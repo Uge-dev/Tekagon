@@ -1,0 +1,153 @@
+
+
+.stack-category {
+  background: rgba(134, 134, 134, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 13px;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.01);
+}
+
+.stack-category h2 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  color: #b8c6ff;
+  border-left: 1px solid #81f2ff;
+  padding-left: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+   font-family: 'YWFT avant modern';
+  background: linear-gradient(to right, rgb(224, 224, 224), #81f2ff, #675cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.2rem 1.5rem;
+}
+
+.stack-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.35s ease;
+  padding: 0.5rem 0;
+}
+
+.stack-item img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.stack-item:hover img {
+  transform: scale(1.08);
+  
+}
+
+.stack-item h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.stack-item p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+@media (max-width: 768px) {
+  .stack-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .stack-item img {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+
+
+
+
+.stack-section.dark {
+  background: #0b0c12;
+  padding: 1rem 2rem;
+  color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stack-title {
+  font-size: 1.8rem;
+  color: #b8c6ff;
+  text-align: left;
+  margin-bottom: 1rem;
+
+  padding-left: 10px;
+  letter-spacing: 0.05em;
+}
+
+
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.stack-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.35s ease;
+}
+
+.stack-item img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+.stack-item h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.stack-item p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.nxtjs {
+  height: 100px ;
+  width: 100px;
+  background-color: #81f2ff;
+  padding: 0px 5px;
+  border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+  .stack-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .stack-item img {
+    width: 36px;
+    height: 36px;
+  }
+}
+

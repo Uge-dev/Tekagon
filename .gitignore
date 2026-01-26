@@ -1,0 +1,103 @@
+# ==========================================
+# .gitignore for Tekagon Website
+# Generated for Mac with HTML frontend + Node.js backend
+# ==========================================
+
+# ********** BACKEND IGNORES **********
+# Node.js specific
+backend/node_modules/
+backend/package-lock.json
+backend/yarn.lock
+backend/.npm-debug.log
+backend/npm-debug.log*
+
+# Environment & Configuration
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/config/local.json
+backend/config/development.json
+
+# Runtime data
+backend/logs/
+backend/*.log
+backend/pids/
+backend/*.pid
+backend/*.seed
+
+# Temporary files
+backend/tmp/
+backend/temp/
+backend/uploads/
+
+# Coverage directory
+backend/coverage/
+backend/.nyc_output/
+
+# ********** FRONTEND IGNORES **********
+# Browser cache files
+frontend/.DS_Store
+frontend/Thumbs.db
+frontend/Desktop.ini
+
+# ********** MAC SPECIFIC **********
+# System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.TemporaryItems
+.fseventsd
+
+# ********** IDE & EDITOR **********
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ********** LARGE MEDIA FILES **********
+# Large video files (use Git LFS for these)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.flv
+*.wmv
+
+# Archive files
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tgz
+
+# ********** BACKUP FILES **********
+*.backup
+*.bak
+*_backup
+backup-*
+
+# ********** SENSITIVE DATA **********
+# Never commit these!
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.secret
+*.private

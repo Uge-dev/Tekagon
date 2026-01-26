@@ -1,0 +1,62 @@
+/* Scroll animation styles extracted from injected JS */
+.anim-initial {
+    opacity: 0;
+    will-change: transform, opacity
+}
+
+.init-up {
+    transform: translate3d(0, 28px, 0)
+}
+
+.init-bottom {
+    transform: translate3d(0, 48px, 0)
+}
+
+.init-top {
+    transform: translate3d(0, -48px, 0)
+}
+
+.init-left {
+    transform: translate3d(-48px, 0, 0)
+}
+
+.init-right {
+    transform: translate3d(48px, 0, 0)
+}
+
+/* active (enter) */
+.anim-active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition: transform .8s cubic-bezier(.2, .9, .3, 1), opacity .6s ease
+}
+
+/* exit (scrolling up) */
+.out-left {
+    opacity: 0;
+    transform: translate3d(-48px, 0, 0);
+    transition: transform .6s cubic-bezier(.2, .9, .3, 1), opacity .45s ease
+}
+
+.out-right {
+    opacity: 0;
+    transform: translate3d(48px, 0, 0);
+    transition: transform .6s cubic-bezier(.2, .9, .3, 1), opacity .45s ease
+}
+
+.out-top {
+    opacity: 0;
+    transform: translate3d(0, -48px, 0);
+    transition: transform .6s cubic-bezier(.2, .9, .3, 1), opacity .45s ease
+}
+
+.out-bottom {
+    opacity: 0;
+    transform: translate3d(0, 48px, 0);
+    transition: transform .6s cubic-bezier(.2, .9, .3, 1), opacity .45s ease
+}
+
+/* small convenience defaults */
+.scroll-anim-stagger {
+    transition-duration: .7s;
+}
