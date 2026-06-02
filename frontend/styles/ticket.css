@@ -156,6 +156,96 @@
 
  /* Responsive adjustments */
  @media (max-width: 768px) {
+.modal-header .whatsapp-modal-icon .fa-whatsapp{
+    
+    font-size: 25px;
+    margin-top: -14px;
+    margin-left: -13px;
+}
+
+.modal-header .whatsapp-modal-icon{
+    height: 35px !important;
+    width: 35px !important;
+}
+
+    .whatsapp-modal .modal-header {
+      padding: 20px 3.5rem !important;
+      
+    }
+
+    .whatsapp-modal .modal-header h3{
+        font-size: 1.2rem !important;
+    }
+
+      .ticket-header {
+         flex-direction: column;
+         align-items: flex-start;
+         gap: 10px;
+     }
+
+     .ticket-footer {
+         flex-direction: column;
+         gap: 15px;
+         align-items: flex-start;
+     }
+
+     .ticket-meta {
+         flex-direction: column;
+         gap: 10px;
+     }
+
+     .ticket-actions {
+         width: 100%;
+     }
+
+     .btn-view-ticket,
+     .btn-chat-ticket {
+         flex: 1;
+         justify-content: center;
+     }
+
+.ticket-modal {
+         max-height: 95vh;
+     }
+
+     .modal-body {
+         max-height: 50vh;
+         scrollbar-width: none;
+     }
+
+     .form-details-grid {
+         grid-template-columns: 1fr;
+     }
+
+     .ticket-info-section {
+         flex-direction: column;
+         align-items: flex-start;
+         gap: 12px;
+     }
+
+     .ticket-timestamps {
+         flex-direction: column;
+         gap: 10px;
+     }
+
+     .modal-actions {
+         flex-direction: column;
+     }
+
+     .modal-header h3{
+        font-size: 15px;
+     }
+
+     .btn-secondary,
+     .btn-primary {
+         width: 100%;
+         justify-content: center;
+     }
+
+    .whatsapp-modal .modal-footer {
+        flex-direction: column;
+      }
+
      .whatsapp-card {
          flex-direction: column;
          text-align: center;
@@ -181,6 +271,15 @@
          flex: 1;
          justify-content: center;
          margin-top: 5px;
+     }
+
+     .tickets-help{
+        padding-right: 0px !important;
+        font-size: 12px;
+     }
+      .tickets-help p{
+       
+        font-size: 12px;
      }
  }
 
@@ -237,13 +336,24 @@
  }
 
  .modal-header {
-     padding: 20px 24px;
+     padding: 20px 3rem;
      background: linear-gradient(135deg, rgba(124, 92, 255, 0.2), rgba(18, 27, 45, 0.4));
      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
      display: flex;
-     justify-content: space-between;
+     justify-content: space-around;
      align-items: center;
  }
+
+
+  .modal-header .whatsapp-modal-icon i{
+    height: 8px !important;
+    width: 8px !important;
+    text-align: center;
+    margin-top: -2rem;
+    margin-left: -1.6rem;
+  }
+
+   
 
  .modal-header h2 {
      margin: 0;
@@ -273,9 +383,9 @@
  }
 
  .modal-body {
-     padding: 24px;
+     padding: 10px 0px;
      overflow-y: auto;
-     max-height: 60vh;
+     max-height: 50vh;
  }
 
  .ticket-info-section {
@@ -560,40 +670,7 @@
      background: rgba(124, 92, 255, 0.5);
  }
 
- @media (max-width: 768px) {
-     .ticket-modal {
-         max-height: 95vh;
-     }
 
-     .modal-body {
-         max-height: 70vh;
-     }
-
-     .form-details-grid {
-         grid-template-columns: 1fr;
-     }
-
-     .ticket-info-section {
-         flex-direction: column;
-         align-items: flex-start;
-         gap: 12px;
-     }
-
-     .ticket-timestamps {
-         flex-direction: column;
-         gap: 10px;
-     }
-
-     .modal-actions {
-         flex-direction: column;
-     }
-
-     .btn-secondary,
-     .btn-primary {
-         width: 100%;
-         justify-content: center;
-     }
- }
 
  .tickets-stats {
      display: grid;
@@ -928,31 +1005,224 @@
      margin-bottom: 8px;
  }
 
- @media (max-width: 768px) {
-     .ticket-header {
-         flex-direction: column;
-         align-items: flex-start;
-         gap: 10px;
-     }
-
-     .ticket-footer {
-         flex-direction: column;
-         gap: 15px;
-         align-items: flex-start;
-     }
-
-     .ticket-meta {
-         flex-direction: column;
-         gap: 10px;
-     }
-
-     .ticket-actions {
-         width: 100%;
-     }
-
-     .btn-view-ticket,
-     .btn-chat-ticket {
-         flex: 1;
-         justify-content: center;
-     }
+ .tickets-help .btn-whatsapp{
+    display: flex;
  }
+
+  .tickets-help .btn-whatsapp{
+    padding: 10px 15px !important;
+    font-weight: 300;
+    font-size: 15px;
+ }
+
+   .tickets-help .btn-whatsapp .fa-whatsapp{
+   
+    font-size: 20px;
+ }
+
+
+
+
+
+
+
+
+
+
+
+ .whatsapp-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .whatsapp-modal {
+      background: #1e293b;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 100vh;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    .whatsapp-modal .modal-header {
+      padding: 20px 4.5rem;
+      background: linear-gradient(135deg, rgba(37, 211, 102, 0.2), rgba(18, 27, 45, 0.4));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: start !important;
+      position: relative;
+    }
+    
+    .whatsapp-modal-icon {
+      width: 50px;
+      height: 50px;
+      background: #25d366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+     
+      font-size: 2.5rem;
+      color: white;
+    }
+    
+    .whatsapp-modal .modal-header h3 {
+      margin: 0;
+      color: white;
+      font-size: 1.5rem;
+    }
+    
+    .whatsapp-modal .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      font-size: 24px;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .whatsapp-modal .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .whatsapp-modal .modal-body {
+      padding: 10px 30px;
+    }
+    
+    .business-hours-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+    }
+    
+.hours-card-top{
+    text-align: center;
+    gap: 10px;
+    display: flex;
+    align-items: center;
+}
+    
+    .hours-card {
+      background: rgba(37, 211, 102, 0.05);
+      border: 1px solid rgba(37, 211, 102, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+ 
+      gap: 15px;
+    }
+    
+    .hours-card i {
+      color: #25d366;
+      font-size: 1.5rem;
+      margin-top: 5px;
+    }
+    
+    .hours-card h4 {
+      margin: 0 0 10px 0;
+      color: #e2e8f0;
+    }
+    
+    .hours-card p {
+      margin: 5px 0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    
+    .alternative-options h4 {
+      color: #e2e8f0;
+      margin-bottom: 3px;
+    }
+    
+    .alternative-options ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .alternative-options li {
+      padding: 10px 0;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .alternative-options li:last-child {
+      border-bottom: none;
+    }
+    
+    .alternative-options li i {
+      color: #93fff6;
+      width: 20px;
+    }
+    
+    .whatsapp-modal .modal-footer {
+      padding: 20px 30px;
+      background: rgba(255, 255, 255, 0.02);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      gap: 12px;
+    }
+    
+    .whatsapp-modal .btn-secondary,
+    .whatsapp-modal .btn-primary {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      border: none;
+      font-size: 1rem;
+    }
+    
+    .whatsapp-modal .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+    
+    .whatsapp-modal .btn-primary {
+      background: linear-gradient(135deg, #25d366, #25d366);
+      color: white;
+    }
+    
+    .whatsapp-modal .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .whatsapp-modal .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+    
+   

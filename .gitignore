@@ -1,103 +1,68 @@
 # ==========================================
-# .gitignore for Tekagon Website
-# Generated for Mac with HTML frontend + Node.js backend
+# .gitignore for Tekagon Website Project
+# Location: /Users/apple/Documents/pr/teckiq website/.gitignore
 # ==========================================
 
-# ********** BACKEND IGNORES **********
-# Node.js specific
-backend/node_modules/
-backend/package-lock.json
-backend/yarn.lock
-backend/.npm-debug.log
-backend/npm-debug.log*
+# --------------------------
+# BACKEND SPECIFIC IGNORES
+# --------------------------
+backend/node_modules/          # Node.js dependencies
+backend/package-lock.json      # Can be regenerated
+backend/.env                   # Environment variables
+backend/.env.local             # Local environment
+backend/uploads/               # Uploaded files
+backend/temp/                  # Temporary files
+backend/logs/                  # Log files
+backend/.npm-debug.log         # NPM debug logs
 
-# Environment & Configuration
-backend/.env
-backend/.env.local
-backend/.env.development.local
-backend/config/local.json
-backend/config/development.json
+# --------------------------
+# FRONTEND SPECIFIC IGNORES
+# --------------------------
+# For HTML/CSS/JS frontend, we don't have build files
+# but we might want to ignore:
+frontend/.DS_Store            # Mac system file
+frontend/Thumbs.db            # Windows thumbnail cache
 
-# Runtime data
-backend/logs/
-backend/*.log
-backend/pids/
-backend/*.pid
-backend/*.seed
+# --------------------------
+# MAC SPECIFIC IGNORES
+# --------------------------
+.DS_Store                     # macOS folder metadata
+._*                           # macOS resource forks
+.Spotlight-V100               # Spotlight indexing
+.Trashes                      # Trash folder
+*.swp                         # Swap files
+*.swo                         # Swap files
 
-# Temporary files
-backend/tmp/
-backend/temp/
-backend/uploads/
+# --------------------------
+# IDE & EDITOR FILES
+# --------------------------
+.vscode/                      # VS Code settings
+.idea/                        # JetBrains IDE
+*.sublime-*                   # Sublime Text
+.project                      # Eclipse
+.classpath                    # Eclipse
 
-# Coverage directory
-backend/coverage/
-backend/.nyc_output/
-
-# ********** FRONTEND IGNORES **********
-# Browser cache files
-frontend/.DS_Store
-frontend/Thumbs.db
-frontend/Desktop.ini
-
-# ********** MAC SPECIFIC **********
-# System Files
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
-.TemporaryItems
-.fseventsd
-
-# ********** IDE & EDITOR **********
-# Visual Studio Code
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# JetBrains IDEs
-.idea/
-*.iws
-*.iml
-*.ipr
-
-# Vim
-*.swp
-*.swo
-*~
-
-# ********** LARGE MEDIA FILES **********
-# Large video files (use Git LFS for these)
+# --------------------------
+# LARGE MEDIA FILES (>100MB)
+# --------------------------
 *.mp4
 *.mov
 *.avi
 *.mkv
-*.flv
-*.wmv
-
-# Archive files
 *.zip
 *.rar
 *.7z
-*.tar.gz
-*.tgz
 
-# ********** BACKUP FILES **********
+# --------------------------
+# SENSITIVE DATA
+# --------------------------
+*.pem                         # SSL certificates
+*.key                         # Private keys
+*.crt                         # Certificates
+
+# --------------------------
+# BACKUP FILES
+# --------------------------
 *.backup
 *.bak
-*_backup
-backup-*
-
-# ********** SENSITIVE DATA **********
-# Never commit these!
-*.pem
-*.key
-*.crt
-*.pfx
-*.p12
-*.secret
-*.private
+~*

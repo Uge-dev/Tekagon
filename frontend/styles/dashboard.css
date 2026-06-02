@@ -274,14 +274,55 @@ body {
 }
 
 .prof-bkg {
+  position: relative;
   width: 100%;
-  background-color: #001a2d;
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 50vh;
+  height: clamp(320px, 45vh, 520px);
   border-radius: 40px;
   margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.prof-bkg .animation-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.prof-bkg .typewriter-text {
+  font-size: clamp(3.5rem, 8vw, 10rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: transparent;
+
+ 
+  -webkit-text-stroke: 1.6px #00eaffc4;
+
+}
+
+.prof-bkg .cursor {
+  font-size: clamp(3.5rem, 8vw, 9rem);
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  background-color: #00f2ff;
+  margin-left: 0.3rem;
+  vertical-align: baseline;
+  animation: profBlink 0.8s step-end infinite;
+}
+
+@keyframes profBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* content area */
@@ -420,19 +461,20 @@ body {
   transform: translateY(-50%);
   border: 0;
   background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 10px;
+  color: #e8fdff;
+  padding: 8px 8px;
+  border-radius: 5rem;
   cursor: pointer;
   z-index: 130
 }
 
 .carousel-btn.prev {
-  left: 12px
+  left: 12px;
+  
 }
 
 .carousel-btn.next {
-  right: 12px
+  right: 12px;
 }
 
 /* page grid */

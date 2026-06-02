@@ -239,9 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add at the top of your dashboard.js
   let submissionTimeout = null;
 
-  let firebaseUnsubscribe = null; // For real-time listener
-  let currentFirebaseTicketId = null;
-
   // --- DOM refs
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -251,9 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const carouselEl = document.getElementById('carousel');
   const carouselPrev = document.getElementById('carouselPrev');
   const carouselNext = document.getElementById('carouselNext');
-
+  // parent wrapper of the carousel (may be a hero/banner container) — used to hide empty space
   const carouselParent = carouselEl ? carouselEl.parentElement : null;
-
+  // snapshot inline styles of the parent so we can restore them when showing again
   const _carouselParentInline = carouselParent ? {
     display: carouselParent.style.display || '',
     margin: carouselParent.style.margin || '',
@@ -264,6 +261,8 @@ document.addEventListener('DOMContentLoaded', () => {
   } : null;
   const pageEl = document.getElementById('page');
 
+  // ========== GLOBAL TICKET FUNCTIONS ==========
+  // These MUST be defined before they're used
 
   window.createTicket = function (serviceName, formData, userId) {
     console.log('createTicket called with:', { serviceName, userId });
@@ -391,6 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => notification.remove(), 300);
     }
 
+    // Don't mark messages as read when dismissing notification
+    // Let users manually read them
   };
   window.setQuickReply = function (message) {
     const chatInput = document.getElementById('chatInput');
@@ -400,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Enhanced sendChatMessage function
   window.sendChatMessage = function () {
     const chatInput = document.getElementById('chatInput');
     if (!chatInput) return;
@@ -410,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentTicketId = localStorage.getItem('current_ticket_id');
     const userId = localStorage.getItem('chatUserId');
 
-
+    // Create message object
     const newMessage = {
       id: 'msg_' + Date.now(),
       sender: 'user',
@@ -421,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (currentTicketId) {
-   
+      // Save to SEPARATE ticket chats storage
       saveTicketMessage(currentTicketId, newMessage);
 
       // Also update the ticket with this message

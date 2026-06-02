@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 
   <link rel="shortcut icon" href="../Images/TeckIQ mark.png" type="image/x-icon" srcset="" />
   <title>Tekagon Dashboard</title>
@@ -26,6 +27,8 @@
   <link rel="stylesheet" href="../styles/scheduler.css">
   <link rel="stylesheet" href="../styles/chat.css">
   <link rel="stylesheet" href="../styles/ticket.css">
+<!-- Add this link in the <head> section, after other stylesheets -->
+<link rel="stylesheet" href="../styles/responsive.css">
 
 
 
@@ -43,6 +46,7 @@
 
   <!-- main dashboard script -->
   <script src="../js/dashboard.js"></script>
+  <script src="../test.js"></script>
 
 </head>
 
@@ -195,10 +199,10 @@
         <section class="banner-wrap" aria-roledescription="carousel">
           <div id="carousel" class="carousel"></div>
           <button id="carouselPrev" class="carousel-btn prev" aria-label="Previous">
-
+          <p> < </p>
           </button>
           <button id="carouselNext" class="carousel-btn next" aria-label="Next">
-            ›
+            <p> > </p>
           </button>
         </section>
 
@@ -221,6 +225,8 @@
   <!-- Your existing scripts -->
   <script src="../js/dashboard.js"></script>
   <script src="../js/contact.js"></script>
+  <script src="../js/test.js"></script>
+
 
   <script>
     // Import Firebase modules
@@ -247,7 +253,7 @@
       window.firebaseAuth = auth;
       window.onAuthStateChanged = onAuthStateChanged;
 
-      console.log('✅ Firebase initialized successfully');
+      console.log('Firebase initialized successfully');
 
       // Create a global function to check auth
       window.checkFirebaseAuth = function () {
@@ -259,7 +265,7 @@
       };
 
     } catch (error) {
-      console.error('❌ Firebase initialization error:', error);
+      console.error(' Firebase initialization error:', error);
       window.firebaseError = error;
     }
     if (window.feather) feather.replace();

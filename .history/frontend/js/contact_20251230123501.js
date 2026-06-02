@@ -6,10 +6,10 @@ function initializeContactForm() {
     setTimeout(() => {
         const contactForm = document.getElementById('contactForm');
         if (!contactForm) {
-            console.error('Contact form not found!');
+            console.error('❌ Contact form not found!');
             return;
         }
-        console.log('Contact form found!');
+        console.log('✅ Contact form found!');
 
         // Get all elements
         const submitBtn = document.getElementById('submitBtn');

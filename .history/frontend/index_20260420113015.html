@@ -21,40 +21,6 @@
 
   </style>
 
-<!-- Add at the end of <body> or in <head> -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, getDocs, where, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-    
-    const firebaseConfig = {
-    apiKey: "AIzaSyD3ugO7i1OuGZ_6PBmL8IVugW02BFxnsvw",
-    authDomain: "tekagon-chat.firebaseapp.com",
-    projectId: "tekagon-chat",
-    storageBucket: "tekagon-chat.firebasestorage.app",
-    messagingSenderId: "945686485922",
-    appId: "1:945686485922:web:a697a859102afe4fac70fb",
-    measurementId: "G-6Z15H1PGGD"
-  };
-    
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    
-    // Make available globally
-    window.db = db;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.query = query;
-    window.orderBy = orderBy;
-    window.onSnapshot = onSnapshot;
-    window.doc = doc;
-    window.updateDoc = updateDoc;
-    window.arrayUnion = arrayUnion;
-    window.getDocs = getDocs;
-    window.where = where;
-    window.setDoc = setDoc;
-    window.getDoc = getDoc;
-  </script>
-
 </head>
 
 <body>
@@ -81,8 +47,8 @@
       <div class="nav-links">
         <a href="#feature">Features</a>
         <a href="#project">Projects</a>
+        <a href="#contact">Contact Us</a>
         <a href="#FAQ">FAQ</a>
-         <a href="./pages/contact.html">Contact Us</a>
       </div>
       <a href="./pages/Dasnboard.html" class="dashboard-btn">View Dashboard</a>
     </nav>
@@ -617,6 +583,15 @@
 
 
   </section>
+
+
+
+
+
+
+
+
+
 
 
 

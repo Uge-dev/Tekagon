@@ -29,10 +29,10 @@ if (hamburger && navbar) {
   });
 }
 
-// Scroll event for sticky header - REMOVED to prevent header movement
-// window.addEventListener("scroll", function () {
-//   header.classList.toggle("sticky", window.scrollY > 8);
-// });
+// Scroll event for sticky header
+window.addEventListener("scroll", function () {
+  header.classList.toggle("sticky", window.scrollY > 80);
+});
 
 
 
@@ -70,77 +70,57 @@ const resetButton = document.getElementById('resetButton');
 let currentSet = 0;
 let animationTimeout;
 
+function showCarouselSet(index) {
+  carouselSets.forEach((set, setIndex) => {
+    const images = set.querySelectorAll('img');
+
+    if (setIndex === index) {
+      set.style.opacity = '1';
+      set.style.transform = 'translateY(0)';
+      images.forEach((img) => {
+        img.style.opacity = '0';
+        img.style.transform = 'translateY(50px)';
+      });
+      images.forEach((img, idx) => {
+        setTimeout(() => {
+          img.style.opacity = '1';
+          img.style.transform = 'translateY(0)';
+        }, idx * 300);
+      });
+    } else {
+      set.style.opacity = '0';
+      set.style.transform = 'translateY(100%)';
+      images.forEach((img) => {
+        img.style.opacity = '0';
+        img.style.transform = 'translateY(50px)';
+      });
+    }
+  });
+
+  currentSet = index;
+}
+
 function showNextSet() {
-  // Hide the current set
-  const previousSet = carouselSets[currentSet];
-  const previousImages = previousSet.querySelectorAll('img');
-  previousImages.forEach((img) => {
-    img.style.opacity = '0';
-    img.style.transform = 'translateY(50px)';
-  });
-  previousSet.style.opacity = '0';
+  clearTimeout(animationTimeout);
 
-  // Move to the next set
-  currentSet = (currentSet + 1) % carouselSets.length;
-  const nextSet = carouselSets[currentSet];
+  const nextIndex = (currentSet + 1) % carouselSets.length;
+  showCarouselSet(nextIndex);
 
-  // Show the new set
-  nextSet.style.opacity = '1';
-  nextSet.style.transform = 'translateY(0)';
-
-  // Animate each image with a delay
-  const images = nextSet.querySelectorAll('img');
-  images.forEach((img, index) => {
-    setTimeout(() => {
-      img.style.opacity = '1';
-      img.style.transform = 'translateY(0)';
-    }, index * 300); // 300ms delay between images
-  });
-
-  // Schedule the next animation
   animationTimeout = setTimeout(showNextSet, 3000); // Adjust time for each group
 }
 
-function restartGroupAnimation(event) {
-  // Prevent default button behavior
-  event.preventDefault();
-
-  // Stop current animation loop
-  clearTimeout(animationTimeout);
-
-  // Hide all sets immediately
-  carouselSets.forEach((set) => {
-    set.style.opacity = '0';
-    set.style.transform = 'translateY(100%)';
-    const images = set.querySelectorAll('img');
-    images.forEach((img) => {
-      img.style.opacity = '0';
-      img.style.transform = 'translateY(50px)';
-    });
-  });
-
-  // Restart from the first set
-  currentSet = 0;
-  const firstSet = carouselSets[currentSet];
-  firstSet.style.opacity = '1';
-  firstSet.style.transform = 'translateY(0)';
-  const firstImages = firstSet.querySelectorAll('img');
-  firstImages.forEach((img, index) => {
-    setTimeout(() => {
-      img.style.opacity = '1';
-      img.style.transform = 'translateY(0)';
-    }, index * 300); // 300ms delay between images
-  });
-
-  // Restart the animation loop
-  animationTimeout = setTimeout(showNextSet, 3000);
-}
-
 // Initialize the first set
-showNextSet();
+showCarouselSet(currentSet);
+animationTimeout = setTimeout(showNextSet, 3000);
 
-// Add event listener for the reset button
-resetButton.addEventListener('click', restartGroupAnimation);
+// Add event listener for the reset button to advance to the next group
+if (resetButton) {
+  resetButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    showNextSet();
+  });
+}
 
 
 
