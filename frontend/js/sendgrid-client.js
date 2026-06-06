@@ -3,7 +3,7 @@ class SendGridClient {
     constructor() {
         this.config = {
             // Backend server URL - update if deployed
-            serverUrl: 'http://localhost:3000',
+            serverUrl: 'https://tekagon-backend.onrender.com',
 
             // SendGrid template ID (for reference)
             templateId: 'd-c0191304da1d467694d801a0d1493180',

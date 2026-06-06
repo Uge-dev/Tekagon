@@ -3,6 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 
+const connectDB = require('./db');
+const User = require('./models/User');
+const Ticket = require('./models/Ticket');
+const Message = require('./models/Message');
+
+// Connect to MongoDB
+connectDB();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -15,8 +23,8 @@ const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
 const SENDER_NAME = process.env.SENDGRID_SENDER_NAME;
 
 
-console.log('🔧 Initializing SendGrid...');
-console.log('📋 Using API Key from:', process.env.SENDGRID_API_KEY ? 'Environment' : 'Hardcoded');
+console.log(' Initializing SendGrid...');
+console.log(' Using API Key from:', process.env.SENDGRID_API_KEY ? 'Environment' : 'Hardcoded');
 
 if (!SENDGRID_API_KEY) {
     console.error(' ERROR: No SendGrid API key found!');
@@ -362,14 +370,126 @@ app.get('/api/debug-sendgrid', async (req, res) => {
     }
 });
 
+// ── USER ROUTES ──
+app.post('/api/users/register', async (req, res) => {
+  try {
+    const { userId, name, phone, email, company } = req.body;
+    let user = await User.findOne({ userId });
+    if (!user) {
+      user = await User.create({ userId, name, phone, email, company });
+    } else {
+      user.lastActive = new Date();
+      await user.save();
+    }
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find().sort({ registeredAt: -1 });
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── TICKET ROUTES ──
+app.post('/api/tickets/create', async (req, res) => {
+  try {
+    const ticket = await Ticket.create(req.body);
+    res.json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tickets/user/:userId', async (req, res) => {
+  try {
+    const tickets = await Ticket.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 });
+    res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tickets/all', async (req, res) => {
+  try {
+    const tickets = await Ticket.find().sort({ createdAt: -1 });
+    res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/tickets/:ticketId/status', async (req, res) => {
+  try {
+    const ticket = await Ticket.findOneAndUpdate(
+      { id: req.params.ticketId },
+      { status: req.body.status, updatedAt: new Date() },
+      { new: true }
+    );
+    res.json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── MESSAGE ROUTES ──
+app.post('/api/messages', async (req, res) => {
+  try {
+    const message = await Message.create(req.body);
+    res.json({ success: true, message });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/messages/user/:userId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      userId: req.params.userId,
+      ticketId: null
+    }).sort({ timestamp: 1 });
+    res.json({ success: true, messages });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/messages/ticket/:ticketId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      ticketId: req.params.ticketId
+    }).sort({ timestamp: 1 });
+    res.json({ success: true, messages });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/messages/read/:userId', async (req, res) => {
+  try {
+    await Message.updateMany(
+      { userId: req.params.userId, read: false },
+      { read: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 app.listen(PORT, async () => {
     console.log(`
-🚀 TEKAGON SCHEDULER BACKEND
-════════════════════════════════
+ TEKAGON SCHEDULER BACKEND
+
  Server: http://localhost:${PORT}
  SendGrid: Initializing...
-════════════════════════════════
+
 `);
 
 
