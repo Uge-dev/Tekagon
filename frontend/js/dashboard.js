@@ -265,57 +265,62 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageEl = document.getElementById('page');
 
 
-  window.createTicket = function (serviceName, formData, userId) {
-    console.log('createTicket called with:', { serviceName, userId });
+ window.createTicket = async function (serviceName, formData, userId) {
+  console.log('createTicket called with:', { serviceName, userId });
 
-    try {
-      const ticketId = 'TKT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      const ticket = {
-        id: ticketId,
-        serviceName: serviceName,
-        formData: formData,
-        userId: userId,
-        userName: localStorage.getItem('userName') || formData.fullName || 'User',
-        status: 'pending',
-        priority: 'normal',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        messages: [],
-        adminNotes: ''
-      };
+  try {
+    const ticketId = 'TKT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const ticket = {
+      id: ticketId,
+      serviceName: serviceName,
+      formData: formData,
+      userId: userId,
+      userName: localStorage.getItem('userName') || formData.fullName || 'User',
+      status: 'pending',
+      priority: 'normal',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+      adminNotes: ''
+    };
 
-      console.log('Ticket object created:', ticketId);
+    console.log('Ticket object created:', ticketId);
 
-      // Save to localStorage
-      const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
-      console.log('Existing tickets:', Object.keys(tickets).length);
+    // Save to localStorage (backup)
+    const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
+    if (!tickets[userId]) tickets[userId] = {};
+    tickets[userId][ticketId] = ticket;
+    localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
+    console.log('✅ Saved to localStorage');
 
-      if (!tickets[userId]) tickets[userId] = {};
-      tickets[userId][ticketId] = ticket;
+    // Also add to all tickets list for admin
+    const allTickets = JSON.parse(localStorage.getItem('tekagon_all_tickets') || '[]');
+    allTickets.push({
+      ticketId: ticketId,
+      userId: userId,
+      serviceName: serviceName,
+      status: 'pending',
+      createdAt: ticket.createdAt
+    });
+    localStorage.setItem('tekagon_all_tickets', JSON.stringify(allTickets));
 
-      localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
-      console.log('Saved to tekagon_tickets');
-
-      // Also add to all tickets list for admin
-      const allTickets = JSON.parse(localStorage.getItem('tekagon_all_tickets') || '[]');
-      allTickets.push({
-        ticketId: ticketId,
-        userId: userId,
-        serviceName: serviceName,
-        status: 'pending',
-        createdAt: ticket.createdAt
-      });
-
-      localStorage.setItem('tekagon_all_tickets', JSON.stringify(allTickets));
-      console.log('Saved to tekagon_all_tickets');
-
-      return ticket;
-
-    } catch (error) {
-      console.error('Error in createTicket:', error);
-      throw error;
+    // Save to MongoDB
+    if (window.TekagonAPI) {
+      const result = await window.TekagonAPI.createTicket(ticket);
+      if (result.success) {
+        console.log('✅ Ticket saved to MongoDB:', ticketId);
+      } else {
+        console.warn('⚠️ MongoDB save failed, localStorage backup used');
+      }
     }
-  };
+
+    return ticket;
+
+  } catch (error) {
+    console.error('Error in createTicket:', error);
+    throw error;
+  }
+};
 
   window.formatServiceBrief = function (serviceName, formData, userName, ticketId) {
     console.log('formatServiceBrief called');
@@ -355,10 +360,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  window.getUserTickets = function (userId) {
-    const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
-    return tickets[userId] || {};
-  };
+ window.getUserTickets = async function(userId) {
+  try {
+    // Try MongoDB first
+    const result = await window.TekagonAPI.getUserTickets(userId);
+    if (result.success && result.tickets.length > 0) {
+      // Convert array to object format dashboard expects
+      const ticketsObj = {};
+      result.tickets.forEach(t => {
+        ticketsObj[t.id] = t;
+      });
+      return ticketsObj;
+    }
+  } catch (err) {
+    console.error('MongoDB tickets failed, using localStorage');
+  }
+
+  // Fallback to localStorage
+  const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
+  return tickets[userId] || {};
+};
   // ========== END GLOBAL FUNCTIONS ==========
 
   // Add these event handlers (place them after the DOMContentLoaded event)
@@ -400,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  window.sendChatMessage = function () {
+ window.sendChatMessage = async function () {
     const chatInput = document.getElementById('chatInput');
     if (!chatInput) return;
 
@@ -409,7 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentTicketId = localStorage.getItem('current_ticket_id');
     const userId = localStorage.getItem('chatUserId');
-
 
     const newMessage = {
       id: 'msg_' + Date.now(),
@@ -421,10 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (currentTicketId) {
-   
       saveTicketMessage(currentTicketId, newMessage);
 
-      // Also update the ticket with this message
+      // Update localStorage ticket messages
       const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
       if (tickets[userId] && tickets[userId][currentTicketId]) {
         if (!tickets[userId][currentTicketId].messages) {
@@ -438,11 +457,28 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
       }
     } else {
-      // Save to general chat ONLY (not mixed with tickets)
+      // Save to general chat localStorage
       const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
       if (!conversations[userId]) conversations[userId] = [];
       conversations[userId].push(newMessage);
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversations));
+    }
+
+    // Save to MongoDB
+    if (window.TekagonAPI) {
+      try {
+        await window.TekagonAPI.sendMessage({
+          id: newMessage.id,
+          sender: 'user',
+          content: message,
+          userId: userId,
+          ticketId: currentTicketId || null,
+          read: true
+        });
+        console.log('✅ Message saved to MongoDB');
+      } catch (err) {
+        console.warn('⚠️ MongoDB save failed, localStorage backup used');
+      }
     }
 
     // Update UI
@@ -1424,6 +1460,17 @@ Designed and developed a full-stack quiz website for church examinations and com
         localStorage.setItem('userPhone', phone);
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userCompany', company);
+
+        // Save to mongodb
+        window.TekagonAPI.registerUser({
+  userId,
+  name,
+  phone,
+  email,
+  company
+}).then(result => {
+  console.log('User saved to MongoDB:', result);
+});
 
         // Store in users list for admin
         const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
