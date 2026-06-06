@@ -1,4 +1,4 @@
-// backend/server.js - DEBUG VERSION
+
 const express = require('express');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
@@ -6,21 +6,20 @@ const sgMail = require('@sendgrid/mail');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ========== CONFIGURE SENDGRID ==========
-// server.js - UPDATED (Replace the config section)
 
-// ========== CONFIGURE SENDGRID ==========
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'REMOVED_API_KEY';
-const SENDGRID_TEMPLATE_ID = 'd-c0191304da1d467694d801a0d1493180';
-const SENDER_EMAIL = 'tekagon.digital@gmail.com';
-const SENDER_NAME = 'Tekagon Digital';
 
-// Initialize SendGrid
+
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const SENDGRID_TEMPLATE_ID = process.env.SENDGRID_TEMPLATE_ID;
+const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
+const SENDER_NAME = process.env.SENDGRID_SENDER_NAME;
+
+
 console.log('🔧 Initializing SendGrid...');
 console.log('📋 Using API Key from:', process.env.SENDGRID_API_KEY ? 'Environment' : 'Hardcoded');
 
 if (!SENDGRID_API_KEY) {
-    console.error('❌ ERROR: No SendGrid API key found!');
+    console.error(' ERROR: No SendGrid API key found!');
     console.error('Set it with: export SENDGRID_API_KEY=your_api_key_here');
     process.exit(1);
 }
@@ -28,17 +27,15 @@ if (!SENDGRID_API_KEY) {
 sgMail.setApiKey(SENDGRID_API_KEY);
 console.log('endGrid initialized');
 
-// ========== CORS CONFIGURATION ==========
 app.use(cors({ origin: '*' }));
 app.options('*', cors());
 app.use(express.json());
 
-// ========== HELPER FUNCTIONS ==========
+
 async function testSendGridConnection() {
     try {
         console.log('Testing SendGrid connection...');
 
-        // Simple test email to ourselves
         const testMsg = {
             to: SENDER_EMAIL,
             from: SENDER_EMAIL,
@@ -56,9 +53,7 @@ async function testSendGridConnection() {
     }
 }
 
-// ========== API ENDPOINTS ==========
 
-// 1. Health Check with SendGrid test
 app.get('/api/health', async (req, res) => {
     console.log('Health check requested');
 
@@ -73,12 +68,12 @@ app.get('/api/health', async (req, res) => {
             'GET /api/health',
             'POST /api/send-email',
             'POST /api/test-email',
-            'POST /api/simple-email'  // Simple alternative
+            'POST /api/simple-email'  
         ]
     });
 });
 
-// 2. SIMPLE EMAIL ENDPOINT (No template - always works)
+
 app.post('/api/simple-email', async (req, res) => {
     try {
         const { toEmail, toName, subject, message } = req.body;
@@ -130,14 +125,13 @@ app.post('/api/simple-email', async (req, res) => {
     }
 });
 
-// 3. TEST EMAIL (Using template - may fail)
+
 app.post('/api/test-email', async (req, res) => {
     try {
         const email = req.body.email || SENDER_EMAIL;
 
         console.log('Sending template test email to:', email);
 
-        // First try with template
         try {
             const msg = {
                 to: email,
@@ -155,7 +149,7 @@ app.post('/api/test-email', async (req, res) => {
 
             const response = await sgMail.send(msg);
 
-            console.log('✅ Template email sent successfully!');
+            console.log(' Template email sent successfully!');
 
             return res.json({
                 success: true,
@@ -165,7 +159,7 @@ app.post('/api/test-email', async (req, res) => {
             });
 
         } catch (templateError) {
-            console.log('⚠️ Template email failed, trying simple email...');
+            console.log('Template email failed, trying simple email...');
 
             // Fallback to simple email
             const simpleMsg = {
@@ -189,7 +183,7 @@ app.post('/api/test-email', async (req, res) => {
         }
 
     } catch (error) {
-        console.error('❌ All email attempts failed:', error.message);
+        console.error(' All email attempts failed:', error.message);
 
         res.status(500).json({
             success: false,
@@ -205,14 +199,14 @@ app.post('/api/test-email', async (req, res) => {
     }
 });
 
-// 4. SEND EMAIL TO FORM USER
+
 app.post('/api/send-email', async (req, res) => {
     try {
         const { toEmail, toName, templateData } = req.body;
 
         console.log('📧 Sending booking email to:', toEmail);
 
-        // Always include required fields
+     
         const emailData = {
             name: templateData?.name || toName,
             company: templateData?.company || 'Not specified',
@@ -223,7 +217,7 @@ app.post('/api/send-email', async (req, res) => {
             ...templateData
         };
 
-        // Try template first, fallback to simple
+  
         try {
             const msg = {
                 to: toEmail,
@@ -234,7 +228,7 @@ app.post('/api/send-email', async (req, res) => {
 
             await sgMail.send(msg);
 
-            console.log('✅ Booking email sent via template');
+            console.log(' Booking email sent via template');
 
             res.json({
                 success: true,
@@ -244,7 +238,7 @@ app.post('/api/send-email', async (req, res) => {
             });
 
         } catch (templateError) {
-            console.log('⚠️ Template failed, sending simple confirmation...');
+            console.log(' Template failed, sending simple confirmation...');
 
             const simpleMsg = {
                 to: toEmail,
@@ -312,15 +306,15 @@ Tekagon Digital Team
     }
 });
 
-// 5. DEBUG ENDPOINT - Check SendGrid status
+
 app.get('/api/debug-sendgrid', async (req, res) => {
     try {
         console.log('🐛 Debugging SendGrid...');
 
-        // Test 1: API Key validity
+ 
         const apiKeyValid = SENDGRID_API_KEY.startsWith('SG.') && SENDGRID_API_KEY.length > 50;
 
-        // Test 2: Try sending minimal email
+  
         let sendTest = { success: false, error: 'Not tested' };
         try {
             const testMsg = {
@@ -368,17 +362,17 @@ app.get('/api/debug-sendgrid', async (req, res) => {
     }
 });
 
-// ========== START SERVER ==========
+
 app.listen(PORT, async () => {
     console.log(`
 🚀 TEKAGON SCHEDULER BACKEND
 ════════════════════════════════
-✅ Server: http://localhost:${PORT}
-✅ SendGrid: Initializing...
+ Server: http://localhost:${PORT}
+ SendGrid: Initializing...
 ════════════════════════════════
 `);
 
-    // Test SendGrid on startup
+
     const testResult = await testSendGridConnection();
 
     if (testResult.success) {
