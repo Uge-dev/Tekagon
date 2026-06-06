@@ -1,0 +1,68 @@
+# ==========================================
+# .gitignore for Tekagon Website Project
+# Location: /Users/apple/Documents/pr/teckiq website/.gitignore
+# ==========================================
+
+# --------------------------
+# BACKEND SPECIFIC IGNORES
+# --------------------------
+backend/node_modules/          # Node.js dependencies
+backend/package-lock.json      # Can be regenerated
+backend/.env                   # Environment variables
+backend/.env.local             # Local environment
+backend/uploads/               # Uploaded files
+backend/temp/                  # Temporary files
+backend/logs/                  # Log files
+backend/.npm-debug.log         # NPM debug logs
+
+# --------------------------
+# FRONTEND SPECIFIC IGNORES
+# --------------------------
+# For HTML/CSS/JS frontend, we don't have build files
+# but we might want to ignore:
+frontend/.DS_Store            # Mac system file
+frontend/Thumbs.db            # Windows thumbnail cache
+
+# --------------------------
+# MAC SPECIFIC IGNORES
+# --------------------------
+.DS_Store                     # macOS folder metadata
+._*                           # macOS resource forks
+.Spotlight-V100               # Spotlight indexing
+.Trashes                      # Trash folder
+*.swp                         # Swap files
+*.swo                         # Swap files
+
+# --------------------------
+# IDE & EDITOR FILES
+# --------------------------
+.vscode/                      # VS Code settings
+.idea/                        # JetBrains IDE
+*.sublime-*                   # Sublime Text
+.project                      # Eclipse
+.classpath                    # Eclipse
+
+# --------------------------
+# LARGE MEDIA FILES (>100MB)
+# --------------------------
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.rar
+*.7z
+
+# --------------------------
+# SENSITIVE DATA
+# --------------------------
+*.pem                         # SSL certificates
+*.key                         # Private keys
+*.crt                         # Certificates
+
+# --------------------------
+# BACKUP FILES
+# --------------------------
+*.backup
+*.bak
+~*

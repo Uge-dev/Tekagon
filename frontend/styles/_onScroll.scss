@@ -1,0 +1,112 @@
+// Variables
+$anim-distance-lg: 48px;
+$anim-distance-md: 28px;
+$anim-distance-sm: 18px;
+$anim-duration: .8s;
+$anim-ease: cubic-bezier(.2, .9, .3, 1);
+$anim-fade: .6s;
+
+/* Base initial state */
+.anim-initial {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.init-up {
+  transform: translate3d(0, $anim-distance-md, 0);
+}
+
+.init-bottom {
+  transform: translate3d(0, $anim-distance-lg, 0);
+}
+
+.init-top {
+  transform: translate3d(0, -$anim-distance-lg, 0);
+}
+
+.init-left {
+  transform: translate3d(-$anim-distance-lg, 0, 0);
+}
+
+.init-right {
+  transform: translate3d($anim-distance-lg, 0, 0);
+}
+
+/* Active (enter) */
+.anim-active {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition: transform $anim-duration $anim-ease, opacity $anim-fade ease;
+}
+
+/* Exit (leave) */
+.out-left {
+  opacity: 0;
+  transform: translate3d(-$anim-distance-lg, 0, 0);
+  transition: transform .6s $anim-ease, opacity .45s ease;
+}
+
+.out-right {
+  opacity: 0;
+  transform: translate3d($anim-distance-lg, 0, 0);
+  transition: transform .6s $anim-ease, opacity .45s ease;
+}
+
+.out-top {
+  opacity: 0;
+  transform: translate3d(0, -$anim-distance-lg, 0);
+  transition: transform .6s $anim-ease, opacity .45s ease;
+}
+
+.out-bottom {
+  opacity: 0;
+  transform: translate3d(0, $anim-distance-lg, 0);
+  transition: transform .6s $anim-ease, opacity .45s ease;
+}
+
+.scroll-anim-stagger {
+  transition-duration: .7s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+
+  .init-left,
+  .init-right {
+    transform: translate3d(0, $anim-distance-md, 0);
+  }
+
+  .init-top,
+  .init-bottom {
+    transform: translate3d(0, $anim-distance-md, 0);
+  }
+
+  .out-left,
+  .out-right,
+  .out-top,
+  .out-bottom {
+    transform: translate3d(0, $anim-distance-md/1.5, 0);
+  }
+}
+
+@media (max-width: 600px) {
+  .anim-active {
+    transition-duration: .6s;
+  }
+
+  .init-left,
+  .init-right,
+  .init-top,
+  .init-bottom {
+    transform: translate3d(0, $anim-distance-sm, 0);
+  }
+
+  .out-left,
+  .out-right,
+  .out-top,
+  .out-bottom {
+    transform: translate3d(0, $anim-distance-sm/1.5, 0);
+  }
+}
+
+// End of _onScroll.scss

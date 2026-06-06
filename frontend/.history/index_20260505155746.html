@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Tekagon - Innovative Solutions</title>
+  <link rel="stylesheet" href="./styles/style.css">
+  <link rel="stylesheet" href="./styles/resp.css">
+  <link rel="shortcut icon" href="./Images/TeckIQ mark.png" type="image/x-icon" srcset="">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
+  <style>
+
+  </style>
+
+<!-- Add at the end of <body> or in <head> -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, getDocs, where, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    
+    const firebaseConfig = {
+    apiKey: "AIzaSyD3ugO7i1OuGZ_6PBmL8IVugW02BFxnsvw",
+    authDomain: "tekagon-chat.firebaseapp.com",
+    projectId: "tekagon-chat",
+    storageBucket: "tekagon-chat.firebasestorage.app",
+    messagingSenderId: "945686485922",
+    appId: "1:945686485922:web:a697a859102afe4fac70fb",
+    measurementId: "G-6Z15H1PGGD"
+  };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    // Make available globally
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.query = query;
+    window.orderBy = orderBy;
+    window.onSnapshot = onSnapshot;
+    window.doc = doc;
+    window.updateDoc = updateDoc;
+    window.arrayUnion = arrayUnion;
+    window.getDocs = getDocs;
+    window.where = where;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+  </script>
+
+</head>
+
+<body>
+
+
+
+
+  <!-- Preloader -->
+  <div class="preloader" id="preloader">
+    <div class="icon-shp">
+      <div class="outer-circle"></div>
+      <div class="inner-circle"></div>
+    </div>
+  </div>
+
+
+  <header class="main-header">
+  <div class="header-container">
+    <div class="logo">
+      <a href="#"><img src="./Images/TeckIQ white text.png" alt="TeckIQ Logo"></a>
+    </div>
+
+    <nav class="nav-wrapper" id="menu-item">
+      <div class="nav-links">
+        <a href="#feature">Features</a>
+        <a href="#project">Projects</a>
+        <a href="#FAQ">FAQ</a>
+         <a href="./pages/contact.html">Contact Us</a>
+      </div>
+      <a href="./pages/Dasnboard.html" class="dashboard-btn">View Dashboard</a>
+    </nav>
+
+    <button class="hamburger-toggle" id="mobile-toggle" aria-label="Toggle Navigation">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
+</header>
+
+
+  <section class="content">
+
+
+    <section class="banner onscroll scale-up">
+
+
+      <div>
+        <div class="ban-cont">
+          <h1>Portal to new <span class="text-gra">innovation,</span> invision the <span class="text-gra">future</span>
+          </h1>
+          <div class="search-container">
+            <div class="icon">
+              <img src="./Images/stars-4.png" alt="icon"> <!-- Replace with your icon image -->
+            </div>
+            <input type="text" placeholder="Search for our services">
+            <button>Search</button>
+          </div>
+          <div class="t-vid">
+
+            <img src="./Images/video-web-play.png" alt="">
+            <a href="#">Video of the team</a>
+
+          </div>
+        </div>
+      </div>
+
+
+
+
+      <section>
+
+        <div class="card-container onscroll scale-up">
+          <!-- Infrastructure Card -->
+          <div class="card">
+            <div class="icon">
+              <img src="./Images/setb (2)-assets/cd4.png" alt="Infrastructure Icon">
+            </div>
+            <div class="card-txt">
+              <h3>Innovation</h3>
+              <p>We embrace modern technologies and creative thinking to deliver solutions that are future-ready and
+                impactful.</p>
+
+              <div class="get-started">
+                <a href="./pages/Dasnboard.html">Get Started</a>
+                <div class="arr">
+                  <img src="./Images/setb (2)-assets/short arr.png" alt="">
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Applications Card -->
+          <div class="card" id="mid-card">
+            <div class="icon">
+              <img src="./Images/setb (2)-assets/cd3.png" alt="Applications Icon">
+            </div>
+            <div class="card-txt">
+              <h3>Growth Partnership</h3>
+              <p>We work as partners, not vendors—helping our clients evolve, optimize, and succeed in a competitive
+                digital world.</p>
+              <div class="get-started">
+                <a href="./pages/Dasnboard.html">Get Started</a>
+                <div class="arr">
+                  <img src="./Images/setb (2)-assets/short arr.png" alt="">
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Security Card -->
+          <div class="card">
+            <div class="icon">
+              <img src="./Images/setb (2)-assets/cd1.png" alt="">
+            </div>
+            <div class="card-txt">
+              <h3>Security</h3>
+              <p>At Tekagon, we believe that high-performance digital products are worthless if they aren't secure. By treating security as a core functionality</p>
+              <div class="get-started">
+                <a href="./pages/Dasnboard.html">Get Started</a>
+                <div class="arr">
+                  <img src="./Images/setb (2)-assets/short arr.png" alt="">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      <section class="val-sect" id="feature">
+        <div class="val">
+          <div class="val-bt">
+            <div class="val-shp"></div>
+            <div class="val-hd">
+              <h1>Co<span class="ph-span">re prospects</span></h1>
+
+            </div>
+          </div>
+          <div class="val-set">
+            <div class="val-card">
+              <img src="./Images/setb (2)-assets/set1.png" alt="">
+              <div>
+                <div class="val-card-txt">
+                  <h1>Programming & App Development</h1>
+                  <p>We build reliable, scalable, and secure software solutions using modern technologies.</p>
+                  <a href="#">Start a Project</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="val-card" id="val-card">
+              <img src="./Images/setb (2)-assets/set1a.png" alt="">
+              <div>
+                <div class="val-card-txt">
+                  <h1>Design & User Experience</h1>
+                  <p>We design digital products that are visually compelling, intuitive, and user-focused.</p>
+                  <a href="#">See Portfolio</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="val-set">
+            <div class="val-card">
+              <img src="./Images/setb (2)-assets/set1c.png" alt="">
+              <div class="val-card-txt">
+                <h1>Business Optimization & Strategy</h1>
+                <p>We help businesses improve performance by aligning technology with business goals.
+                </p>
+                <a href="#">Request Maintenance</a>
+              </div>
+            </div>
+
+            <div class="val-card" id="val-card">
+              <img src="./Images/setb (2)-assets/set1b.png" alt="">
+              <div class="val-card-txt">
+                <h1>DevOps, Maintenance & Support</h1>
+                <p>We ensure your systems remain stable, secure, and scalable after launch.
+                </p>
+                <a href="#">Book Design Services</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="val-sect-img"> <img src="./Images/setb (2)-assets/back1.png" alt=""></div>
+      </section>
+
+
+
+      <section class="abt-bg" id="contact">
+        <div class="abt onscroll">
+          <img src="./Images/setb (2)-assets/abt.png" alt="">
+          <div class="abt-txt">
+            <img class="verified" src="./Images/setb (2)-assets/cd5.png" alt="">
+            <h1 class="writing-text">Trusted & Verified</h1>
+            <div class="contact">
+              <a href="./pages/Dasnboard.html"><img src="./Images/Component 1 (1).svg" alt=""></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="project">
+        <div class="tv-a">
+          <h2 style="color: #18A0FB;">Featured Project</h2>
+          <h1>Professional service to <span class="f-span">deliver an upscaled</span> project.</h1>
+          <p>Leveraging tech to provide upscale solution</p>
+          <!-- <div class="search-container">
+            <div class="icon">
+              <img src="./Images/stars-4.png" alt="icon"> 
+            </div>
+            <input type="text" placeholder="Search for our services">
+            <button>Search</button>
+          </div> -->
+        </div>
+
+      </section>
+
+
+      <div class="carousel-container">
+        <div class="carousel">
+          <button class="ctr reset-button" id="resetButton" type="button" aria-label="Next carousel group">
+            <img src="./Images/setb (2)-assets/arrow.png" alt="Next carousel group">
+          </button>
+          <!-- Set 1 -->
+          <div class="carousel-set" id="seta">
+            <img src="./Images/sete.jpeg.png" alt="Image 1">
+            <img src="./Images/sete (2).jpeg.png" alt="Image 2">
+            <img src="./Images/sete.png" alt="Image 3">
+          </div>
+          <!-- Set 2 -->
+          <div class="carousel-set" id="setb">
+            <img src="./Images/setb.png" alt="Image 1">
+            <img src="./Images/setb (2).png" alt="Image 2">
+            <img src="./Images/setb (3).png" alt="Image 3">
+          </div>
+          <!-- Set 3 -->
+          <div class="carousel-set" id="setc">
+            <img src="./Images/setc.png" alt="Image 1">
+            <img src="./Images/setc (2).png" alt="Image 2">
+            <img src="./Images/setc (3).png" alt="Image 3">
+          </div>
+          <!-- Set 3 -->
+          <!-- <div class="carousel-set" id="setd">
+            <img src="./Images/setd.png" alt="Image 1">
+            <img src="./Images/setd (2).png" alt="Image 2">
+            <img src="./Images/setd (3).png" alt="Image 3">
+          </div> -->
+        </div>
+      </div>
+
+
+
+
+      <section class="cont-gp">
+
+        <div class="bg-container">
+          <div class="containera">
+            <div class="containera-txt">
+              <h1>Mob<span class="ph-span">ile UI showcase </span></h1>
+              <p>From Android to cross-platform apps, we create mobile solutions that are reliable, scalable, and
+                user-friendly.</p>
+            </div>
+
+            <div class="image-display">
+              <img src="./Images/setb (2)-assets/mob1.png" class="image" id="image1" alt="Image 1">
+              <img src="./Images/setb (2)-assets/mob2.png" class="image" id="image2" alt="Image 2">
+              <img src="./Images/setb (2)-assets/mob3.png" class="image" id="image3" alt="Image 3">
+              <img src="./Images/setb (2)-assets/mob4.png" class="image" id="image4" alt="Image 4">
+              <img src="./Images/setb (2)-assets/mob5.png" class="image" id="image5" alt="Image 5">
+            </div>
+            <div class="buttons">
+              <button class="button button1" onclick="showImage('image1')">1</button>
+              <button class="button button2" onclick="showImage('image2')">2</button>
+              <button class="button button3" onclick="showImage('image3')">3</button>
+              <button class="button button4" onclick="showImage('image4')">4</button>
+              <button class="button button5" onclick="showImage('image5')">5</button>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="ph1">
+          <div class="ph2">
+            <div class="ph-txt">
+              <h1>Bra<span class="ph-span">nd Web UI showcase </span></h1>
+              <p>We design intuitive and visually appealing user interfaces and experiences that put users first and
+                drive engagement.</p>
+            </div>
+            <div class="ph-sect">
+              <div class="ph-item" id="left">
+                <img src="./Images/setb (2)-assets/ph-item1.png" alt="Left Image">
+              </div>
+              <div class="ph-item" id="center">
+                <img src="./Images/setb (2)-assets/ph-item3.png" alt="Center Image">
+              </div>
+              <div class="ph-item" id="right">
+                <img src="./Images/setb (2)-assets/ph-item2.png" alt="Right Image">
+              </div>
+            </div>
+            <div class="ph-btn">
+              <a href="#" onclick="buildPage('service')">Click to hire us and get the best web service</a>
+            </div>
+          </div>
+        </div>
+
+
+      </section>
+
+
+      <section class="map-bg">
+        <div class="map">
+          <h1>..<span class="map-span">..Global is in our DNA</span></h1>
+          <h3>We developed our expertise in global, distributed operation from the ground up.</h3>
+          <p>From systems to talent, we are proud to be global by design. It' one of the bold bets we made that lets us
+            be your unfair advantage</p>
+        </div>
+      </section>
+
+
+
+
+
+
+
+      <section class="faq" id="FAQ">
+        <h1>Fr<span class="ph-span">equently Asked Questions</span></h1>
+        <div class="faq-det">
+          <h1>About</h1>
+          <div class="faq-b">
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>Why don’t I just hire a full-time designer or freelancer?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>Good question, with Hyperflow you’re not just hiring a designer you’re hiring senior full-stack
+                  design specialists with over 30 years combined experience. A full-stack designer has a
+                  multi-disciplinary skill set combining strategy, user experience, visual design, project management
+                  and development.
+                  This gives us a unique edge over other designers to see the project through from inception to
+                  execution. Hiring a full-stack designer can also cost a pretty penny with salaries well over £70k+ in
+                  the UK, with also the average freelancer charging over £400 per day makes us a steal at roughly
+                  £150/d.
+                  With the monthly subscription you can have this on tap, pausing and resuming as your business needs.
+                  We work great with start-ups and marketing teams who need the experience and design finesse to get
+                  stuff done quickly.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>Where are you located and which time zone?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>We’re based in the United Kingdom (Marlow & Aylesbury) and Portugal (Lisbon) covering global clients.
+                  We work in the London based time zone of GMT. </p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>Who are the designers?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>The team behind Hyperflow are business owners and senior designers with a wealth of knowledge, skill
+                  and experience.
+                  Rob & Ben co-founded Hyperflow to provide a subscription based design model to those that need on tap
+                  creative output.
+                  Rob’s been working in digital design for over 20+ years delivering tailor made experiences for a wide
+                  range of clients, capturing a wealth of
+                  industry experience, insights and creative problem solving. Helping to elevate businesses, their teams
+                  and delighting users.
+                  Ben is super cool... </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="faq-det">
+          <h1>Getting Started</h1>
+          <div class="faq-b">
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How do I communicate with the team?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>We require all our clients to communicate using the Trello board comments,
+                  this keeps commutation all in one place and easy to follow, allowing anyone in the team visibility to
+                  pick up and push forward.
+                  We’ve found creating short loom videos helps get the idea across quickly.
+                  Once within Trello you can add a variety of different links, attachments or videos to help provide
+                  more context or feedback</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>What platform do you use to manage tasks and projects?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>We use Trello to manage the task list, current task and approval process.
+                  Larger projects are typically broken down into sub cards, please see our website app process.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <div class="faq-det">
+          <h1>Membership</h1>
+          <div class="faq-b">
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How do I pause or cancel?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>You can simply pause or cancel the service through our member area.
+                  If pausing mid-month you’ll be able to continue with the remaining time you have automatically.
+                  We’ll be sad to see you go but understand if you no longer require our design needs, to cancel jump
+                  into the member area and update your status.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How do I pay for the design subscription?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>Payment is taken each month by Stripe automatically, once subscribed you don’t have to worry about
+                  anything.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How do I manage my subscription?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>You can manage your design subscription through the member area, you’ll find
+                  a Trello card named Subscription with the link and status.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+
+        <div class="faq-det">
+          <h1>Scope</h1>
+          <div class="faq-b">
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>What programs do you typically use?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>We use Miro and Google Hangouts for our live workshops.
+                  Octopus.do for information architecture, site map and structure.
+                  Figma, Adobe XD, Framer and Dora for wireframing, prototyping and visual design.
+                  Adobe suite for any further creative tasks, we’re also playing with Firefly bringing
+                  you AI capabilities without the need of buying and learning graphic software yourselves.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>What does your website or app process look like?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>We kick off with a UX workshop, we offer 4 of these a month within the subscription plan.
+                  Within the UX Workshop we uncover the business goals, vision, user needs and mapping,
+                  draft sitemap and site structure providing a project roadmap to action.
+                  The project roadmap is broken down into separate tasks, for example information
+                  architecture, wireframe homepage, design homepage, running through all
+                  the core pages highlighted in the workshop.
+                  We’ll work through all these tasks until you have a full
+                  set and ready for development handover.
+                  Workshop > IA > Wireframe > Design > Handover</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How many design task requests can I have?</span>
+                <span class="icon">+</span>
+              </div>
+              <div class="faq-answer">
+                <p>With our design subscription service you can have a single active
+                  request but unlimited tasks that need doing.
+                  Fill up your backlog and add them to the current task when ready.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+   
+
+
+
+
+      <footer>
+        <div class="footer-container">
+          <div class="logo-footer"><a href="#"><img src="./Images/TeckIQ mark.png" alt=""></a></div>
+          <div class="footer-column">
+            <h3>Explore</h3>
+            <ul>
+              <li><a href="#">Updates</a></li>
+              <li><a href="#">Pricing</a></li>
+              <li><a href="#">Educational Discounts</a></li>
+              <li><a href="#">Become an Ambassador</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h3>Quick Links</h3>
+            <ul>
+              <li><a href="#">portfolio</a></li>
+              <li><a href="#">Services</a></li>
+              <li><a href="#">Contact</a></li>
+              <li><a href="#">TeckIQ Community</a></li>
+
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h3>Company</h3>
+            <ul>
+              <li><a href="#">Terms & Conditions</a></li>
+              <li><a href="#">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+
+          <div class="social-icons">
+            <a href="#"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+
+        </div>
+      </footer>
+
+    </section>
+
+
+
+
+
+
+  </section>
+
+
+
+
+
+  <script src="./js/script.js"></script>
+
+  <script>
+const toggleBtn = document.getElementById('mobile-toggle');
+const navMenu = document.getElementById('menu-item');
+
+toggleBtn.addEventListener('click', () => {
+  // Toggle the side menu
+  navMenu.classList.toggle('active');
+  // Toggle the hamburger animation
+  toggleBtn.classList.toggle('active');
+});
+
+// Close when clicking a link
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', () => {
+    navMenu.classList.remove('active');
+    toggleBtn.classList.remove('active');
+  });
+});
+  </script>
+
+ 
+
+</body>
+
+</html>

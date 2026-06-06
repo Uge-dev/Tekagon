@@ -1,0 +1,74 @@
+# ==========================================
+# .gitignore for Tekagon Website Project
+# ==========================================
+
+# --------------------------
+# NODE MODULES (global)
+# --------------------------
+node_modules/
+**/node_modules/
+
+# --------------------------
+# ENVIRONMENT VARIABLES
+# --------------------------
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# --------------------------
+# BUILD OUTPUTS
+# --------------------------
+/build
+/dist
+/.next/
+/out/
+
+# --------------------------
+# LOGS
+# --------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# --------------------------
+# UPLOADS & TEMP
+# --------------------------
+backend/uploads/
+backend/temp/
+
+# --------------------------
+# MAC SPECIFIC
+# --------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# --------------------------
+# IDE & EDITOR
+# --------------------------
+.vscode/
+.idea/
+
+# --------------------------
+# LARGE MEDIA FILES
+# --------------------------
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.rar
+*.7z
+
+# --------------------------
+# SENSITIVE DATA
+# --------------------------
+*.pem
+*.key
+*.crt
+*.backup
+*.bakfrontend/Images/
