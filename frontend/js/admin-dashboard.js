@@ -1,23 +1,22 @@
 // Admin Dashboard - Chat Management System
+const TICKET_CHAT_KEY = 'tekagon_ticket_chats';
 class AdminChatDashboard {
-  constructor() {
-    this.currentPage = 'dashboard';
-    this.selectedUser = null;
-    this.conversations = {};
-    this.ticketChats = {};
-    this.stats = {
-      totalUsers: 0,
-      activeToday: 0,
-      unreadMessages: 0,
-      totalMessages: 0
-    };
-
-
-
-
-    this.init();
-    this.debugStorage(); // Add this line
-  }
+constructor() {
+  this.currentPage = 'dashboard';
+  this.selectedUser = null;
+  this.conversations = {};
+  this.ticketChats = {};
+  this.registeredUsers = {}; // ← add this line
+  this.allTicketsList = [];  // ← add this line too
+  this.stats = {
+    totalUsers: 0,
+    activeToday: 0,
+    unreadMessages: 0,
+    totalMessages: 0
+  };
+  this.init();
+  this.debugStorage();
+}
 
   // Add this method to your AdminChatDashboard class
   debugStorage() {
@@ -81,13 +80,50 @@ class AdminChatDashboard {
     };
     return icons[status] || 'question-circle';
   }
-  init() {
-    this.checkAuth();
-    this.loadData();
+ init() {
+  this.checkAuth();
+  this.loadData().then(() => {
     this.renderDashboard();
     this.setupEventListeners();
     this.startAutoRefresh();
+    this.initAdminSocket();
+  });
+  this.debugStorage();
+}
+
+initAdminSocket() {
+  if (!window.TekagonAPI) {
+    console.warn('TekagonAPI not available for socket');
+    return;
   }
+
+  window.TekagonAPI.socket.emit('join_admin');
+  console.log('👑 Admin joined socket room');
+
+  window.TekagonAPI.onNewMessage((message) => {
+    console.log('📨 New message received from user:', message);
+
+    if (!this.conversations[message.userId]) {
+      this.conversations[message.userId] = [];
+    }
+    this.conversations[message.userId].push(message);
+
+    this.showNotification(`New message from user`, 'info');
+
+    this.calculateStats();
+    this.updateBadge();
+
+    if (this.selectedUser === message.userId) {
+      const messagesDiv = document.getElementById('conversationMessages');
+      if (messagesDiv) {
+        const userInfo = this.registeredUsers[message.userId] || {};
+        const userName = userInfo.name || 'User';
+        messagesDiv.innerHTML += this.renderAdminChatMessage(message, userName);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    }
+  });
+}
 
   refreshTickets() {
     this.loadTickets();
@@ -168,35 +204,61 @@ class AdminChatDashboard {
     this.addAdminStyles();
   }
 
-  loadData() {
-    try {
-      // Load all conversations from localStorage
+ async loadData() {
+  try {
+    // Try MongoDB first
+    if (window.TekagonAPI) {
+      console.log('📊 Loading data from MongoDB...');
+
+      // Load users
+      const usersResult = await window.TekagonAPI.getAllUsers();
+      if (usersResult.success) {
+        this.registeredUsers = {};
+        usersResult.users.forEach(u => {
+          this.registeredUsers[u.userId] = u;
+        });
+        console.log('✅ Users loaded:', usersResult.users.length);
+      }
+
+      // Load tickets
+      const ticketsResult = await window.TekagonAPI.getAllTickets();
+      if (ticketsResult.success) {
+        this.allTicketsList = ticketsResult.tickets;
+        console.log('✅ Tickets loaded:', ticketsResult.tickets.length);
+      }
+
+      // Load messages for all users
+      this.conversations = {};
+      for (const userId of Object.keys(this.registeredUsers)) {
+        const msgResult = await window.TekagonAPI.getUserMessages(userId);
+        if (msgResult.success) {
+          this.conversations[userId] = msgResult.messages;
+        }
+      }
+
+      console.log('✅ All data loaded from MongoDB');
+    }
+
+    // Fallback to localStorage
+    else {
+      console.warn('⚠️ TekagonAPI not available, using localStorage');
       const conversationsData = localStorage.getItem('tekagon_chat_conversations');
       this.conversations = conversationsData ? JSON.parse(conversationsData) : {};
-
-      // Load ticket chats
       const ticketChatsData = localStorage.getItem('tekagon_ticket_chats');
       this.ticketChats = ticketChatsData ? JSON.parse(ticketChatsData) : {};
-
-      // Load user registration data
       const usersData = localStorage.getItem('tekagon_chat_users');
       this.registeredUsers = usersData ? JSON.parse(usersData) : {};
-
-      // Calculate stats
-      this.calculateStats();
-
-      console.log('Admin data loaded:', {
-        conversations: Object.keys(this.conversations).length,
-        ticketChats: Object.keys(this.ticketChats).length,
-        registeredUsers: Object.keys(this.registeredUsers).length
-      });
-    } catch (e) {
-      console.error('Failed to load admin data:', e);
-      this.conversations = {};
-      this.ticketChats = {};
-      this.registeredUsers = {};
     }
+
+    this.calculateStats();
+
+  } catch (e) {
+    console.error('Failed to load admin data:', e);
+    this.conversations = {};
+    this.ticketChats = {};
+    this.registeredUsers = {};
   }
+}
 
   calculateStats() {
     const userIds = Object.keys(this.conversations);
@@ -253,40 +315,26 @@ class AdminChatDashboard {
     return null;
   }
 
-  loadTickets() {
-    try {
-      // Load tickets from the new format
-      const ticketsData = localStorage.getItem('tekagon_tickets');
-      this.tickets = ticketsData ? JSON.parse(ticketsData) : {};
-
-      // Also load from all_tickets list (legacy format)
-      const allTickets = localStorage.getItem('tekagon_all_tickets');
-      if (allTickets) {
-        this.allTicketsList = JSON.parse(allTickets);
-      } else {
-        // Generate from tickets object if allTickets doesn't exist
-        this.allTicketsList = [];
-        Object.entries(this.tickets).forEach(([userId, userTickets]) => {
-          Object.values(userTickets).forEach(ticket => {
-            this.allTicketsList.push({
-              ticketId: ticket.id,
-              userId: userId,
-              serviceName: ticket.serviceName,
-              status: ticket.status || 'pending',
-              createdAt: ticket.createdAt,
-              userName: ticket.userName || 'User'
-            });
-          });
-        });
+  async loadTickets() {
+  try {
+    if (window.TekagonAPI) {
+      const result = await window.TekagonAPI.getAllTickets();
+      if (result.success) {
+        this.allTicketsList = result.tickets;
+        console.log('✅ Tickets loaded from MongoDB:', result.tickets.length);
+        return;
       }
-
-      console.log('Loaded tickets:', this.allTicketsList.length);
-    } catch (e) {
-      console.error('Failed to load tickets:', e);
-      this.tickets = {};
-      this.allTicketsList = [];
     }
+
+    // Fallback to localStorage
+    const allTickets = localStorage.getItem('tekagon_all_tickets');
+    this.allTicketsList = allTickets ? JSON.parse(allTickets) : [];
+
+  } catch (e) {
+    console.error('Failed to load tickets:', e);
+    this.allTicketsList = [];
   }
+}
 
 
   renderDashboard() {
@@ -872,112 +920,108 @@ class AdminChatDashboard {
   }
 
   // Update the openConversation method to support ticket chats
-  openConversation(userId, ticketId = null) {
+  async openConversation(userId, ticketId = null) {
     if (!userId) {
       alert('Please select a user first');
       return;
     }
 
-    const userName = localStorage.getItem(`${userId}_name`) ||
-      this.getTicketUserName(userId) ||
-      'User';
-
-    // Mark messages as read
-    this.markAsRead(userId, ticketId);
-
-    // Store current conversation context
-    this.selectedUser = userId;
-    this.selectedTicket = ticketId;
-
-    // Get messages based on context
-    let messages = [];
-    let chatTitle = userName;
-
-    if (ticketId) {
-      // Get ticket-specific messages
-      const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
-      messages = ticketChats[ticketId] || [];
-      chatTitle = `Ticket #${ticketId.substring(0, 10)} - ${userName}`;
-
-      // Get ticket info
-      const ticket = this.getTicket(userId, ticketId);
-      if (ticket) {
-        chatTitle = `${ticket.serviceName} - ${userName}`;
+    // Load fresh messages from MongoDB
+    if (window.TekagonAPI) {
+      try {
+        if (ticketId) {
+          const result = await window.TekagonAPI.getTicketMessages(ticketId);
+          if (result.success) {
+            const ticketChats = JSON.parse(localStorage.getItem('tekagon_ticket_chats') || '{}');
+            ticketChats[ticketId] = result.messages;
+            localStorage.setItem('tekagon_ticket_chats', JSON.stringify(ticketChats));
+            console.log('✅ Ticket messages loaded from MongoDB');
+          }
+        } else {
+          const result = await window.TekagonAPI.getUserMessages(userId);
+          if (result.success) {
+            this.conversations[userId] = result.messages;
+            console.log('✅ User messages loaded from MongoDB');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load messages from MongoDB:', err);
       }
-    } else {
-      // Get general messages
-      messages = this.conversations[userId] || [];
     }
 
-    // Filter messages to show only relevant ones
-    const relevantMessages = messages.filter(msg =>
-      !ticketId || msg.ticketId === ticketId || !msg.ticketId
-    );
+    // Get user info from registration data
+    const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
+    const userInfo = users[userId] || {};
+    const userName = userInfo.name || localStorage.getItem(`${userId}_name`) || 'User';
+
+    // Mark messages as read
+    this.markAsRead(userId);
+
+    let ticketInfo = '';
+    let messages = [];
+
+    if (ticketId) {
+      // Load ticket-specific messages
+      const ticketChats = JSON.parse(localStorage.getItem('tekagon_ticket_chats') || '{}');
+      messages = ticketChats[ticketId] || [];
+
+      const ticket = this.getTicket(userId, ticketId);
+      if (ticket) {
+        ticketInfo = `
+        <div class="ticket-chat-header">
+          <div class="ticket-chat-badge">
+            <i class="fas fa-ticket-alt"></i>
+            Ticket #${ticketId.substring(0, 10)}
+          </div>
+          <div class="ticket-chat-service">${ticket.serviceName}</div>
+          <div class="ticket-chat-status ${ticket.status}">${ticket.status}</div>
+        </div>
+      `;
+      }
+    } else {
+      // Load general conversation messages
+      messages = this.conversations[userId] || [];
+    }
 
     // Open conversation in modal
     const modalHTML = `
     <div class="conversation-modal" id="conversationModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="user-header-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div>
-                        <h3>${chatTitle}</h3>
-                        <div class="user-id">ID: ${userId.substring(0, 15)}...</div>
-                        ${ticketId ? `
-                            <div class="ticket-info-badge">
-                                <i class="fas fa-ticket-alt"></i>
-                                Ticket #${ticketId.substring(0, 10)}
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-                <button class="modal-close" onclick="adminDashboard.closeModal()">×</button>
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="user-header-info">
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
             </div>
-            
-            ${ticketId ? `
-                <div class="ticket-chat-context">
-                    <div class="context-actions">
-                        <button class="btn-view-ticket" onclick="adminDashboard.viewAdminTicket('${userId}', '${ticketId}')">
-                            <i class="fas fa-eye"></i> View Ticket Details
-                        </button>
-                        <select class="ticket-status-select" onchange="adminDashboard.updateTicketStatus('${userId}', '${ticketId}', this.value)">
-                            <option value="pending">Pending</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div class="modal-body">
-                <div class="conversation-messages" id="conversationMessages">
-                    ${relevantMessages.map(msg => this.renderAdminChatMessage(msg, userName)).join('')}
-                </div>
-                
-                <div class="message-input">
-                    <textarea id="adminReply" placeholder="Type your reply..." rows="3"></textarea>
-                    <div class="message-actions">
-                        <button onclick="adminDashboard.sendAdminReply('${userId}', '${ticketId || ''}')" class="btn-primary">
-                            <i class="fas fa-paper-plane"></i> Send Reply
-                        </button>
-                        <div class="quick-response-buttons">
-                            <button onclick="adminDashboard.addQuickResponse('Typical response time is 24-48 hours.')" class="btn-quick-response">
-                                <i class="fas fa-clock"></i> Response Time
-                            </button>
-                            <button onclick="adminDashboard.addQuickResponse('We are looking into this and will update you shortly.')" class="btn-quick-response">
-                                <i class="fas fa-spinner"></i> Looking Into It
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div>
+              <h3>${userName}</h3>
+              <div class="user-id">ID: ${userId.substring(0, 15)}...</div>
             </div>
+          </div>
+          <button class="modal-close" onclick="adminDashboard.closeModal()">×</button>
         </div>
+        
+        ${ticketInfo}
+        
+        <div class="modal-body">
+          <div class="conversation-messages" id="conversationMessages">
+            ${messages.map(msg => this.renderChatMessage(msg, userName)).join('')}
+          </div>
+          
+          <div class="message-input">
+            <textarea id="adminReply" placeholder="Type your reply..." rows="3"></textarea>
+            <div class="message-actions">
+              <button onclick="adminDashboard.sendAdminReply('${userId}', '${ticketId || ''}')" class="btn-primary">
+                <i class="fas fa-paper-plane"></i> Send Reply
+              </button>
+              <button onclick="adminDashboard.addQuickResponse('${userId}')" class="btn-secondary">
+                <i class="fas fa-bolt"></i> Quick Response
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    `;
+  `;
 
     // Remove existing modal
     const existingModal = document.getElementById('conversationModal');
@@ -985,17 +1029,6 @@ class AdminChatDashboard {
 
     // Add new modal
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Set status if ticket exists
-    if (ticketId) {
-      const ticket = this.getTicket(userId, ticketId);
-      if (ticket) {
-        const statusSelect = document.querySelector('.ticket-status-select');
-        if (statusSelect) {
-          statusSelect.value = ticket.status;
-        }
-      }
-    }
 
     // Scroll to bottom
     setTimeout(() => {
@@ -1011,53 +1044,7 @@ class AdminChatDashboard {
     if (modal) modal.remove();
   }
 
-  sendAdminReply(userId) {
-    const replyInput = document.getElementById('adminReply');
-    const message = replyInput.value.trim();
-
-    if (!message) {
-      alert('Please enter a message');
-      return;
-    }
-
-    // Create admin message
-    const adminMessage = {
-      id: 'admin_' + Date.now(),
-      sender: 'admin',
-      content: message,
-      timestamp: new Date().toISOString(),
-      read: true
-    };
-
-    // Add to conversation
-    if (!this.conversations[userId]) {
-      this.conversations[userId] = [];
-    }
-    this.conversations[userId].push(adminMessage);
-
-    // Save to localStorage
-    localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
-
-    // Update UI
-    const messagesDiv = document.getElementById('conversationMessages');
-    if (messagesDiv) {
-      messagesDiv.innerHTML += `
-        <div class="admin-message admin">
-          <div class="message-content">${message}</div>
-          <div class="message-time">${new Date().toLocaleString()}</div>
-        </div>
-      `;
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // Clear input
-    replyInput.value = '';
-
-    // Update stats
-    this.calculateStats();
-    this.updateBadge();
-  }
-
+ 
   markAsRead(userId) {
     if (!this.conversations[userId]) return;
 
@@ -1351,11 +1338,7 @@ class AdminChatDashboard {
     this.openConversation(userId, ticketId);
   }
 
-  // New method to open ticket chat directly
-  openTicketChat(userId, ticketId) {
-    this.openConversation(userId, ticketId);
-  }
-
+ 
   // Add quick response
   addQuickResponse(text) {
     const replyInput = document.getElementById('adminReply');
@@ -1942,101 +1925,7 @@ class AdminChatDashboard {
     }
   }
 
-  openConversation(userId, ticketId = null) {
-    if (!userId) {
-      alert('Please select a user first');
-      return;
-    }
-
-    // Get user info from registration data
-    const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
-    const userInfo = users[userId] || {};
-    const userName = userInfo.name || localStorage.getItem(`${userId}_name`) || 'User';
-
-    // Mark messages as read
-    this.markAsRead(userId);
-
-    let ticketInfo = '';
-    let messages = [];
-
-    if (ticketId) {
-      // Load ticket-specific messages
-      const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
-      messages = ticketChats[ticketId] || [];
-
-      const ticket = this.getTicket(userId, ticketId);
-      if (ticket) {
-        ticketInfo = `
-        <div class="ticket-chat-header">
-          <div class="ticket-chat-badge">
-            <i class="fas fa-ticket-alt"></i>
-            Ticket #${ticketId.substring(0, 10)}
-          </div>
-          <div class="ticket-chat-service">${ticket.serviceName}</div>
-          <div class="ticket-chat-status ${ticket.status}">${ticket.status}</div>
-        </div>
-      `;
-      }
-    } else {
-      // Load general conversation messages
-      messages = this.conversations[userId] || [];
-    }
-
-    // Open conversation in modal
-    const modalHTML = `
-    <div class="conversation-modal" id="conversationModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div class="user-header-info">
-            <div class="user-avatar">
-              <i class="fas fa-user"></i>
-            </div>
-            <div>
-              <h3>${userName}</h3>
-              <div class="user-id">ID: ${userId.substring(0, 15)}...</div>
-            </div>
-          </div>
-          <button class="modal-close" onclick="adminDashboard.closeModal()">×</button>
-        </div>
-        
-        ${ticketInfo}
-        
-        <div class="modal-body">
-          <div class="conversation-messages" id="conversationMessages">
-            ${messages.map(msg => this.renderChatMessage(msg, userName)).join('')}
-          </div>
-          
-          <div class="message-input">
-            <textarea id="adminReply" placeholder="Type your reply..." rows="3"></textarea>
-            <div class="message-actions">
-              <button onclick="adminDashboard.sendAdminReply('${userId}', '${ticketId || ''}')" class="btn-primary">
-                <i class="fas fa-paper-plane"></i> Send Reply
-              </button>
-              <button onclick="adminDashboard.addQuickResponse('${userId}')" class="btn-secondary">
-                <i class="fas fa-bolt"></i> Quick Response
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-    // Remove existing modal
-    const existingModal = document.getElementById('conversationModal');
-    if (existingModal) existingModal.remove();
-
-    // Add new modal
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Scroll to bottom
-    setTimeout(() => {
-      const messagesDiv = document.getElementById('conversationMessages');
-      if (messagesDiv) {
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
-    }, 100);
-  }
+  
 
   // Update renderAdminChatMessage to show ticket context
   renderAdminChatMessage(msg, userName) {
@@ -2067,56 +1956,8 @@ class AdminChatDashboard {
     `;
   }
 
-  // Replace the current sendAdminReply method with this:
-  sendAdminReply(userId, ticketId = '') {
-    const replyInput = document.getElementById('adminReply');
-    const message = replyInput.value.trim();
-
-    if (!message) {
-      alert('Please enter a message');
-      return;
-    }
-
-    // Create admin message with ticket context
-    const adminMessage = {
-      id: 'admin_' + Date.now(),
-      sender: 'admin',
-      content: message,
-      timestamp: new Date().toISOString(),
-      read: false,
-      ticketId: ticketId || null
-    };
-
-    if (ticketId) {
-      // Save to ticket-specific storage
-      this.saveTicketMessage(userId, ticketId, adminMessage);
-    } else {
-      // Save to general conversation
-      if (!this.conversations[userId]) {
-        this.conversations[userId] = [];
-      }
-      this.conversations[userId].push(adminMessage);
-      localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
-    }
-
-    // Update UI
-    const messagesDiv = document.getElementById('conversationMessages');
-    if (messagesDiv) {
-      const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
-      const userInfo = users[userId] || {};
-      const userName = userInfo.name || 'User';
-
-      messagesDiv.innerHTML += this.renderAdminChatMessage(adminMessage, userName);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // Clear input
-    replyInput.value = '';
-    replyInput.focus();
-
-    // Update notification
-    this.updateUnreadNotification();
-  }
+ 
+  
 
   // Add this method for saving ticket messages
   saveTicketMessage(userId, ticketId, message) {
@@ -2245,54 +2086,65 @@ class AdminChatDashboard {
     }
   }
 
-  sendAdminReply(userId, ticketId = '') {
-    const replyInput = document.getElementById('adminReply');
-    const message = replyInput.value.trim();
+  async sendAdminReply(userId, ticketId = '') {
+  const replyInput = document.getElementById('adminReply');
+  const message = replyInput.value.trim();
 
-    if (!message) {
-      alert('Please enter a message');
-      return;
-    }
-
-    // Create admin message
-    const adminMessage = {
-      id: 'admin_' + Date.now(),
-      sender: 'admin',
-      content: message,
-      timestamp: new Date().toISOString(),
-      read: false
-    };
-
-    // Add to conversation
-    if (!this.conversations[userId]) {
-      this.conversations[userId] = [];
-    }
-    this.conversations[userId].push(adminMessage);
-
-    // Save to localStorage
-    localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
-
-    // If there's a ticketId, add the message to the ticket
-    if (ticketId) {
-      this.addTicketMessage(userId, ticketId, message, 'admin');
-    }
-
-    // Update UI
-    const messagesDiv = document.getElementById('conversationMessages');
-    if (messagesDiv) {
-      const userName = localStorage.getItem(`${userId}_name`) || 'User';
-      messagesDiv.innerHTML += this.renderChatMessage(adminMessage, userName);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // Clear input
-    replyInput.value = '';
-    replyInput.focus();
-
-    // Update stats
-    this.calculateStats();
-    this.updateBadge();
+  if (!message) {
+    alert('Please enter a message');
+    return;
   }
+
+  const adminMessage = {
+    id: 'admin_' + Date.now(),
+    sender: 'admin',
+    content: message,
+    timestamp: new Date().toISOString(),
+    read: false,
+    ticketId: ticketId || null,
+    userId: userId
+  };
+
+  // Save to MongoDB
+  if (window.TekagonAPI) {
+    try {
+      await window.TekagonAPI.sendMessage({
+        id: adminMessage.id,
+        sender: 'admin',
+        content: message,
+        userId: userId,
+        ticketId: ticketId || null,
+        read: false
+      });
+      console.log('✅ Admin message saved to MongoDB');
+    } catch (err) {
+      console.warn('⚠️ MongoDB save failed:', err);
+    }
+  }
+
+  // Also save to localStorage as backup
+  if (ticketId) {
+    this.saveTicketMessage(userId, ticketId, adminMessage);
+  } else {
+    if (!this.conversations[userId]) this.conversations[userId] = [];
+    this.conversations[userId].push(adminMessage);
+    localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
+  }
+
+  // Update UI
+  const messagesDiv = document.getElementById('conversationMessages');
+  if (messagesDiv) {
+    const userInfo = this.registeredUsers[userId] || {};
+    const userName = userInfo.name || 'User';
+    messagesDiv.innerHTML += this.renderAdminChatMessage(adminMessage, userName);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  replyInput.value = '';
+  replyInput.focus();
+  this.calculateStats();
+  this.updateBadge();
+}
 
   addTicketMessage(userId, ticketId, message, sender) {
     try {
