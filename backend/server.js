@@ -438,52 +438,66 @@ app.patch('/api/tickets/:ticketId/status', async (req, res) => {
   }
 });
 
-// ── MESSAGE ROUTES ──
 app.post('/api/messages', async (req, res) => {
   try {
     const message = await Message.create(req.body);
+    
+    const io = req.app.get('io');
+    
+    // If admin sent message, notify the user
+    if (req.body.sender === 'admin') {
+      io.to(req.body.userId).emit('new_message', message);
+      console.log('📨 Message sent to user:', req.body.userId);
+    }
+    
+    // If user sent message, notify admin
+    if (req.body.sender === 'user') {
+      io.to('admin_room').emit('new_message', message);
+      console.log('📨 Message sent to admin room');
+    }
+    
     res.json({ success: true, message });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.get('/api/messages/user/:userId', async (req, res) => {
-  try {
-    const messages = await Message.find({
-      userId: req.params.userId,
-      ticketId: null
-    }).sort({ timestamp: 1 });
-    res.json({ success: true, messages });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST']
   }
 });
 
-app.get('/api/messages/ticket/:ticketId', async (req, res) => {
-  try {
-    const messages = await Message.find({
-      ticketId: req.params.ticketId
-    }).sort({ timestamp: 1 });
-    res.json({ success: true, messages });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+// Socket.io connection
+io.on('connection', (socket) => {
+  console.log('🔌 User connected:', socket.id);
+
+  // User joins their own room
+  socket.on('join_room', (userId) => {
+    socket.join(userId);
+    console.log(`👤 User ${userId} joined room`);
+  });
+
+  // Admin joins admin room
+  socket.on('join_admin', () => {
+    socket.join('admin_room');
+    console.log('👑 Admin joined admin room');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 User disconnected:', socket.id);
+  });
 });
 
-app.patch('/api/messages/read/:userId', async (req, res) => {
-  try {
-    await Message.updateMany(
-      { userId: req.params.userId, read: false },
-      { read: true }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+// Make io accessible in routes
+app.set('io', io);
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
     console.log(`
  TEKAGON SCHEDULER BACKEND
 

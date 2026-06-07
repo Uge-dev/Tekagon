@@ -124,7 +124,24 @@ async function markMessagesRead(userId) {
   }
 }
 
-// ── EXPORT ──
+// ── SOCKET.IO ──
+const socket = io('https://tekagon-backend.onrender.com');
+
+// Join user's room when they log in
+function joinUserRoom(userId) {
+  socket.emit('join_room', userId);
+  console.log('🔌 Joined room:', userId);
+}
+
+// Listen for new messages from admin
+function onNewMessage(callback) {
+  socket.on('new_message', (message) => {
+    console.log('📨 New message received:', message);
+    callback(message);
+  });
+}
+
+// Add to TekagonAPI
 window.TekagonAPI = {
   registerUser,
   getAllUsers,
@@ -135,7 +152,9 @@ window.TekagonAPI = {
   sendMessage,
   getUserMessages,
   getTicketMessages,
-  markMessagesRead
+  markMessagesRead,
+  joinUserRoom,
+  onNewMessage,
+  socket
 };
-
 console.log('✅ Tekagon API loaded');
