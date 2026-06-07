@@ -92,37 +92,51 @@ constructor() {
 }
 
 initAdminSocket() {
-  if (!window.TekagonAPI) {
-    console.warn('TekagonAPI not available for socket');
-    return;
-  }
+  // Poll for new messages every 3 seconds
+  setInterval(async () => {
+    if (!window.TekagonAPI) return;
 
-  window.TekagonAPI.socket.emit('join_admin');
-  console.log('👑 Admin joined socket room');
+    try {
+      // Check all users for new messages
+      for (const userId of Object.keys(this.registeredUsers)) {
+        const result = await window.TekagonAPI.getUserMessages(userId);
+        if (result.success) {
+          const oldCount = (this.conversations[userId] || []).length;
+          const newCount = result.messages.length;
 
-  window.TekagonAPI.onNewMessage((message) => {
-    console.log('📨 New message received from user:', message);
+          if (newCount > oldCount) {
+            // New messages!
+            const newMessages = result.messages.slice(oldCount);
+            this.conversations[userId] = result.messages;
 
-    if (!this.conversations[message.userId]) {
-      this.conversations[message.userId] = [];
-    }
-    this.conversations[message.userId].push(message);
+            newMessages.forEach(msg => {
+              if (msg.sender !== 'admin') {
+                console.log('📨 New message from user:', msg);
+                this.showNotification(`New message from user`, 'info');
+                this.calculateStats();
+                this.updateBadge();
 
-    this.showNotification(`New message from user`, 'info');
-
-    this.calculateStats();
-    this.updateBadge();
-
-    if (this.selectedUser === message.userId) {
-      const messagesDiv = document.getElementById('conversationMessages');
-      if (messagesDiv) {
-        const userInfo = this.registeredUsers[message.userId] || {};
-        const userName = userInfo.name || 'User';
-        messagesDiv.innerHTML += this.renderAdminChatMessage(message, userName);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                // If admin has this conversation open, show message live
+                if (this.selectedUser === userId) {
+                  const messagesDiv = document.getElementById('conversationMessages');
+                  if (messagesDiv) {
+                    const userInfo = this.registeredUsers[userId] || {};
+                    const userName = userInfo.name || 'User';
+                    messagesDiv.innerHTML += this.renderAdminChatMessage(msg, userName);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                  }
+                }
+              }
+            });
+          }
+        }
       }
+    } catch (err) {
+      console.error('Admin polling error:', err);
     }
-  });
+  }, 3000);
+
+  console.log('✅ Admin polling started');
 }
 
   refreshTickets() {

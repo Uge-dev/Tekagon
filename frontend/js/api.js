@@ -1,5 +1,3 @@
-// api.js - Handles all communication with the backend
-
 const API_URL = 'https://tekagon-backend.onrender.com';
 
 // ── USER ──
@@ -22,7 +20,6 @@ async function getAllUsers() {
     const res = await fetch(`${API_URL}/api/users`);
     return await res.json();
   } catch (err) {
-    console.error('Get users error:', err);
     return { success: false, users: [] };
   }
 }
@@ -37,7 +34,6 @@ async function createTicket(ticketData) {
     });
     return await res.json();
   } catch (err) {
-    console.error('Create ticket error:', err);
     return { success: false };
   }
 }
@@ -47,7 +43,6 @@ async function getUserTickets(userId) {
     const res = await fetch(`${API_URL}/api/tickets/user/${userId}`);
     return await res.json();
   } catch (err) {
-    console.error('Get tickets error:', err);
     return { success: false, tickets: [] };
   }
 }
@@ -57,7 +52,6 @@ async function getAllTickets() {
     const res = await fetch(`${API_URL}/api/tickets/all`);
     return await res.json();
   } catch (err) {
-    console.error('Get all tickets error:', err);
     return { success: false, tickets: [] };
   }
 }
@@ -71,7 +65,6 @@ async function updateTicketStatus(ticketId, status) {
     });
     return await res.json();
   } catch (err) {
-    console.error('Update ticket error:', err);
     return { success: false };
   }
 }
@@ -86,7 +79,6 @@ async function sendMessage(messageData) {
     });
     return await res.json();
   } catch (err) {
-    console.error('Send message error:', err);
     return { success: false };
   }
 }
@@ -96,7 +88,6 @@ async function getUserMessages(userId) {
     const res = await fetch(`${API_URL}/api/messages/user/${userId}`);
     return await res.json();
   } catch (err) {
-    console.error('Get messages error:', err);
     return { success: false, messages: [] };
   }
 }
@@ -106,7 +97,6 @@ async function getTicketMessages(ticketId) {
     const res = await fetch(`${API_URL}/api/messages/ticket/${ticketId}`);
     return await res.json();
   } catch (err) {
-    console.error('Get ticket messages error:', err);
     return { success: false, messages: [] };
   }
 }
@@ -119,29 +109,57 @@ async function markMessagesRead(userId) {
     });
     return await res.json();
   } catch (err) {
-    console.error('Mark read error:', err);
     return { success: false };
   }
 }
 
-// ── SOCKET.IO ──
-const socket = io('https://tekagon-backend.onrender.com');
+// ── POLLING (replaces Socket.io) ──
+let pollingInterval = null;
+let lastMessageCount = 0;
 
-// Join user's room when they log in
-function joinUserRoom(userId) {
-  socket.emit('join_room', userId);
-  console.log('🔌 Joined room:', userId);
+function startPolling(userId, onNewMessage, ticketId = null) {
+  // Clear existing polling
+  if (pollingInterval) clearInterval(pollingInterval);
+
+  pollingInterval = setInterval(async () => {
+    try {
+      let result;
+      if (ticketId) {
+        result = await getTicketMessages(ticketId);
+      } else {
+        result = await getUserMessages(userId);
+      }
+
+      if (result.success && result.messages) {
+        const newCount = result.messages.length;
+        if (newCount > lastMessageCount) {
+          // New messages arrived
+          const newMessages = result.messages.slice(lastMessageCount);
+          newMessages.forEach(msg => {
+            if (msg.sender !== 'user') {
+              onNewMessage(msg);
+            }
+          });
+          lastMessageCount = newCount;
+        }
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 3000); // Check every 3 seconds
+
+  console.log('✅ Polling started for:', userId);
 }
 
-// Listen for new messages from admin
-function onNewMessage(callback) {
-  socket.on('new_message', (message) => {
-    console.log('📨 New message received:', message);
-    callback(message);
-  });
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log('⏹️ Polling stopped');
+  }
 }
 
-// Add to TekagonAPI
+// ── EXPORT ──
 window.TekagonAPI = {
   registerUser,
   getAllUsers,
@@ -153,8 +171,8 @@ window.TekagonAPI = {
   getUserMessages,
   getTicketMessages,
   markMessagesRead,
-  joinUserRoom,
-  onNewMessage,
-  socket
+  startPolling,
+  stopPolling
 };
+
 console.log('✅ Tekagon API loaded');

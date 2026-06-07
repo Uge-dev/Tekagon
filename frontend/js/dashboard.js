@@ -1380,29 +1380,24 @@ Designed and developed a full-stack quiz website for church examinations and com
     return;
   }
 
-  // Join socket room for real-time messages
-  if (window.TekagonAPI) {
-    window.TekagonAPI.joinUserRoom(currentChatUser);
-
-    // Listen for new messages from admin
-    window.TekagonAPI.onNewMessage((message) => {
-      console.log('📨 Real-time message received!', message);
-
-      // Only show if it's for this user
-      if (message.userId === currentChatUser) {
-        const messagesContainer = document.getElementById('messagesContainer');
-        if (messagesContainer) {
-          messagesContainer.innerHTML += renderChatMessage(message);
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // Update unread notification
-        updateUnreadNotification();
-      }
-    });
-  }
-
   loadUserMessages();
+
+  // Start polling for new messages every 3 seconds
+  if (window.TekagonAPI) {
+    const currentTicketId = localStorage.getItem('current_ticket_id');
+
+    window.TekagonAPI.startPolling(currentChatUser, (newMessage) => {
+      console.log('📨 New message received via polling!', newMessage);
+
+      const messagesContainer = document.getElementById('messagesContainer');
+      if (messagesContainer) {
+        messagesContainer.innerHTML += renderChatMessage(newMessage);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      updateUnreadNotification();
+    }, currentTicketId);
+  }
 }
 
     // Show user registration modal
@@ -2322,17 +2317,17 @@ Designed and developed a full-stack quiz website for church examinations and com
       }
 
       // Initialize chat user
-      function initializeChat() {
-        // Check if user is registered
-        currentChatUser = localStorage.getItem('chatUserId');
+      // function initializeChat() {
+       
+      //   currentChatUser = localStorage.getItem('chatUserId');
 
-        if (!currentChatUser) {
-          showUserRegistration();
-          return;
-        }
+      //   if (!currentChatUser) {
+      //     showUserRegistration();
+      //     return;
+      //   }
 
-        loadUserMessages();
-      }
+      //   loadUserMessages();
+      // }
 
 
 
