@@ -82,55 +82,89 @@ app.get('/api/health', async (req, res) => {
 });
 
 
-app.post('/api/simple-email', async (req, res) => {
-    try {
-        const { toEmail, toName, subject, message } = req.body;
 
-        console.log('Sending simple email to:', toEmail);
+// ── CLEAN USER MESSAGE FETCH FOR POLLING ──
+app.get('/api/messages/user/:userId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      userId: req.params.userId
+    }).sort({ timestamp: 1 });
 
-        const msg = {
-            to: toEmail,
-            from: SENDER_EMAIL,
-            subject: subject || 'Tekagon Scheduler - Simple Test',
-            text: message || `Hello ${toName},\n\nThis is a simple test email from Tekagon Scheduler.\n\nTime: ${new Date().toLocaleString()}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2 style="color: #6366f1;">Tekagon Scheduler - Simple Test</h2>
-                    <p>Hello <strong>${toName}</strong>,</p>
-                    <p>This is a simple test email from your Tekagon Scheduler system.</p>
-                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-                        <p><strong>System:</strong> Tekagon Scheduler Backend</p>
-                        <p><strong>Status:</strong> Working ✓</p>
-                    </div>
-                    <p>If you receive this, your email system is working!</p>
-                </div>
-            `
-        };
+    res.json({
+      success: true,
+      messages
+    });
 
-        const response = await sgMail.send(msg);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
 
-        console.log('Simple email sent!');
+// ── CLEAN TICKET MESSAGE FETCH ──
+app.get('/api/messages/ticket/:ticketId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      ticketId: req.params.ticketId
+    }).sort({ timestamp: 1 });
 
-        res.json({
-            success: true,
-            message: 'Simple test email sent successfully!',
-            recipient: toEmail,
-            timestamp: new Date().toISOString()
-        });
+    res.json({
+      success: true,
+      messages
+    });
 
-    } catch (error) {
-        console.error('Simple email error:', error.message);
-        console.error('Full error:', error);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+app.patch('/api/messages/read/:userId', async (req, res) => {
+  try {
+    await Message.updateMany(
+      { userId: req.params.userId, read: false },
+      { read: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-        res.status(500).json({
-            success: false,
-            error: 'Failed to send simple email',
-            message: error.message,
-            details: error.response?.body || 'No details',
-            troubleshooting: 'Check SendGrid API key and sender authentication'
-        });
+// ── SMART POLLING ENDPOINT (OPTIMIZED) ──
+app.get('/api/messages/conversation', async (req, res) => {
+  try {
+    const { userId, adminId, lastTime } = req.query;
+
+    let query = {
+      $or: [
+        { sender: userId, receiver: adminId },
+        { sender: adminId, receiver: userId }
+      ]
+    };
+
+    // ADD THIS FILTER FOR NEW MESSAGES ONLY
+    if (lastTime) {
+      query.timestamp = { $gt: new Date(lastTime) };
     }
+
+    const messages = await Message.find(query)
+      .sort({ timestamp: 1 });
+
+    res.json({
+      success: true,
+      messages
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
 
@@ -440,64 +474,28 @@ app.patch('/api/tickets/:ticketId/status', async (req, res) => {
 
 app.post('/api/messages', async (req, res) => {
   try {
-    const message = await Message.create(req.body);
-    
-    const io = req.app.get('io');
-    
-    // If admin sent message, notify the user
-    if (req.body.sender === 'admin') {
-      io.to(req.body.userId).emit('new_message', message);
-      console.log('📨 Message sent to user:', req.body.userId);
-    }
-    
-    // If user sent message, notify admin
-    if (req.body.sender === 'user') {
-      io.to('admin_room').emit('new_message', message);
-      console.log('📨 Message sent to admin room');
-    }
-    
-    res.json({ success: true, message });
+    const message = await Message.create({
+      ...req.body,
+      timestamp: new Date()
+    });
+
+    res.json({
+      success: true,
+      message
+    });
+
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 });
 
-const http = require('http');
-const { Server } = require('socket.io');
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST']
-  }
-});
 
-// Socket.io connection
-io.on('connection', (socket) => {
-  console.log('🔌 User connected:', socket.id);
 
-  // User joins their own room
-  socket.on('join_room', (userId) => {
-    socket.join(userId);
-    console.log(`👤 User ${userId} joined room`);
-  });
-
-  // Admin joins admin room
-  socket.on('join_admin', () => {
-    socket.join('admin_room');
-    console.log('👑 Admin joined admin room');
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 User disconnected:', socket.id);
-  });
-});
-
-// Make io accessible in routes
-app.set('io', io);
-
-server.listen(PORT, async () => {
+app.listen(PORT, async () => {
     console.log(`
  TEKAGON SCHEDULER BACKEND
 

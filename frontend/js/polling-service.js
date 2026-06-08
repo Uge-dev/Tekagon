@@ -16,8 +16,12 @@ class PollingService {
     this.retryCount = 0;
     this.maxRetries = 5;
     
-    console.log('✅ Polling Service initialized');
+    console.log(' Polling Service initialized');
   }
+
+  getInitialTimestamp() {
+  return new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 minutes ago
+}
 
   /**
    * Start polling for user messages
@@ -31,11 +35,12 @@ class PollingService {
     // Store callback
     this.messageCallbacks.set(userId, onNewMessage);
 
-    // Set initial timestamp
-    if (!this.lastTimestamps.has(`user_${userId}`)) {
-      this.lastTimestamps.set(`user_${userId}`, new Date(Date.now() - 60000).toISOString()); // 1 minute ago
-    }
-
+if (!this.lastTimestamps.has(`user_${userId}`)) {
+  this.lastTimestamps.set(
+    `user_${userId}`,
+    this.getInitialTimestamp()
+  );
+}
     // Clear any existing polling for this user
     if (this.pollIntervals.has(`user_${userId}`)) {
       clearInterval(this.pollIntervals.get(`user_${userId}`));
@@ -68,7 +73,7 @@ class PollingService {
       if (data.success && data.messages && Array.isArray(data.messages)) {
         // Filter for new messages only
         const newMessages = data.messages.filter(msg => {
-          const msgTime = new Date(msg.timestamp);
+         const msgTime = new Date(msg.timestamp || msg.createdAt);
           const lastTime = new Date(lastTimestamp);
           return msgTime > lastTime;
         });
@@ -115,10 +120,12 @@ class PollingService {
     // Store callback
     this.ticketCallbacks.set(ticketId, onNewMessage);
 
-    // Set initial timestamp
-    if (!this.lastTimestamps.has(`ticket_${ticketId}`)) {
-      this.lastTimestamps.set(`ticket_${ticketId}`, new Date(Date.now() - 60000).toISOString());
-    }
+ if (!this.lastTimestamps.has(`ticket_${ticketId}`)) {
+  this.lastTimestamps.set(
+    `ticket_${ticketId}`,
+    this.getInitialTimestamp()
+  );
+}
 
     // Clear any existing polling for this ticket
     if (this.pollIntervals.has(`ticket_${ticketId}`)) {
@@ -196,10 +203,12 @@ class PollingService {
 
     this.ticketCallbacks.set('all_tickets', onTicketUpdate);
 
-    if (!this.lastTimestamps.has('all_tickets')) {
-      this.lastTimestamps.set('all_tickets', new Date(Date.now() - 60000).toISOString());
-    }
-
+   if (!this.lastTimestamps.has('all_tickets')) {
+  this.lastTimestamps.set(
+    'all_tickets',
+    this.getInitialTimestamp()
+  );
+}
     if (this.pollIntervals.has('all_tickets')) {
       clearInterval(this.pollIntervals.get('all_tickets'));
     }
