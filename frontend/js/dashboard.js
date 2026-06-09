@@ -197,10 +197,10 @@ const tickets = await window.getUserTickets(currentUserId) || {};
     }
     localStorage.setItem('current_ticket_id', ticketId);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const chatInput = document.getElementById('chatInput');
       if (chatInput) {
-        const tickets = window.getUserTickets(localStorage.getItem('chatUserId'));
+        const tickets = await Promise.resolve(window.getUserTickets(localStorage.getItem('chatUserId')));
         const ticket = tickets[ticketId];
         if (ticket) {
           chatInput.value = `I have a question about my ticket #${ticket.id} for ${ticket.serviceName}`;
@@ -1372,7 +1372,7 @@ async function buildPage(pageKey) {
 
 
     // Initialize chat user with registration
- function initializeChat() {
+ async function initializeChat() {
   currentChatUser = localStorage.getItem('chatUserId');
 
   if (!currentChatUser) {
@@ -1380,7 +1380,7 @@ async function buildPage(pageKey) {
     return;
   }
 
-  loadUserMessages();
+  await loadUserMessages();
 
   // Start polling for new messages every 3 seconds
   if (window.TekagonAPI) {
@@ -1634,13 +1634,34 @@ async function buildPage(pageKey) {
     }
 
     // Load user messages with ticket separation
-    function loadUserMessages() {
+    async function loadUserMessages() {
       try {
         const allConversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
         chatMessages = allConversations[currentChatUser] || [];
 
         // Load ticket chats
         const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
+
+        if (window.TekagonAPI && currentChatUser) {
+          const result = await window.TekagonAPI.getUserMessages(currentChatUser);
+          if (result.success && Array.isArray(result.messages)) {
+            chatMessages = result.messages.filter(msg => !msg.ticketId);
+            const ticketMessages = {};
+
+            result.messages.forEach(msg => {
+              if (!msg.ticketId) return;
+              if (!ticketMessages[msg.ticketId]) ticketMessages[msg.ticketId] = [];
+              ticketMessages[msg.ticketId].push(msg);
+            });
+
+            allConversations[currentChatUser] = chatMessages;
+            Object.entries(ticketMessages).forEach(([ticketId, messages]) => {
+              ticketChats[ticketId] = messages;
+            });
+            localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(allConversations));
+            localStorage.setItem(TICKET_CHAT_KEY, JSON.stringify(ticketChats));
+          }
+        }
 
         // Add welcome message if no messages
         if (chatMessages.length === 0 && Object.keys(ticketChats).length === 0) {
@@ -1665,10 +1686,10 @@ async function buildPage(pageKey) {
     }
 
     // Update the chat interface to show separated sections
-    function buildChatInterface() {
+    async function buildChatInterface() {
       // Get current ticket ID if any
       const currentTicketId = localStorage.getItem('current_ticket_id');
-      const userTickets = window.getUserTickets(currentChatUser);
+      const userTickets = await Promise.resolve(window.getUserTickets(currentChatUser));
       const ticketList = Object.values(userTickets);
 
       // Check for unread messages
@@ -2180,51 +2201,9 @@ async function buildPage(pageKey) {
 
     // Send chat message (updated for ticket separation)
     function sendChatMessage() {
-      const chatInput = document.getElementById('chatInput');
-      if (!chatInput) return;
-
-      const message = chatInput.value.trim();
-      if (!message) return;
-
-      const currentTicketId = localStorage.getItem('current_ticket_id');
-
-      // Create message object
-      const newMessage = {
-        id: 'msg_' + Date.now(),
-        sender: 'user',
-        content: message,
-        timestamp: new Date().toISOString(),
-        read: true, // User's own message is always read
-        ticketId: currentTicketId || null
-      };
-
-      if (currentTicketId) {
-        // Save to ticket chats
-        saveTicketMessage(currentTicketId, newMessage);
-      } else {
-        // Save to general chat
-        chatMessages.push(newMessage);
-        saveChatMessages();
+      if (typeof window.sendChatMessage === 'function') {
+        return window.sendChatMessage();
       }
-
-      // Update UI
-      const messagesContainer = document.getElementById('messagesContainer');
-      if (messagesContainer) {
-        messagesContainer.innerHTML += renderChatMessage(newMessage);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-
-      // Clear input
-      chatInput.value = '';
-      chatInput.focus();
-
-      // Show typing indicator
-      showTypingIndicator();
-
-      // Simulate response
-      setTimeout(() => {
-        simulateSupportResponse(message, currentTicketId);
-      }, 1500 + Math.random() * 2000);
     }
 
     // Save ticket message
@@ -2332,11 +2311,11 @@ async function buildPage(pageKey) {
 
 
       // Initialize chat
-      initializeChat();
+      await initializeChat();
 
       // If user is registered, build interface
       if (currentChatUser) {
-        buildChatInterface();
+        await buildChatInterface();
       }
 
       return;
@@ -2653,51 +2632,9 @@ async function buildPage(pageKey) {
     }
     // Send chat message (updated for ticket separation)
     function sendChatMessage() {
-      const chatInput = document.getElementById('chatInput');
-      if (!chatInput) return;
-
-      const message = chatInput.value.trim();
-      if (!message) return;
-
-      const currentTicketId = localStorage.getItem('current_ticket_id');
-
-      // Create message object
-      const newMessage = {
-        id: 'msg_' + Date.now(),
-        sender: 'user',
-        content: message,
-        timestamp: new Date().toISOString(),
-        read: true, // User's own message is always read
-        ticketId: currentTicketId || null
-      };
-
-      if (currentTicketId) {
-        // Save to ticket chats
-        saveTicketMessage(currentTicketId, newMessage);
-      } else {
-        // Save to general chat
-        chatMessages.push(newMessage);
-        saveChatMessages();
+      if (typeof window.sendChatMessage === 'function') {
+        return window.sendChatMessage();
       }
-
-      // Update UI
-      const messagesContainer = document.getElementById('messagesContainer');
-      if (messagesContainer) {
-        messagesContainer.innerHTML += renderChatMessage(newMessage);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-
-      // Clear input
-      chatInput.value = '';
-      chatInput.focus();
-
-      // Show typing indicator
-      showTypingIndicator();
-
-      // Simulate response
-      setTimeout(() => {
-        simulateSupportResponse(message, currentTicketId);
-      }, 1500 + Math.random() * 2000);
     }
 
     // Save ticket message
@@ -3040,11 +2977,11 @@ async function buildPage(pageKey) {
           }
           localStorage.setItem('current_ticket_id', ticketId);
 
-          setTimeout(() => {
+          setTimeout(async () => {
             const chatInput = document.getElementById('chatInput');
             if (chatInput) {
               const currentUserId = localStorage.getItem('chatUserId');
-             const tickets = await window.getUserTickets(currentUserId);
+              const tickets = await Promise.resolve(window.getUserTickets(currentUserId));
               const ticket = tickets[ticketId];
               if (ticket) {
                 chatInput.value = `I have a question about my ticket #${ticket.id} for ${ticket.serviceName}`;
@@ -3072,9 +3009,9 @@ async function buildPage(pageKey) {
       return icons[status] || 'question-circle';
     }
 
-    function viewTicketDetails(ticketId) {
+    async function viewTicketDetails(ticketId) {
       const currentUserId = localStorage.getItem('chatUserId');
-      const tickets = getUserTickets(currentUserId);
+      const tickets = await Promise.resolve(window.getUserTickets(currentUserId));
       const ticket = tickets[ticketId];
 
       if (!ticket) return;
@@ -3187,9 +3124,9 @@ async function buildPage(pageKey) {
       if (modal) modal.remove();
     }
 
-    function chatAboutTicket(ticketId) {
+    async function chatAboutTicket(ticketId) {
       const currentUserId = localStorage.getItem('chatUserId');
-      const tickets = getUserTickets(currentUserId);
+      const tickets = await Promise.resolve(window.getUserTickets(currentUserId));
       const ticket = tickets[ticketId];
 
       if (!ticket) return;
@@ -3286,7 +3223,7 @@ async function buildPage(pageKey) {
       }
 
       // Ticket-specific WhatsApp buttons
-      document.addEventListener('click', function (e) {
+      document.addEventListener('click', async function (e) {
         // WhatsApp ticket button in actions
         const whatsappTicketBtn = e.target.closest('.btn-whatsapp-ticket');
         if (whatsappTicketBtn) {
@@ -3301,7 +3238,7 @@ async function buildPage(pageKey) {
 
           // Get ticket data
           const userId = localStorage.getItem('chatUserId');
-          const tickets = getUserTickets(userId);
+          const tickets = await Promise.resolve(window.getUserTickets(userId));
           const ticket = tickets[ticketId];
 
           if (ticket) {
@@ -3327,7 +3264,7 @@ async function buildPage(pageKey) {
 
           // Get ticket data
           const userId = localStorage.getItem('chatUserId');
-          const tickets = getUserTickets(userId);
+          const tickets = await Promise.resolve(window.getUserTickets(userId));
           const ticket = tickets[ticketId];
 
           if (ticket) {
@@ -3514,11 +3451,11 @@ async function buildPage(pageKey) {
           }
           localStorage.setItem('current_ticket_id', ticketId);
 
-          setTimeout(() => {
+          setTimeout(async () => {
             const chatInput = document.getElementById('chatInput');
             if (chatInput) {
               const currentUserId = localStorage.getItem('chatUserId');
-              const tickets = window.getUserTickets(currentUserId);
+              const tickets = await Promise.resolve(window.getUserTickets(currentUserId));
               const ticket = tickets[ticketId];
               if (ticket) {
                 chatInput.value = `I have a question about my ticket #${ticket.id} for ${ticket.serviceName}`;

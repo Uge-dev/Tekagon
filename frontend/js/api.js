@@ -131,7 +131,7 @@ function startPolling(userId, onNewMessage, ticketId = null) {
   stopPolling();   // clear any previous poll
 
   const key = ticketId ? `ticket_${ticketId}` : `user_${userId}`;
-  _pollState[key] = { timer: null, lastCount: 0 };
+  _pollState[key] = { timer: null, lastCount: 0, initialized: false };
 
   async function poll() {
     try {
@@ -146,6 +146,12 @@ function startPolling(userId, onNewMessage, ticketId = null) {
 
       const msgs = result.messages;
       const prevCount = _pollState[key].lastCount;
+
+      if (!_pollState[key].initialized) {
+        _pollState[key].lastCount = msgs.length;
+        _pollState[key].initialized = true;
+        return;
+      }
 
       if (msgs.length > prevCount) {
         // Slice only the new ones

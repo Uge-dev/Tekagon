@@ -153,6 +153,8 @@
       /* ── Logout button (injected into nav) ── */
       #tekagon-logout-btn {
         display: flex; align-items: center; gap: 8px;
+        width: 100%; justify-content: flex-start;
+        margin-top: 8px;
         padding: 9px 18px; border-radius: 8px;
         background: rgba(239,68,68,.1);
         border: 1px solid rgba(239,68,68,.3);
@@ -364,6 +366,15 @@
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         await cred.user.updateProfile({ displayName: name });
         await cred.user.sendEmailVerification();
+        if (window.TekagonAPI) {
+          await window.TekagonAPI.registerUser({
+            userId: 'FB_' + cred.user.uid,
+            name,
+            phone: phone || '',
+            email,
+            company: ''
+          });
+        }
         // Save extra info for use once verified
         localStorage.setItem('pendingUserName', name);
         localStorage.setItem('pendingUserPhone', phone || '');
@@ -388,6 +399,7 @@
         clearAuthMessages();
         try {
           const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
           await auth.signInWithPopup(provider);
           // onAuthStateChanged handles it
         } catch (err) {
@@ -409,8 +421,9 @@
     btn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
     btn.addEventListener('click', showLogoutConfirm);
 
-    // Try to place it in the header-right area; fallback to body
+    // Place it below Contact Us in the dashboard sidebar when available.
     const target =
+      document.querySelector('.sidebar-contact') ||
       document.querySelector('.header-right') ||
       document.querySelector('.admin-header .header-right') ||
       document.querySelector('header') ||

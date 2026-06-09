@@ -16,11 +16,10 @@ const SENDGRID_TEMPLATE_ID = process.env.SENDGRID_TEMPLATE_ID;
 const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
 
 if (!SENDGRID_API_KEY) {
-  console.error('ERROR: No SendGrid API key found!');
-  process.exit(1);
+  console.warn('WARNING: No SendGrid API key found. Email routes will fail until SENDGRID_API_KEY is configured.');
+} else {
+  sgMail.setApiKey(SENDGRID_API_KEY);
 }
-
-sgMail.setApiKey(SENDGRID_API_KEY);
 
 app.use(cors({ origin: '*' }));
 app.options('*', cors());
@@ -35,13 +34,25 @@ app.get('/api/health', (req, res) => {
 app.post('/api/users/register', async (req, res) => {
   try {
     const { userId, name, phone, email, company } = req.body;
-    let user = await User.findOne({ userId });
-    if (!user) {
-      user = await User.create({ userId, name, phone, email, company });
-    } else {
-      user.lastActive = new Date();
-      await user.save();
+    if (!userId || !name) {
+      return res.status(400).json({ success: false, error: 'userId and name are required' });
     }
+
+    const user = await User.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          name,
+          phone: phone || '',
+          email: email || '',
+          company: company || '',
+          lastActive: new Date()
+        },
+        $setOnInsert: { registeredAt: new Date() }
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -167,6 +178,10 @@ app.patch('/api/messages/read/:userId', async (req, res) => {
 // ── EMAIL ROUTES ──────────────────────────────────────────────────────────────
 app.post('/api/send-email', async (req, res) => {
   try {
+    if (!SENDGRID_API_KEY) {
+      return res.status(500).json({ success: false, error: 'SendGrid is not configured' });
+    }
+
     const { toEmail, toName, templateData } = req.body;
     const emailData = {
       name: templateData?.name || toName,
@@ -199,6 +214,10 @@ app.post('/api/send-email', async (req, res) => {
 
 app.post('/api/simple-email', async (req, res) => {
   try {
+    if (!SENDGRID_API_KEY) {
+      return res.status(500).json({ success: false, error: 'SendGrid is not configured' });
+    }
+
     const { toEmail, toName, subject, message } = req.body;
     await sgMail.send({
       to: toEmail, from: SENDER_EMAIL,
