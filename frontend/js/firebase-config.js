@@ -1,3 +1,4 @@
+// firebase-config.js
 const firebaseConfig = {
     apiKey: "AIzaSyAz5tLFyyTuBJYr0VtLHIrUqhnrJIf8tvs",
     authDomain: "tekagon-scheduling.firebaseapp.com",
@@ -8,29 +9,12 @@ const firebaseConfig = {
     measurementId: "G-M9H2XESGL8"
 };
 
-// Initialize only if not already initialized
+// Initialise only once
 if (!firebase.apps.length) {
-    try {
-        firebase.initializeApp(firebaseConfig);
-        console.log("Firebase initialized successfully");
-    } catch (error) {
-        console.error("Firebase initialization failed:", error);
-    }
-} else {
-    console.log("Firebase already initialized");
+    firebase.initializeApp(firebaseConfig);
+    console.log('Firebase initialised');
 }
 
-// Make Firestore globally available
-let db = null;
-// You're using MongoDB, not Firestore — no db needed here
-const db = null;
-window.db = db;
-
-// Export for module systems
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { firebaseConfig, db };
-}
-
-// Store in window for global access
-window.db = db;
+// You are using MongoDB, not Firestore — db is not needed
+window.db = null;
 window.firebaseConfig = firebaseConfig;

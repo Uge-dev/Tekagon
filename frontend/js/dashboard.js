@@ -1,6 +1,6 @@
-function showTicketDetailsModal(ticketId) {
+async function showTicketDetailsModal(ticketId) {
   const currentUserId = localStorage.getItem('chatUserId');
-  const tickets = window.getUserTickets(currentUserId);
+const tickets = await window.getUserTickets(currentUserId) || {};
   const ticket = tickets[ticketId];
 
 
@@ -1253,7 +1253,7 @@ Designed and developed a full-stack quiz website for church examinations and com
   }
 
   // --- Build page grid / profile
-  function buildPage(pageKey) {
+async function buildPage(pageKey) {
 
     const data = pageData[pageKey];
     pageEl.innerHTML = '';
@@ -2869,7 +2869,7 @@ Designed and developed a full-stack quiz website for church examinations and com
 
       // Get current user ID
       const currentUserId = localStorage.getItem('chatUserId');
-   const userTickets = await window.getUserTickets(currentUserId);
+      const userTickets = await window.getUserTickets(currentUserId);
       const ticketList = Object.values(userTickets);
 
       pageEl.innerHTML = `

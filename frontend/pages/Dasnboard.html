@@ -32,21 +32,13 @@
 
 
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-  <!-- Firebase config -->
-  <script src="../js/firebase-config.js"></script>
-
-  <!-- Add this before your dashboard.js script -->
-
-
-  <!-- main dashboard script -->
-
- 
-  <script src="../js/auth.js"></script>
-  <script src="../js/api.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/api.js"></script>
 <script src="../js/dashboard.js"></script>
 
 </head>
@@ -229,76 +221,7 @@
 
 
 
-  <script>
-    // Import Firebase modules
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    // Your Firebase config (REPLACE with your actual config)
-    const firebaseConfig = {
-      apiKey: "AIzaSyDv6vRVybFvYF1szk-d0vF0XT0dvjdooYE",
-      authDomain: "tekagondashboard.firebaseapp.com",
-      projectId: "tekagondashboard",
-      storageBucket: "tekagondashboard.firebasestorage.app",
-      messagingSenderId: "945157934278",
-      appId: "1:945157934278:web:3de062925a39d842ce5bc7",
-      measurementId: "G-YMY793BL7R"
-    };
-    try {
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-
-      // Make available globally
-      window.firebaseApp = app;
-      window.firebaseAuth = auth;
-      window.onAuthStateChanged = onAuthStateChanged;
-
-      console.log('Firebase initialized successfully');
-
-      // Create a global function to check auth
-      window.checkFirebaseAuth = function () {
-        return new Promise((resolve) => {
-          onAuthStateChanged(auth, (user) => {
-            resolve(user);
-          });
-        });
-      };
-
-    } catch (error) {
-      console.error(' Firebase initialization error:', error);
-      window.firebaseError = error;
-    }
-    if (window.feather) feather.replace();
-
-    // Update status time
-    function updateTime() {
-      const now = new Date();
-      const time = now.toLocaleTimeString("en-US", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      const timeEl = document.getElementById("status-time");
-      if (timeEl) timeEl.textContent = time;
-    }
-
-    // Update time every second if service page is active
-    setInterval(() => {
-      if (document.querySelector(".service-extra-section")) {
-        updateTime();
-      }
-    }, 1000);
-
-    document.addEventListener('DOMContentLoaded', function () {
-      console.log("🚀 Initializing Tekagon Scheduler...");
-
-      // Initialize scheduler
-      window.scheduler = new TekagonScheduler();
-      console.log("✅ Scheduler initialized successfully");
-    });
-  </script>
+  
 
 </body>
 
