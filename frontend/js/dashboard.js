@@ -468,19 +468,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
       }
-      } else {
+    } else {
       // Save to general chat localStorage
       const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
       if (!conversations[userId]) conversations[userId] = [];
       conversations[userId].push(newMessage);
+      chatMessages.push(newMessage);
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversations));
-      }
+    }
 
     // Update UI immediately before the network request finishes.
     const messagesContainer = document.getElementById('messagesContainer');
     if (messagesContainer) {
       const messageHTML = renderChatMessage(newMessage);
-      messagesContainer.innerHTML += messageHTML;
+      messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 

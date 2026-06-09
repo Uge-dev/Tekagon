@@ -5122,15 +5122,31 @@ initAdminSocket() {
       }
       
       .admin-message.user {
-        align-self: flex-start;
+        align-self: flex-start !important;
+        margin-right: auto !important;
+        margin-left: 0 !important;
         background: rgba(124, 92, 255, 0.1);
         border: 1px solid rgba(124, 92, 255, 0.2);
       }
       
       .admin-message.admin {
-        align-self: flex-end;
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(16, 185, 129, 0.7));
         color: white;
+      }
+
+      .admin-message.from-user {
+        align-self: flex-start !important;
+        margin-right: auto !important;
+        margin-left: 0 !important;
+      }
+
+      .admin-message.from-admin {
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
       }
       
       .message-input {
