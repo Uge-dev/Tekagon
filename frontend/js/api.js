@@ -1,6 +1,6 @@
 const API_URL = 'https://tekagon-backend.onrender.com';
 
-// ── USER ──
+// ── USERS ─────────────────────────────────────────────────────────────────────
 async function registerUser(userData) {
   try {
     const res = await fetch(`${API_URL}/api/users/register`, {
@@ -10,7 +10,7 @@ async function registerUser(userData) {
     });
     return await res.json();
   } catch (err) {
-    console.error('Register user error:', err);
+    console.error('registerUser error:', err);
     return { success: false };
   }
 }
@@ -24,7 +24,7 @@ async function getAllUsers() {
   }
 }
 
-// ── TICKETS ──
+// ── TICKETS ───────────────────────────────────────────────────────────────────
 async function createTicket(ticketData) {
   try {
     const res = await fetch(`${API_URL}/api/tickets/create`, {
@@ -69,7 +69,7 @@ async function updateTicketStatus(ticketId, status) {
   }
 }
 
-// ── MESSAGES ──
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
 async function sendMessage(messageData) {
   try {
     const res = await fetch(`${API_URL}/api/messages`, {
@@ -83,6 +83,8 @@ async function sendMessage(messageData) {
   }
 }
 
+// Returns ALL messages for a user (general + all tickets).
+// Filter by ticketId on the frontend when needed.
 async function getUserMessages(userId) {
   try {
     const res = await fetch(`${API_URL}/api/messages/user/${userId}`);
@@ -113,15 +115,25 @@ async function markMessagesRead(userId) {
   }
 }
 
-// ── POLLING (replaces Socket.io) ──
-let pollingInterval = null;
-let lastMessageCount = 0;
+// ── POLLING ───────────────────────────────────────────────────────────────────
+// Tracks the last known message count per context key so we only fire
+// the callback for genuinely new messages.
+const _pollState = {};  // key -> { timer, lastCount }
 
+/**
+ * Start polling for new messages.
+ *
+ * @param {string}   userId        - The current user's ID
+ * @param {function} onNewMessage  - Called with each new message object
+ * @param {string|null} ticketId   - If set, only fires for messages on this ticket
+ */
 function startPolling(userId, onNewMessage, ticketId = null) {
-  // Clear existing polling
-  if (pollingInterval) clearInterval(pollingInterval);
+  stopPolling();   // clear any previous poll
 
-  pollingInterval = setInterval(async () => {
+  const key = ticketId ? `ticket_${ticketId}` : `user_${userId}`;
+  _pollState[key] = { timer: null, lastCount: 0 };
+
+  async function poll() {
     try {
       let result;
       if (ticketId) {
@@ -130,36 +142,44 @@ function startPolling(userId, onNewMessage, ticketId = null) {
         result = await getUserMessages(userId);
       }
 
-      if (result.success && result.messages) {
-        const newCount = result.messages.length;
-        if (newCount > lastMessageCount) {
-          // New messages arrived
-          const newMessages = result.messages.slice(lastMessageCount);
-          newMessages.forEach(msg => {
-            if (msg.sender !== 'user') {
-              onNewMessage(msg);
-            }
-          });
-          lastMessageCount = newCount;
-        }
+      if (!result.success || !Array.isArray(result.messages)) return;
+
+      const msgs = result.messages;
+      const prevCount = _pollState[key].lastCount;
+
+      if (msgs.length > prevCount) {
+        // Slice only the new ones
+        const newMsgs = msgs.slice(prevCount);
+        _pollState[key].lastCount = msgs.length;
+
+        newMsgs.forEach(msg => {
+          // KEY FIX: notify for ALL new messages the user didn't send themselves.
+          // Previously this filtered out admin messages, so replies never appeared.
+          if (msg.sender !== 'user') {
+            onNewMessage(msg);
+          }
+        });
       }
     } catch (err) {
       console.error('Polling error:', err);
     }
-  }, 3000); // Check every 3 seconds
+  }
 
-  console.log('✅ Polling started for:', userId);
+  // Run immediately, then on interval
+  poll();
+  _pollState[key].timer = setInterval(poll, 3000);
+  console.log(`✅ Polling started — userId: ${userId}${ticketId ? ` ticketId: ${ticketId}` : ''}`);
 }
 
 function stopPolling() {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
-    console.log('⏹️ Polling stopped');
-  }
+  Object.values(_pollState).forEach(s => {
+    if (s.timer) clearInterval(s.timer);
+  });
+  // Clear state
+  Object.keys(_pollState).forEach(k => delete _pollState[k]);
 }
 
-// ── EXPORT ──
+// ── EXPORT ────────────────────────────────────────────────────────────────────
 window.TekagonAPI = {
   registerUser,
   getAllUsers,
@@ -175,4 +195,4 @@ window.TekagonAPI = {
   stopPolling
 };
 
-console.log('✅ Tekagon API loaded');
+console.log('✅ TekagonAPI loaded');

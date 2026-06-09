@@ -2869,7 +2869,7 @@ Designed and developed a full-stack quiz website for church examinations and com
 
       // Get current user ID
       const currentUserId = localStorage.getItem('chatUserId');
-      const userTickets = getUserTickets(currentUserId);
+   const userTickets = await window.getUserTickets(currentUserId);
       const ticketList = Object.values(userTickets);
 
       pageEl.innerHTML = `
@@ -3044,7 +3044,7 @@ Designed and developed a full-stack quiz website for church examinations and com
             const chatInput = document.getElementById('chatInput');
             if (chatInput) {
               const currentUserId = localStorage.getItem('chatUserId');
-              const tickets = window.getUserTickets(currentUserId);
+             const tickets = await window.getUserTickets(currentUserId);
               const ticket = tickets[ticketId];
               if (ticket) {
                 chatInput.value = `I have a question about my ticket #${ticket.id} for ${ticket.serviceName}`;

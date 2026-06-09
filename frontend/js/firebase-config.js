@@ -22,25 +22,9 @@ if (!firebase.apps.length) {
 
 // Make Firestore globally available
 let db = null;
-try {
-    if (firebase.firestore) {
-        db = firebase.firestore();
-        console.log("Firebase Firestore available");
-
-        // Enable offline persistence
-        db.enablePersistence()
-            .catch((err) => {
-                if (err.code == 'failed-precondition') {
-                    console.log("Multiple tabs open, persistence can only be enabled in one tab at a time.");
-                } else if (err.code == 'unimplemented') {
-                    console.log("The current browser doesn't support persistence.");
-                }
-            });
-    }
-} catch (error) {
-    console.error("Firebase Firestore error:", error);
-    db = null;
-}
+// You're using MongoDB, not Firestore — no db needed here
+const db = null;
+window.db = db;
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
