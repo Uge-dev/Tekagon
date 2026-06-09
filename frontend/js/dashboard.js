@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       if (currentTicketId) {
-      saveTicketMessage(currentTicketId, newMessage);
+      storeChatMessage(newMessage);
 
       // Update localStorage ticket messages
       const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
@@ -469,46 +469,34 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
       }
     } else {
-      // Save to general chat localStorage
-      const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
-      if (!conversations[userId]) conversations[userId] = [];
-      conversations[userId].push(newMessage);
-      chatMessages.push(newMessage);
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversations));
+      storeChatMessage(newMessage);
     }
 
     // Update UI immediately before the network request finishes.
-    const messagesContainer = document.getElementById('messagesContainer');
-    if (messagesContainer) {
-      const messageHTML = renderChatMessage(newMessage);
-      messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
+    renderActiveChatMessages();
 
     // Save to MongoDB
     if (window.TekagonAPI) {
       try {
-        await window.TekagonAPI.sendMessage({
+        const result = await window.TekagonAPI.sendMessage({
           id: newMessage.id,
+          clientId: newMessage.id,
           sender: 'user',
           content: message,
           userId: userId,
           ticketId: currentTicketId || null,
           read: true
         });
+        if (result && result.success && result.message) {
+          storeChatMessage({ ...result.message, id: result.message.clientId || newMessage.id });
+          renderActiveChatMessages();
+        }
         console.log('✅ Message saved to MongoDB');
       } catch (err) {
         console.warn('⚠️ MongoDB save failed, localStorage backup used');
       }
     }
 
-    // Show typing indicator
-    showTypingIndicator();
-
-    // Simulate response
-    setTimeout(() => {
-      simulateSupportResponse(message, currentTicketId, userId);
-    }, 1500 + Math.random() * 2000);
     } finally {
       chatInput.disabled = false;
       if (sendBtn) sendBtn.disabled = false;
@@ -618,6 +606,132 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentChatTicket = null;
   const CHAT_STORAGE_KEY = 'tekagon_chat_conversations';
   const TICKET_CHAT_KEY = 'tekagon_ticket_chats'; // New: Separate storage for ticket chats
+
+  function normalizeChatMessage(msg) {
+    if (!msg) return msg;
+    return {
+      ...msg,
+      id: msg.clientId || msg.id || msg._id || [
+        msg.sender,
+        msg.userId || currentChatUser || localStorage.getItem('chatUserId') || '',
+        msg.ticketId || '',
+        msg.content,
+        msg.timestamp
+      ].join('|'),
+      content: msg.content || msg.message || '',
+      timestamp: msg.timestamp || new Date().toISOString()
+    };
+  }
+
+  function getChatMessageKey(msg) {
+    const normalized = normalizeChatMessage(msg);
+    return normalized.clientId || normalized.id || normalized._id || [
+      normalized.sender,
+      normalized.userId || currentChatUser || '',
+      normalized.ticketId || '',
+      normalized.content,
+      normalized.timestamp
+    ].join('|');
+  }
+
+  function mergeChatMessages(...messageLists) {
+    const merged = new Map();
+
+    messageLists.flat().filter(Boolean).forEach(message => {
+      const normalized = normalizeChatMessage(message);
+      const key = getChatMessageKey(normalized);
+      merged.set(key, { ...(merged.get(key) || {}), ...normalized });
+    });
+
+    return Array.from(merged.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  }
+
+  function storeChatMessage(message) {
+    const normalized = normalizeChatMessage(message);
+    if (!normalized) return;
+
+    const userId = currentChatUser || localStorage.getItem('chatUserId');
+    const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
+    conversations[userId] = mergeChatMessages(conversations[userId] || [], normalized).filter(msg => !msg.ticketId);
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversations));
+    chatMessages = mergeChatMessages(chatMessages, conversations[userId]);
+
+    if (normalized.ticketId) {
+      const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
+      ticketChats[normalized.ticketId] = mergeChatMessages(ticketChats[normalized.ticketId] || [], normalized);
+      localStorage.setItem(TICKET_CHAT_KEY, JSON.stringify(ticketChats));
+    }
+  }
+
+  function renderActiveChatMessages() {
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (!messagesContainer) return;
+
+    const activeTicketId = localStorage.getItem('current_ticket_id');
+    let messages = [];
+
+    if (activeTicketId) {
+      const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
+      const ticketMessages = ticketChats[activeTicketId] || [];
+      const ticketReferenceMessages = chatMessages.filter(msg =>
+        msg.ticketId === activeTicketId || (msg.content && msg.content.includes(activeTicketId))
+      );
+      messages = mergeChatMessages(ticketMessages, ticketReferenceMessages);
+    } else {
+      messages = chatMessages.filter(msg => !msg.ticketId || msg.type === 'general');
+    }
+
+    messagesContainer.innerHTML = messages.map(msg => renderChatBubbleHtml(msg)).join('');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function renderChatBubbleHtml(message) {
+    const msg = normalizeChatMessage(message);
+    const timestamp = new Date(msg.timestamp);
+    const time = Number.isNaN(timestamp.getTime())
+      ? ''
+      : timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (msg.sender === 'user') {
+      return `
+        <div class="message-bubble user-message">
+          <div class="message-header">
+            <span class="message-sender">You</span>
+            <span class="message-time">${time}</span>
+          </div>
+          <div class="message-content">${escapeHtml(msg.content)}</div>
+          ${msg.ticketId ? `
+            <div class="message-context">
+              <i class="fas fa-ticket-alt"></i>
+              Ticket #${String(msg.ticketId).substring(0, 10)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    const senderName = msg.sender === 'admin' ? 'Admin' : 'Tekagon Support';
+    const iconClass = msg.sender === 'admin' ? 'fa-user-shield' : 'fa-headset';
+
+    return `
+      <div class="message-bubble support-message ${msg.sender === 'admin' ? 'admin-message' : ''}">
+        <div class="message-header">
+          <span class="message-sender">
+            <i class="fas ${iconClass}"></i>
+            ${senderName}
+          </span>
+          <span class="message-time">${time}</span>
+        </div>
+        <div class="message-content">${escapeHtml(msg.content)}</div>
+        ${msg.ticketId ? `
+          <div class="message-context ticket-context">
+            <i class="fas fa-ticket-alt"></i>
+            Regarding Ticket #${String(msg.ticketId).substring(0, 10)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
 
   // --- Page data (change image paths to ./assets/... if you add local files)
   const pageData = {
@@ -1406,11 +1520,8 @@ async function buildPage(pageKey) {
     window.TekagonAPI.startPolling(currentChatUser, (newMessage) => {
       console.log('📨 New message received via polling!', newMessage);
 
-      const messagesContainer = document.getElementById('messagesContainer');
-      if (messagesContainer) {
-        messagesContainer.innerHTML += renderChatMessage(newMessage);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
+      storeChatMessage(newMessage);
+      renderActiveChatMessages();
 
       updateUnreadNotification();
     }, currentTicketId);
@@ -1662,7 +1773,7 @@ async function buildPage(pageKey) {
         if (window.TekagonAPI && currentChatUser) {
           const result = await window.TekagonAPI.getUserMessages(currentChatUser);
           if (result.success && Array.isArray(result.messages)) {
-            chatMessages = result.messages.filter(msg => !msg.ticketId);
+            chatMessages = mergeChatMessages(chatMessages, result.messages.filter(msg => !msg.ticketId));
             const ticketMessages = {};
 
             result.messages.forEach(msg => {
@@ -1673,7 +1784,7 @@ async function buildPage(pageKey) {
 
             allConversations[currentChatUser] = chatMessages;
             Object.entries(ticketMessages).forEach(([ticketId, messages]) => {
-              ticketChats[ticketId] = messages;
+              ticketChats[ticketId] = mergeChatMessages(ticketChats[ticketId] || [], messages);
             });
             localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(allConversations));
             localStorage.setItem(TICKET_CHAT_KEY, JSON.stringify(ticketChats));
@@ -2367,8 +2478,7 @@ async function buildPage(pageKey) {
         msg.ticketId === ticketId || (msg.content && msg.content.includes(ticketId))
       );
 
-      const allTicketMessages = [...ticketMessages, ...ticketReferenceMessages]
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const allTicketMessages = mergeChatMessages(ticketMessages, ticketReferenceMessages);
 
       messagesContainer.innerHTML = allTicketMessages.map(msg => renderChatMessage(msg)).join('');
 

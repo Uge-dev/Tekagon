@@ -126,11 +126,12 @@ app.patch('/api/tickets/:ticketId/status', async (req, res) => {
 // ── MESSAGE ROUTES ────────────────────────────────────────────────────────────
 app.post('/api/messages', async (req, res) => {
   try {
-    const { sender, content, userId, ticketId } = req.body;
+    const { sender, content, userId, ticketId, id, clientId } = req.body;
     if (!sender || !content || !userId) {
       return res.status(400).json({ success: false, error: 'sender, content, and userId are required' });
     }
     const message = await Message.create({
+      clientId: clientId || id || undefined,
       sender,
       content,
       userId,

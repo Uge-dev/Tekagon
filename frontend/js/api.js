@@ -116,9 +116,19 @@ async function markMessagesRead(userId) {
 }
 
 // ── POLLING ───────────────────────────────────────────────────────────────────
-// Tracks the last known message count per context key so we only fire
-// the callback for genuinely new messages.
-const _pollState = {};  // key -> { timer, lastCount }
+// Tracks seen message IDs per context key so local optimistic messages
+// and MongoDB messages do not fight each other during polling.
+const _pollState = {};  // key -> { timer, seen, initialized }
+
+function getMessageIdentity(msg) {
+  return msg.clientId || msg.id || msg._id || [
+    msg.sender,
+    msg.userId || '',
+    msg.ticketId || '',
+    msg.content,
+    msg.timestamp
+  ].join('|');
+}
 
 /**
  * Start polling for new messages.
@@ -131,7 +141,7 @@ function startPolling(userId, onNewMessage, ticketId = null) {
   stopPolling();   // clear any previous poll
 
   const key = ticketId ? `ticket_${ticketId}` : `user_${userId}`;
-  _pollState[key] = { timer: null, lastCount: 0, initialized: false };
+  _pollState[key] = { timer: null, seen: new Set(), initialized: false };
 
   async function poll() {
     try {
@@ -145,27 +155,25 @@ function startPolling(userId, onNewMessage, ticketId = null) {
       if (!result.success || !Array.isArray(result.messages)) return;
 
       const msgs = result.messages;
-      const prevCount = _pollState[key].lastCount;
 
       if (!_pollState[key].initialized) {
-        _pollState[key].lastCount = msgs.length;
+        msgs.forEach(msg => _pollState[key].seen.add(getMessageIdentity(msg)));
         _pollState[key].initialized = true;
         return;
       }
 
-      if (msgs.length > prevCount) {
-        // Slice only the new ones
-        const newMsgs = msgs.slice(prevCount);
-        _pollState[key].lastCount = msgs.length;
+      const newMsgs = msgs.filter(msg => {
+        const identity = getMessageIdentity(msg);
+        if (_pollState[key].seen.has(identity)) return false;
+        _pollState[key].seen.add(identity);
+        return true;
+      });
 
-        newMsgs.forEach(msg => {
-          // KEY FIX: notify for ALL new messages the user didn't send themselves.
-          // Previously this filtered out admin messages, so replies never appeared.
-          if (msg.sender !== 'user') {
-            onNewMessage(msg);
-          }
-        });
-      }
+      newMsgs.forEach(msg => {
+        if (msg.sender !== 'user') {
+          onNewMessage(msg);
+        }
+      });
     } catch (err) {
       console.error('Polling error:', err);
     }
