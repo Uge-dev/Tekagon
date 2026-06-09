@@ -134,7 +134,7 @@ initAdminSocket() {
     } catch (err) {
       console.error('Admin polling error:', err);
     }
-  }, 3000);
+  }, 1000);
 
   console.log('✅ Admin polling started');
 }
@@ -5296,4 +5296,3 @@ let adminDashboard;
 document.addEventListener('DOMContentLoaded', () => {
   adminDashboard = new AdminChatDashboard();
 });
-

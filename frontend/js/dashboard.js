@@ -421,15 +421,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
- window.sendChatMessage = async function () {
+  window.__tekagonChatSending = false;
+
+  window.sendChatMessage = async function () {
+    if (window.__tekagonChatSending) return;
+
     const chatInput = document.getElementById('chatInput');
     if (!chatInput) return;
 
     const message = chatInput.value.trim();
     if (!message) return;
 
+    const sendBtn = document.getElementById('sendMessage');
     const currentTicketId = localStorage.getItem('current_ticket_id');
     const userId = localStorage.getItem('chatUserId');
+    if (!userId) return;
+
+    window.__tekagonChatSending = true;
+    chatInput.value = '';
+    chatInput.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
 
     const newMessage = {
       id: 'msg_' + Date.now(),
@@ -440,7 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ticketId: currentTicketId || null
     };
 
-    if (currentTicketId) {
+    try {
+      if (currentTicketId) {
       saveTicketMessage(currentTicketId, newMessage);
 
       // Update localStorage ticket messages
@@ -456,12 +468,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
       }
-    } else {
+      } else {
       // Save to general chat localStorage
       const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
       if (!conversations[userId]) conversations[userId] = [];
       conversations[userId].push(newMessage);
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversations));
+      }
+
+    // Update UI immediately before the network request finishes.
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (messagesContainer) {
+      const messageHTML = renderChatMessage(newMessage);
+      messagesContainer.innerHTML += messageHTML;
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     // Save to MongoDB
@@ -481,18 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Update UI
-    const messagesContainer = document.getElementById('messagesContainer');
-    if (messagesContainer) {
-      const messageHTML = renderChatMessage(newMessage);
-      messagesContainer.innerHTML += messageHTML;
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    // Clear input
-    chatInput.value = '';
-    chatInput.focus();
-
     // Show typing indicator
     showTypingIndicator();
 
@@ -500,6 +508,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       simulateSupportResponse(message, currentTicketId, userId);
     }, 1500 + Math.random() * 2000);
+    } finally {
+      chatInput.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+      window.__tekagonChatSending = false;
+      chatInput.focus();
+    }
   };
 
   // Fix ticket message saving - COMPLETELY SEPARATE storage
@@ -1257,6 +1271,8 @@ async function buildPage(pageKey) {
 
     const data = pageData[pageKey];
     pageEl.innerHTML = '';
+    currentPage = pageKey;
+    window._currentPage = pageKey;
     // persist current page in the URL hash so refresh remains on this page
     try { location.hash = '#page=' + encodeURIComponent(pageKey); } catch (e) { }
     if (!data) {

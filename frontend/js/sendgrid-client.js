@@ -113,7 +113,7 @@ class SendGridClient {
             if (debugResponse.ok) {
                 console.log("📊 SendGrid debug info:", debugResult.sendgrid);
 
-                if (debugResult.sendgrid?.sendTest?.success) {
+                if (debugResult.sendgrid?.configured) {
                     console.log("✅ SendGrid is properly configured!");
 
                     // Now try the simple email
@@ -176,7 +176,7 @@ class SendGridClient {
                     }
                 } else {
                     // SendGrid not properly configured
-                    const errorMsg = debugResult.sendgrid?.sendTest?.error || 'SendGrid configuration issue';
+                    const errorMsg = 'SendGrid configuration issue';
                     console.error("❌ SendGrid issue:", errorMsg);
 
                     return {
@@ -230,9 +230,9 @@ class SendGridClient {
         try {
             console.log("🔍 Verifying SendGrid configuration...");
 
-            // Try the full verification endpoint first
+            // Try the configured backend status endpoint first
             try {
-                const response = await fetch(`${this.config.serverUrl}/api/verify-sendgrid`, {
+                const response = await fetch(`${this.config.serverUrl}/api/debug-sendgrid`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' }
                 });
@@ -240,8 +240,12 @@ class SendGridClient {
                 const result = await response.json();
 
                 if (response.ok) {
-                    console.log("✅ SendGrid verification successful:", result);
-                    return result;
+                    console.log("✅ SendGrid status check:", result);
+                    return {
+                        success: Boolean(result.sendgrid?.configured),
+                        message: result.sendgrid?.configured ? 'SendGrid is configured' : 'SendGrid is missing required configuration',
+                        sendgrid: result.sendgrid
+                    };
                 }
             } catch (error) {
                 console.log("⚠️ Full verification failed, trying simple status...");

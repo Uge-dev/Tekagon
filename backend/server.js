@@ -30,6 +30,20 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'running', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/debug-sendgrid', (req, res) => {
+  res.json({
+    success: true,
+    sendgrid: {
+      configured: Boolean(SENDGRID_API_KEY && SENDER_EMAIL),
+      hasApiKey: Boolean(SENDGRID_API_KEY),
+      hasSenderEmail: Boolean(SENDER_EMAIL),
+      hasTemplateId: Boolean(SENDGRID_TEMPLATE_ID),
+      senderEmail: SENDER_EMAIL || null,
+      templateId: SENDGRID_TEMPLATE_ID || null
+    }
+  });
+});
+
 // ── USER ROUTES ──────────────────────────────────────────────────────────────
 app.post('/api/users/register', async (req, res) => {
   try {
@@ -193,19 +207,31 @@ app.post('/api/send-email', async (req, res) => {
       ...templateData
     };
     try {
-      await sgMail.send({
+      const [sendResult] = await sgMail.send({
         to: toEmail, from: SENDER_EMAIL,
         templateId: SENDGRID_TEMPLATE_ID,
         dynamicTemplateData: emailData
       });
-      res.json({ success: true, message: 'Booking confirmation sent!', type: 'template' });
+      res.json({
+        success: true,
+        message: 'Booking confirmation sent!',
+        type: 'template',
+        messageId: sendResult?.headers?.['x-message-id'] || null,
+        recipient: toEmail
+      });
     } catch (templateError) {
-      await sgMail.send({
+      const [sendResult] = await sgMail.send({
         to: toEmail, from: SENDER_EMAIL,
         subject: `Tekagon Booking Confirmation - ${emailData.booking_id}`,
         text: `Hello ${emailData.name}, your booking is confirmed. ID: ${emailData.booking_id}`
       });
-      res.json({ success: true, message: 'Booking confirmation sent (simple format)', type: 'simple' });
+      res.json({
+        success: true,
+        message: 'Booking confirmation sent (simple format)',
+        type: 'simple',
+        messageId: sendResult?.headers?.['x-message-id'] || null,
+        recipient: toEmail
+      });
     }
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -219,12 +245,16 @@ app.post('/api/simple-email', async (req, res) => {
     }
 
     const { toEmail, toName, subject, message } = req.body;
-    await sgMail.send({
+    const [sendResult] = await sgMail.send({
       to: toEmail, from: SENDER_EMAIL,
       subject: subject || 'Message from Tekagon',
       text: message || `Hello ${toName}`
     });
-    res.json({ success: true });
+    res.json({
+      success: true,
+      messageId: sendResult?.headers?.['x-message-id'] || null,
+      recipient: toEmail
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

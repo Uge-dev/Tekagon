@@ -254,13 +254,17 @@ class TekagonScheduler {
                 this.updateLoadingText('Sending confirmation email...');
 
                 // Send confirmation email via SERVER
-                await this.sendConfirmationEmail(formData);
+                const emailResult = await this.sendConfirmationEmail(formData);
 
                 // Update UI and navigate to confirmation
                 this.updateConfirmationPage(formData, formData.id);
                 this.goToStep(3);
 
-                this.showNotification('✅ Booking confirmed! Email sent successfully.', 'success');
+                if (emailResult.success) {
+                    this.showNotification('✅ Booking confirmed! Email sent successfully.', 'success');
+                } else {
+                    this.showNotification('⚠️ Booking saved! Email may be delayed.', 'warning');
+                }
                 console.log("🎉 Booking completed successfully");
 
             } else {
@@ -413,6 +417,7 @@ class TekagonScheduler {
                     console.log("🎨 Sent as template email");
                     this.showNotification("✅ Booking confirmed! Email sent with full details.", "success");
                 }
+                return { success: true, result };
 
             } else {
                 console.warn("⚠️ Email had issues:", result.message);
@@ -420,12 +425,14 @@ class TekagonScheduler {
 
                 // Store for manual follow-up
                 this.storeForManualFollowup(booking, result.error);
+                return { success: false, result };
             }
 
         } catch (error) {
             console.error("❌ Email processing error:", error);
             // Don't show error to user - booking is still saved
             console.log("📝 Booking saved locally for manual processing");
+            return { success: false, error };
         }
     }
 

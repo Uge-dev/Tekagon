@@ -173,7 +173,7 @@ function startPolling(userId, onNewMessage, ticketId = null) {
 
   // Run immediately, then on interval
   poll();
-  _pollState[key].timer = setInterval(poll, 3000);
+  _pollState[key].timer = setInterval(poll, 1000);
   console.log(`✅ Polling started — userId: ${userId}${ticketId ? ` ticketId: ${ticketId}` : ''}`);
 }
 
