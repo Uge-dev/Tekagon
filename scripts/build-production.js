@@ -195,6 +195,14 @@ http.createServer((req, res) => {
   fs.writeFileSync(path.join(outDir, 'index.js'), obfuscateJs(minifyJs(server)));
 }
 
+function verifyOutput() {
+  const required = ['index.html', 'index.js'];
+  const missing = required.filter(file => !fs.existsSync(path.join(outDir, file)));
+  if (missing.length > 0) {
+    throw new Error(`Production build is missing required output file(s): ${missing.join(', ')}`);
+  }
+}
+
 function injectRuntimeConfig(html) {
   if (html.includes('runtime-config.js')) return html;
 
@@ -230,5 +238,6 @@ copyRecursive(sourceDir, outDir);
 writeRuntimeConfig();
 walkFiles(outDir).forEach(processFile);
 writeStaticEntrypoint();
+verifyOutput();
 
 console.log(`Production build created at ${path.relative(rootDir, outDir)}`);
