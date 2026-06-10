@@ -600,6 +600,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let slideInterval = null;
   const AUTO_MS = 5000;
 
+  function isUserInChatView() {
+    return (currentPage === 'chat' || window._currentPage === 'chat') &&
+      Boolean(document.getElementById('messagesContainer'));
+  }
+
   // --- Chat System Variables
   let chatMessages = [];
   let currentChatUser = null;
@@ -1956,7 +1961,7 @@ async function buildPage(pageKey) {
     </div>
     
     <!-- Notification Alert (floating) -->
-    ${hasUnread ? `
+    ${hasUnread && !isUserInChatView() ? `
         <div class="floating-notification-alert" id="floatingNotification">
             <div class="alert-content">
                 <i class="fas fa-bell"></i>
@@ -2026,7 +2031,7 @@ async function buildPage(pageKey) {
       // Show notification if there are unread messages
       setTimeout(() => {
         const hasUnread = checkForUnreadMessages();
-        if (hasUnread) {
+        if (hasUnread && !isUserInChatView()) {
           showFloatingNotification(true);
         }
       }, 500);
@@ -2523,6 +2528,7 @@ async function buildPage(pageKey) {
     // Update the floating notification to auto-dismiss
     function showFloatingNotification(hasUnread) {
       if (!hasUnread) return;
+      if (isUserInChatView()) return;
 
       // Remove any existing notification
       const existing = document.getElementById('floatingNotification');
@@ -2699,6 +2705,10 @@ async function buildPage(pageKey) {
     function updateUnreadNotification() {
       const hasUnread = checkForUnreadMessages();
       console.log('Updating unread notification. Has unread?', hasUnread);
+      if (isUserInChatView()) {
+        const notification = document.getElementById('floatingNotification');
+        if (notification) notification.remove();
+      }
 
       // Update badge in navigation
       const chatNav = document.querySelector('[data-page="chat"]');
@@ -2722,9 +2732,9 @@ async function buildPage(pageKey) {
 
         // Show floating notification if not already shown
         const existingNotification = document.getElementById('floatingNotification');
-        if (!existingNotification) {
+        if (!existingNotification && !isUserInChatView()) {
           setTimeout(() => {
-            showFloatingNotification(true);
+            if (!isUserInChatView()) showFloatingNotification(true);
           }, 1000);
         }
       } else {
@@ -4822,12 +4832,9 @@ async function buildPage(pageKey) {
   </div>
     <div class="business-content">
       <div class="business-image">
-<video autoplay loop muted playsinline class="bg-video">
-  <source src="../Images/animated shape.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+        <img src="../Images/cards/crd (15).gif" alt="Business growth animation" class="bg-video">
 
-      </div>      
+      </div>
       <div class="business-text">
         <div class="strategy-grid">
     <div class="strategy-box">

@@ -15,6 +15,34 @@ async function registerUser(userData) {
   }
 }
 
+async function signupWithEmail(userData) {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('signupWithEmail error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function signinWithEmail(credentials) {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('signinWithEmail error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 async function getAllUsers() {
   try {
     const res = await fetch(`${API_URL}/api/users`);
@@ -196,6 +224,8 @@ function stopPolling() {
 // ── EXPORT ────────────────────────────────────────────────────────────────────
 window.TekagonAPI = {
   registerUser,
+  signupWithEmail,
+  signinWithEmail,
   getAllUsers,
   createTicket,
   getUserTickets,

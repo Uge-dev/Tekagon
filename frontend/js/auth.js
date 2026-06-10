@@ -329,6 +329,18 @@
     });
 
     const auth = firebase.auth();
+    const canUseBackendEmailAuth = () =>
+      window.TekagonAPI &&
+      typeof window.TekagonAPI.signupWithEmail === 'function' &&
+      typeof window.TekagonAPI.signinWithEmail === 'function';
+
+    const shouldTryBackendAuth = (code) => [
+      'auth/user-not-found',
+      'auth/invalid-credential',
+      'auth/operation-not-allowed',
+      'auth/configuration-not-found',
+      'auth/internal-error'
+    ].includes(code);
 
     // ── Sign In ──
     document.getElementById('btn-signin').addEventListener('click', async () => {
@@ -339,15 +351,18 @@
       clearAuthMessages();
       try {
         const cred = await auth.signInWithEmailAndPassword(email, password);
-        if (!cred.user.emailVerified) {
-          await auth.signOut();
-          showAuthError('Please verify your email first. Check your inbox for the verification link.');
-          setLoading('btn-signin', false);
-          return;
-        }
         // onAuthStateChanged handles the rest
       } catch (err) {
-        showAuthError(friendlyError(err.code));
+        if (canUseBackendEmailAuth() && shouldTryBackendAuth(err.code)) {
+          const result = await window.TekagonAPI.signinWithEmail({ email, password });
+          if (result.success && result.user) {
+            setBackendAuthSession(result.user);
+            return;
+          }
+          showAuthError(result.error || friendlyError(err.code));
+        } else {
+          showAuthError(friendlyError(err.code));
+        }
         setLoading('btn-signin', false);
       }
     });
@@ -365,7 +380,7 @@
       try {
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         await cred.user.updateProfile({ displayName: name });
-        await cred.user.sendEmailVerification();
+        cred.user.sendEmailVerification().catch(() => {});
         if (window.TekagonAPI) {
           await window.TekagonAPI.registerUser({
             userId: 'FB_' + cred.user.uid,
@@ -378,17 +393,18 @@
         // Save extra info for use once verified
         localStorage.setItem('pendingUserName', name);
         localStorage.setItem('pendingUserPhone', phone || '');
-        await auth.signOut();
-        showAuthInfo(`
-          <strong>Account created!</strong><br>
-          A verification email has been sent to <em>${email}</em>.<br>
-          Please verify then sign in.
-        `);
-        // Switch to sign-in tab
-        document.querySelector('[data-tab="signin"]').click();
-        setLoading('btn-signup', false);
+        // onAuthStateChanged handles the signed-in session.
       } catch (err) {
-        showAuthError(friendlyError(err.code));
+        if (canUseBackendEmailAuth() && shouldTryBackendAuth(err.code)) {
+          const result = await window.TekagonAPI.signupWithEmail({ name, email, password, phone, company: '' });
+          if (result.success && result.user) {
+            setBackendAuthSession(result.user);
+            return;
+          }
+          showAuthError(result.error || friendlyError(err.code));
+        } else {
+          showAuthError(friendlyError(err.code));
+        }
         setLoading('btn-signup', false);
       }
     });
@@ -453,12 +469,15 @@
     document.getElementById('logout-no').addEventListener('click', () => popup.remove());
     document.getElementById('logout-yes').addEventListener('click', async () => {
       popup.remove();
-      await firebase.auth().signOut();
       // Clear session data
       ['chatUserId', 'userName', 'userPhone', 'userEmail', 'userCompany',
        'current_ticket_id', 'pendingUserName', 'pendingUserPhone'].forEach(k =>
         localStorage.removeItem(k)
       );
+      await firebase.auth().signOut();
+      const btn = document.getElementById('tekagon-logout-btn');
+      if (btn) btn.remove();
+      showAuthOverlay();
     });
   }
 
@@ -473,8 +492,28 @@
       'auth/too-many-requests':    'Too many attempts. Please try again later.',
       'auth/network-request-failed': 'Network error. Check your connection.',
       'auth/invalid-credential':   'Incorrect email or password.',
+      'auth/operation-not-allowed': 'Email/password sign-in is not enabled in Firebase. Using the Tekagon account system instead.',
+      'auth/configuration-not-found': 'Firebase email/password sign-in is not configured.',
+      'auth/internal-error':        'Authentication service is temporarily unavailable.',
     };
     return map[code] || 'Something went wrong. Please try again.';
+  }
+
+  function setBackendAuthSession(user) {
+    removeAuthOverlay();
+    const name = user.name || (user.email ? user.email.split('@')[0] : 'User');
+    localStorage.setItem('chatUserId', user.userId);
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userPhone', user.phone || '');
+    localStorage.setItem('userEmail', user.email || '');
+    localStorage.setItem('userCompany', user.company || '');
+    localStorage.removeItem('pendingUserName');
+    localStorage.removeItem('pendingUserPhone');
+    injectLogoutButton();
+
+    if (typeof window.buildPage === 'function') {
+      window.buildPage(window._currentPage || 'home');
+    }
   }
 
   // ── Session handler — runs on every page load ──────────────────────────────
@@ -514,6 +553,16 @@
   }
 
   function onUserSignedOut() {
+    const existingUserId = localStorage.getItem('chatUserId');
+    if (existingUserId && existingUserId.startsWith('EMAIL_')) {
+      removeAuthOverlay();
+      injectLogoutButton();
+      if (typeof window.buildPage === 'function') {
+        window.buildPage(window._currentPage || 'home');
+      }
+      return;
+    }
+
     // Remove logout button
     const btn = document.getElementById('tekagon-logout-btn');
     if (btn) btn.remove();
@@ -536,16 +585,6 @@
 
     auth.onAuthStateChanged(user => {
       if (user) {
-        // Email/password users must have verified their email
-        if (!user.emailVerified && user.providerData[0]?.providerId === 'password') {
-          auth.signOut();
-          showAuthOverlay();
-          // Show a friendly message after the overlay renders
-          setTimeout(() => showAuthInfo(
-            'Please verify your email before signing in. Check your inbox.'
-          ), 100);
-          return;
-        }
         onUserSignedIn(user);
       } else {
         onUserSignedOut();

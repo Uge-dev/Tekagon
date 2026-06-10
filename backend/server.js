@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
+const crypto = require('crypto');
 const connectDB = require('./db');
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
@@ -14,6 +15,22 @@ const PORT = process.env.PORT || 3000;
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_TEMPLATE_ID = process.env.SENDGRID_TEMPLATE_ID;
 const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
+const TEAM_BOOKING_EMAIL = process.env.TEAM_BOOKING_EMAIL || process.env.TEKAGON_BOOKING_EMAIL || 'tekagon.digital@gmail.com';
+
+function getEmailName(email) {
+  return (email || '').split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'User';
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.pbkdf2Sync(password, salt, 120000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+function verifyPassword(password, user) {
+  if (!user?.passwordHash || !user?.passwordSalt) return false;
+  const { hash } = hashPassword(password, user.passwordSalt);
+  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+}
 
 if (!SENDGRID_API_KEY) {
   console.warn('WARNING: No SendGrid API key found. Email routes will fail until SENDGRID_API_KEY is configured.');
@@ -68,6 +85,69 @@ app.post('/api/users/register', async (req, res) => {
     );
 
     res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { name, email, password, phone = '', company = '' } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, error: 'Name, email, and password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail }).select('+passwordHash +passwordSalt');
+    if (existing?.passwordHash) {
+      return res.status(409).json({ success: false, error: 'An account with this email already exists' });
+    }
+
+    const { salt, hash } = hashPassword(password);
+    const userId = existing?.userId || `EMAIL_${crypto.createHash('sha256').update(normalizedEmail).digest('hex').slice(0, 24)}`;
+    const user = await User.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          name,
+          phone,
+          email: normalizedEmail,
+          company,
+          authProvider: existing?.authProvider || 'email',
+          passwordHash: hash,
+          passwordSalt: salt,
+          lastActive: new Date()
+        },
+        $setOnInsert: { registeredAt: new Date() }
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    res.json({ success: true, user: { userId: user.userId, name: user.name, phone: user.phone, email: user.email, company: user.company } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash +passwordSalt');
+    if (!user || !verifyPassword(password, user)) {
+      return res.status(401).json({ success: false, error: 'Incorrect email or password' });
+    }
+
+    user.lastActive = new Date();
+    await user.save();
+    res.json({ success: true, user: { userId: user.userId, name: user.name || getEmailName(user.email), phone: user.phone, email: user.email, company: user.company } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -208,30 +288,60 @@ app.post('/api/send-email', async (req, res) => {
       ...templateData
     };
     try {
-      const [sendResult] = await sgMail.send({
-        to: toEmail, from: SENDER_EMAIL,
+      const recipients = [
+        { email: toEmail, name: toName || emailData.name, role: 'client' },
+        { email: TEAM_BOOKING_EMAIL, name: 'Tekagon Team', role: 'team' }
+      ].filter((recipient, index, list) =>
+        recipient.email && list.findIndex(item => item.email.toLowerCase() === recipient.email.toLowerCase()) === index
+      );
+
+      const results = await Promise.all(recipients.map(recipient => sgMail.send({
+        to: recipient.email, from: SENDER_EMAIL,
         templateId: SENDGRID_TEMPLATE_ID,
-        dynamicTemplateData: emailData
-      });
+        dynamicTemplateData: {
+          ...emailData,
+          recipient_role: recipient.role,
+          team_booking_email: TEAM_BOOKING_EMAIL
+        }
+      })));
       res.json({
         success: true,
         message: 'Booking confirmation sent!',
         type: 'template',
-        messageId: sendResult?.headers?.['x-message-id'] || null,
-        recipient: toEmail
+        messageId: results[0]?.[0]?.headers?.['x-message-id'] || null,
+        recipient: toEmail,
+        teamRecipient: TEAM_BOOKING_EMAIL,
+        recipients: recipients.map(recipient => recipient.email)
       });
     } catch (templateError) {
-      const [sendResult] = await sgMail.send({
-        to: toEmail, from: SENDER_EMAIL,
+      const text = [
+        `Hello ${emailData.name}, your booking is confirmed.`,
+        `Booking ID: ${emailData.booking_id}`,
+        `Date: ${emailData.date}`,
+        `Time: ${emailData.time}`,
+        `Platform: ${emailData.platform || emailData.meeting_details || 'Not specified'}`,
+        `Meeting link: ${emailData.meeting_link || 'Not provided'}`,
+        `Notes: ${emailData.notes || 'None'}`
+      ].join('\n');
+      const recipients = [
+        { email: toEmail, name: toName || emailData.name },
+        { email: TEAM_BOOKING_EMAIL, name: 'Tekagon Team' }
+      ].filter((recipient, index, list) =>
+        recipient.email && list.findIndex(item => item.email.toLowerCase() === recipient.email.toLowerCase()) === index
+      );
+      const results = await Promise.all(recipients.map(recipient => sgMail.send({
+        to: recipient.email, from: SENDER_EMAIL,
         subject: `Tekagon Booking Confirmation - ${emailData.booking_id}`,
-        text: `Hello ${emailData.name}, your booking is confirmed. ID: ${emailData.booking_id}`
-      });
+        text
+      })));
       res.json({
         success: true,
         message: 'Booking confirmation sent (simple format)',
         type: 'simple',
-        messageId: sendResult?.headers?.['x-message-id'] || null,
-        recipient: toEmail
+        messageId: results[0]?.[0]?.headers?.['x-message-id'] || null,
+        recipient: toEmail,
+        teamRecipient: TEAM_BOOKING_EMAIL,
+        recipients: recipients.map(recipient => recipient.email)
       });
     }
   } catch (error) {

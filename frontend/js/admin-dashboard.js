@@ -75,6 +75,23 @@ constructor() {
     return Array.from(merged.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   }
 
+  getUserDisplayName(userId, fallbackUser = {}) {
+    const userInfo = this.registeredUsers[userId] || fallbackUser || {};
+    const candidate =
+      userInfo.name ||
+      userInfo.fullName ||
+      localStorage.getItem(`${userId}_name`) ||
+      userInfo.email ||
+      localStorage.getItem(`${userId}_email`) ||
+      '';
+
+    if (candidate && candidate !== 'User' && candidate.includes('@')) {
+      return candidate.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    return candidate && candidate !== 'User' ? candidate : 'User';
+  }
+
   setConversationMessages(userId, messages) {
     this.conversations[userId] = this.mergeMessages(this.conversations[userId] || [], messages);
     localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
@@ -95,7 +112,7 @@ constructor() {
     if (!messagesDiv) return;
 
     const userInfo = this.registeredUsers[userId] || {};
-    const userName = userInfo.name || localStorage.getItem(`${userId}_name`) || 'User';
+    const userName = this.getUserDisplayName(userId, userInfo);
     let messages = [];
 
     if (ticketId) {
@@ -378,7 +395,7 @@ initAdminSocket() {
 
       if (userInfo) {
         return {
-          name: userInfo.name || 'User',
+          name: this.getUserDisplayName(userId, userInfo),
           phone: userInfo.phone || 'Not provided',
           email: userInfo.email || 'Not provided',
           company: userInfo.company || 'Not provided',
@@ -653,7 +670,7 @@ initAdminSocket() {
             ${userIds.map(userId => {
       const messages = this.conversations[userId] || [];
       const lastMessage = messages[messages.length - 1];
-      const userName = localStorage.getItem(`${userId}_name`) || 'User';
+      const userName = this.getUserDisplayName(userId);
       const unreadCount = messages.filter(msg => !msg.read && msg.sender === 'user').length;
 
       return `
@@ -736,7 +753,7 @@ initAdminSocket() {
               ${userIds.map(userId => {
       const messages = this.conversations[userId] || [];
       const lastMessage = messages[messages.length - 1];
-      const userName = localStorage.getItem(`${userId}_name`) || 'User';
+      const userName = this.getUserDisplayName(userId);
       const unreadCount = messages.filter(msg => !msg.read && msg.sender === 'user').length;
 
       return `
@@ -797,7 +814,7 @@ initAdminSocket() {
               <select id="emailRecipients" multiple style="height: 100px;">
                 <option value="all">All Users (${userIds.length})</option>
                 ${userIds.map(userId => {
-      const userName = localStorage.getItem(`${userId}_name`) || 'User';
+      const userName = this.getUserDisplayName(userId);
       return `<option value="${userId}">${userName} (${userId.substring(0, 10)}...)</option>`;
     }).join('')}
               </select>
@@ -969,7 +986,7 @@ initAdminSocket() {
       const messages = this.conversations[userId] || [];
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        const userName = localStorage.getItem(`${userId}_name`) || 'User';
+        const userName = this.getUserDisplayName(userId);
         const unreadCount = messages.filter(msg => !msg.read && msg.sender === 'user').length;
 
         recent.push({
@@ -1032,7 +1049,7 @@ initAdminSocket() {
     // Get user info from registration data
     const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
     const userInfo = users[userId] || {};
-    const userName = userInfo.name || localStorage.getItem(`${userId}_name`) || 'User';
+    const userName = this.getUserDisplayName(userId, userInfo);
 
     // Mark messages as read
     this.markAsRead(userId);
@@ -1145,7 +1162,7 @@ initAdminSocket() {
 
   exportConversation(userId) {
     const messages = this.conversations[userId] || [];
-    const userName = localStorage.getItem(`${userId}_name`) || 'User';
+    const userName = this.getUserDisplayName(userId);
 
     const chatText = messages.map(msg => {
       const time = new Date(msg.timestamp).toLocaleString();
@@ -1460,7 +1477,7 @@ initAdminSocket() {
           const ticketId = ticket.ticketId || ticket.id || 'N/A';
           const userId = ticket.userId || 'N/A';
           const serviceName = ticket.serviceName || 'Unknown Service';
-          const userName = ticket.userName || 'User';
+          const userName = ticket.userName || this.getUserDisplayName(userId);
           const status = ticket.status || 'pending';
           const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
           const packageName = ticket.package || '';

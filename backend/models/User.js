@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   email: { type: String, default: '' },
   company: { type: String, default: '' },
+  authProvider: { type: String, default: 'external' },
+  passwordHash: { type: String, select: false },
+  passwordSalt: { type: String, select: false },
   registeredAt: { type: Date, default: Date.now },
   lastActive: { type: Date, default: Date.now }
 });
