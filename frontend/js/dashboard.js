@@ -4830,11 +4830,14 @@ async function buildPage(pageKey) {
         </p>
       </div>
   </div>
-    <div class="business-content">
+     <div class="business-content">
       <div class="business-image">
-        <img src="../Images/cards/crd (15).gif" alt="Business growth animation" class="bg-video">
+<video autoplay loop muted playsinline class="bg-video">
+  <source src="../Images/animated shape.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
-      </div>
+      </div>  
       <div class="business-text">
         <div class="strategy-grid">
     <div class="strategy-box">
