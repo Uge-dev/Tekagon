@@ -5,7 +5,7 @@
 
 class PollingService {
   constructor(config = {}) {
-    this.apiUrl = config.apiUrl || 'https://tekagon-backend.onrender.com';
+    this.apiUrl = config.apiUrl || window.TEKAGON_PUBLIC_CONFIG?.API_URL || window.TEKAGON_API_URL || '';
     this.pollInterval = config.pollInterval || 3000; // 3 seconds
     this.pollIntervals = new Map();
     this.lastTimestamps = new Map();
@@ -392,7 +392,7 @@ window.PollingService = PollingService;
 // Create global instance
 if (!window.pollingService) {
   window.pollingService = new PollingService({
-    apiUrl: 'https://tekagon-backend.onrender.com',
+    apiUrl: window.TEKAGON_PUBLIC_CONFIG?.API_URL || window.TEKAGON_API_URL || '',
     pollInterval: 3000
   });
 }

@@ -1,18 +1,21 @@
 // firebase-config.js
+const publicConfig = window.TEKAGON_PUBLIC_CONFIG || {};
 const firebaseConfig = {
-    apiKey: "AIzaSyAz5tLFyyTuBJYr0VtLHIrUqhnrJIf8tvs",
-    authDomain: "tekagon-scheduling.firebaseapp.com",
-    projectId: "tekagon-scheduling",
-    storageBucket: "tekagon-scheduling.firebasestorage.app",
-    messagingSenderId: "743488562874",
-    appId: "1:743488562874:web:71ce7f7cdf0a7214c7c483",
-    measurementId: "G-M9H2XESGL8"
+    apiKey: publicConfig.FIREBASE_API_KEY || '',
+    authDomain: publicConfig.FIREBASE_AUTH_DOMAIN || '',
+    projectId: publicConfig.FIREBASE_PROJECT_ID || '',
+    storageBucket: publicConfig.FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: publicConfig.FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: publicConfig.FIREBASE_APP_ID || '',
+    measurementId: publicConfig.FIREBASE_MEASUREMENT_ID || ''
 };
 
 // Initialise only once
-if (!firebase.apps.length) {
+if (firebaseConfig.apiKey && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     console.log('Firebase initialised');
+} else if (!firebaseConfig.apiKey) {
+    console.warn('Firebase public config is missing. Set the VITE_FIREBASE_* variables before building.');
 }
 
 // You are using MongoDB, not Firestore — db is not needed

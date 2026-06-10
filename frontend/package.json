@@ -1,0 +1,11 @@
+{
+  "name": "tekagon-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node ../scripts/build-production.js --source . --out dist"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

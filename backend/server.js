@@ -2,10 +2,31 @@ const express = require('express');
 const cors = require('cors');
 const sgMail = require('@sendgrid/mail');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const connectDB = require('./db');
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Message = require('./models/Message');
+
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  fs.readFileSync(filePath, 'utf8').split(/\r?\n/).forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) return;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (!(key in process.env)) process.env[key] = value;
+  });
+}
+
+loadEnvFile(path.join(__dirname, '.env'));
+loadEnvFile(path.join(__dirname, '..', '.env'));
 
 connectDB();
 
@@ -16,6 +37,8 @@ const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_TEMPLATE_ID = process.env.SENDGRID_TEMPLATE_ID;
 const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
 const TEAM_BOOKING_EMAIL = process.env.TEAM_BOOKING_EMAIL || process.env.TEKAGON_BOOKING_EMAIL || 'tekagon.digital@gmail.com';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 function getEmailName(email) {
   return (email || '').split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'User';
@@ -30,6 +53,12 @@ function verifyPassword(password, user) {
   if (!user?.passwordHash || !user?.passwordSalt) return false;
   const { hash } = hashPassword(password, user.passwordSalt);
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+}
+
+function safeCompare(left, right) {
+  const leftBuffer = Buffer.from(left || '');
+  const rightBuffer = Buffer.from(right || '');
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 if (!SENDGRID_API_KEY) {
@@ -148,6 +177,27 @@ app.post('/api/auth/signin', async (req, res) => {
     user.lastActive = new Date();
     await user.save();
     res.json({ success: true, user: { userId: user.userId, name: user.name || getEmailName(user.email), phone: user.phone, email: user.email, company: user.company } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+      return res.status(500).json({ success: false, error: 'Admin credentials are not configured' });
+    }
+
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password are required' });
+    }
+
+    if (!safeCompare(username, ADMIN_USERNAME) || !safeCompare(password, ADMIN_PASSWORD)) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

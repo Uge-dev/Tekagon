@@ -2,8 +2,8 @@
 class SendGridClient {
     constructor() {
         this.config = {
-            // Backend server URL - update if deployed
-            serverUrl: 'https://tekagon-backend.onrender.com',
+            // Public backend server URL generated at build time
+            serverUrl: window.TEKAGON_PUBLIC_CONFIG?.API_URL || window.TEKAGON_API_URL || '',
 
             // SendGrid template ID (for reference)
             templateId: 'd-c0191304da1d467694d801a0d1493180',

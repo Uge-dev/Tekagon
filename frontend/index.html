@@ -22,20 +22,25 @@
   </style>
 
 <!-- Add at the end of <body> or in <head> -->
+  <script src="/js/runtime-config.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, getDocs, where, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
     
+    const publicConfig = window.TEKAGON_PUBLIC_CONFIG || {};
     const firebaseConfig = {
-    apiKey: "AIzaSyD3ugO7i1OuGZ_6PBmL8IVugW02BFxnsvw",
-    authDomain: "tekagon-chat.firebaseapp.com",
-    projectId: "tekagon-chat",
-    storageBucket: "tekagon-chat.firebasestorage.app",
-    messagingSenderId: "945686485922",
-    appId: "1:945686485922:web:a697a859102afe4fac70fb",
-    measurementId: "G-6Z15H1PGGD"
+    apiKey: publicConfig.INDEX_FIREBASE_API_KEY || publicConfig.FIREBASE_API_KEY || "",
+    authDomain: publicConfig.INDEX_FIREBASE_AUTH_DOMAIN || publicConfig.FIREBASE_AUTH_DOMAIN || "",
+    projectId: publicConfig.INDEX_FIREBASE_PROJECT_ID || publicConfig.FIREBASE_PROJECT_ID || "",
+    storageBucket: publicConfig.INDEX_FIREBASE_STORAGE_BUCKET || publicConfig.FIREBASE_STORAGE_BUCKET || "",
+    messagingSenderId: publicConfig.INDEX_FIREBASE_MESSAGING_SENDER_ID || publicConfig.FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: publicConfig.INDEX_FIREBASE_APP_ID || publicConfig.FIREBASE_APP_ID || "",
+    measurementId: publicConfig.INDEX_FIREBASE_MEASUREMENT_ID || publicConfig.FIREBASE_MEASUREMENT_ID || ""
   };
     
+    if (!firebaseConfig.apiKey) {
+      console.warn('Landing page Firebase config is missing. Set VITE_INDEX_FIREBASE_* or VITE_FIREBASE_* before building.');
+    } else {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     
@@ -53,6 +58,7 @@
     window.where = where;
     window.setDoc = setDoc;
     window.getDoc = getDoc;
+    }
   </script>
 
 </head>

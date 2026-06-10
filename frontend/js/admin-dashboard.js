@@ -273,24 +273,28 @@ initAdminSocket() {
           </form>
           
           <div class="login-footer">
-            <p>Default: admin / admin123</p>
-            <small>Change these credentials in production</small>
+            <p>Use the admin credentials configured on the backend.</p>
           </div>
         </div>
       </div>
     `;
 
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      if ((username === 'admin' && password === 'admin123') ||
-        (username === 'admin' && password === 'admin')) {
+      if (!window.TekagonAPI || typeof window.TekagonAPI.adminLogin !== 'function') {
+        alert('Admin login service is unavailable');
+        return;
+      }
+
+      const result = await window.TekagonAPI.adminLogin({ username, password });
+      if (result.success) {
         localStorage.setItem('adminLoggedIn', 'true');
         location.reload();
       } else {
-        alert('Invalid credentials');
+        alert(result.error || 'Invalid credentials');
       }
     });
 

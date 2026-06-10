@@ -16,12 +16,17 @@ node_modules/
 .env.*.local
 backend/.env
 frontend/.env
+!.env.example
+!backend/.env.example
+!frontend/.env.example
 
 # --------------------------
 # BUILD OUTPUTS
 # --------------------------
 /build
 /dist
+frontend/dist/
+backend/dist/
 /.next/
 /out/
 
@@ -71,4 +76,4 @@ backend/temp/
 *.key
 *.crt
 *.backup
-*.bakfrontend/Images/
+*.bak

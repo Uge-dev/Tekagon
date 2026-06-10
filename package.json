@@ -1,0 +1,13 @@
+{
+  "name": "tekagon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tekagon frontend production build",
+  "scripts": {
+    "build": "node scripts/build-production.js",
+    "build:frontend": "node scripts/build-production.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

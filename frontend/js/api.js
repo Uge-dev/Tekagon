@@ -1,4 +1,4 @@
-const API_URL = 'https://tekagon-backend.onrender.com';
+const API_URL = window.TEKAGON_PUBLIC_CONFIG?.API_URL || window.TEKAGON_API_URL || '';
 
 // ── USERS ─────────────────────────────────────────────────────────────────────
 async function registerUser(userData) {
@@ -39,6 +39,20 @@ async function signinWithEmail(credentials) {
     return await res.json();
   } catch (err) {
     console.error('signinWithEmail error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function adminLogin(credentials) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('adminLogin error:', err);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -226,6 +240,7 @@ window.TekagonAPI = {
   registerUser,
   signupWithEmail,
   signinWithEmail,
+  adminLogin,
   getAllUsers,
   createTicket,
   getUserTickets,
