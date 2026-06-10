@@ -46,6 +46,17 @@ function removeDir(dir) {
 }
 
 function copyRecursive(src, dest) {
+  const basename = path.basename(src);
+  if ([
+    '.env',
+    '.env.example',
+    'package.json',
+    'package-lock.json',
+    'vercel.json'
+  ].includes(basename)) {
+    return;
+  }
+
   const stat = fs.statSync(src);
   if (stat.isDirectory()) {
     ensureDir(dest);
@@ -143,6 +154,47 @@ function writeRuntimeConfig() {
   fs.writeFileSync(target, contents);
 }
 
+function writeStaticEntrypoint() {
+  const server = `
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const root = __dirname;
+const port = process.env.PORT || 3000;
+const types = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.mp4': 'video/mp4',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2'
+};
+function safeFile(url) {
+  const clean = decodeURIComponent((url || '/').split('?')[0]);
+  const target = path.normalize(path.join(root, clean === '/' ? '/index.html' : clean));
+  if (!target.startsWith(root)) return path.join(root, 'index.html');
+  if (fs.existsSync(target) && fs.statSync(target).isFile()) return target;
+  return path.join(root, 'index.html');
+}
+http.createServer((req, res) => {
+  const file = safeFile(req.url);
+  res.setHeader('Content-Type', types[path.extname(file).toLowerCase()] || 'application/octet-stream');
+  fs.createReadStream(file).pipe(res);
+}).listen(port);
+`.trim();
+
+  fs.writeFileSync(path.join(outDir, 'index.js'), obfuscateJs(minifyJs(server)));
+}
+
 function injectRuntimeConfig(html) {
   if (html.includes('runtime-config.js')) return html;
 
@@ -177,5 +229,6 @@ removeDir(outDir);
 copyRecursive(sourceDir, outDir);
 writeRuntimeConfig();
 walkFiles(outDir).forEach(processFile);
+writeStaticEntrypoint();
 
 console.log(`Production build created at ${path.relative(rootDir, outDir)}`);
