@@ -1256,7 +1256,8 @@ footer {
 
 .logo-footer img {
   max-width: 160px; /* Default desktop logo size */
-  height: 90px;
+  height: 100px;
+  min-height: 35px;
   height: auto;
   display: block;
 }
