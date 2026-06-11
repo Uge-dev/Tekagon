@@ -751,6 +751,8 @@ END:VCALENDAR`;
     }
 }
 
+window.TekagonScheduler = TekagonScheduler;
+
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TekagonScheduler;

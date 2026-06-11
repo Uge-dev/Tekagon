@@ -25,8 +25,8 @@ body {
 /* Main Container - Fixed to match dashboard width */
 .scheduling-container {
     max-width: 1200px;
-    width: calc(100% - 40px);
-    margin: 20px auto;
+    width: 100%;
+    margin: 0 auto 32px;
     background: var(--panel);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -114,11 +114,8 @@ body {
 
 /* Scheduling Wrapper - Fixed layout */
 .scheduling-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 32px;
-
+    width: 100%;
+    min-width: 0;
 }
 
 /* Sidebar - Dark theme */
@@ -206,9 +203,14 @@ body {
 
 /* Main Content */
 .main-content {
-
     padding: 40px;
+}
 
+#schedulingComponent .main-content {
+    width: 100%;
+    min-width: 0;
+    padding: 32px;
+    box-sizing: border-box;
 }
 
 /* Steps */
@@ -328,7 +330,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius);
     padding: 25px;
-    min-width: 400px;
+    min-width: 0;
     height: auto;
     /* Let it grow naturally */
     display: flex;
@@ -431,7 +433,7 @@ body {
 
 /* FIXED: Side Time Slots Container - Proper height matching */
 .side-time-slots {
-    width: 350px;
+    width: min(350px, 100%);
     /* Increased width */
     background: linear-gradient(135deg, rgba(124, 92, 255, 0.05), rgba(18, 27, 45, 0.3));
     border-radius: var(--radius);
@@ -1206,6 +1208,11 @@ body {
     .scheduling-wrapper,
     .main-content {
         padding: 20px;
+    }
+
+    #schedulingComponent .scheduling-wrapper,
+    #schedulingComponent .main-content {
+        padding: 16px;
     }
 
     .main-header {

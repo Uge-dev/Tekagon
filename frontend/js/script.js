@@ -36,28 +36,23 @@ window.addEventListener("scroll", function () {
 
 
 
-//page preloader
-// Wait for the page to fully load
-window.addEventListener("load", function () {
-  // Add a minimal delay to keep the preloader visible briefly
-  setTimeout(() => {
-    // Hide the preloader
-    const preloader = document.getElementById("preloader");
-    preloader.style.opacity = "0";
-    preloader.style.transition = "opacity 0.5s ease";
+// Keep the preloader independent from slow remote fonts, videos, and APIs.
+function dismissPreloader() {
+  const preloader = document.getElementById('preloader');
+  if (!preloader || preloader.classList.contains('is-hidden')) return;
 
-    // After the transition, completely hide the preloader
-    setTimeout(() => {
-      preloader.style.display = "none";
+  preloader.classList.add('is-hidden');
+  setTimeout(() => preloader.remove(), 220);
+}
 
-      // Show the main content immediately
-      const content = document.querySelector(".content");
-      content.style.display = "block";
-      content.style.opacity = "1";
-      content.style.transition = "opacity 0.5s ease";
-    }, 500); // Match this delay to the opacity transition duration
-  }, 500); // Preloader stays visible for only 0.5 seconds (reduced from 2 seconds)
-});
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(dismissPreloader, 180), { once: true });
+} else {
+  setTimeout(dismissPreloader, 180);
+}
+
+// Hard fallback: the overlay must never trap the visitor.
+setTimeout(dismissPreloader, 900);
 
 
 

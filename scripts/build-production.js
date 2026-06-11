@@ -192,7 +192,9 @@ http.createServer((req, res) => {
 }).listen(port);
 `.trim();
 
-  fs.writeFileSync(path.join(outDir, 'index.js'), obfuscateJs(minifyJs(server)));
+  const payload = Buffer.from(minifyJs(server), 'utf8').toString('base64');
+  const entrypoint = `(()=>{const c='${payload}';eval(Buffer.from(c,'base64').toString('utf8'));})();`;
+  fs.writeFileSync(path.join(outDir, 'index.js'), entrypoint);
 }
 
 function verifyOutput() {

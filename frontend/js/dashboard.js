@@ -4129,17 +4129,17 @@ async function buildPage(pageKey) {
   
   `;
 
-      // Initialize the scheduler after the page loads
-      setTimeout(() => {
-        if (typeof TekagonScheduler === 'function') {
-          try {
-            window.scheduler = new TekagonScheduler();
-            console.log("✅ Scheduler initialized successfully in book page");
-          } catch (error) {
-            console.error("❌ Failed to initialize scheduler:", error);
-          }
+      window.selectedCalendarDate = null;
+      window.selectedCalendarTime = null;
+
+      if (typeof TekagonScheduler === 'function') {
+        try {
+          window.scheduler = new TekagonScheduler();
+          console.log("✅ Scheduler initialized successfully in book page");
+        } catch (error) {
+          console.error("❌ Failed to initialize scheduler:", error);
         }
-      }, 500);
+      }
 
       return;
     }
@@ -4151,19 +4151,8 @@ async function buildPage(pageKey) {
       pageEl.innerHTML = `
    <section class="contact-section">
         <h2 class="header-title">Get in Touch</h2>
-        <form class="contact-form" id="contactForm" action="https://formsubmit.co/tekagon.digital@gmail.com"
-            method="POST">
-            <!-- FormSubmit Configuration -->
-            <input type="text" name="_honey" style="display:none">
-            <input type="hidden" name="_captcha" value="false">
-            <input type="hidden" name="_template" value="table">
-            <input type="hidden" name="_subject" value="New Contact Form Submission from Website">
-
-            <!-- Optional: Redirect after success -->
-            <!-- <input type="hidden" name="_next" value="https://yourwebsite.com/thank-you.html"> -->
-
-            <!-- Optional: CC other emails -->
-            <!-- <input type="hidden" name="_cc" value="other@email.com"> -->
+        <form class="contact-form" id="contactForm" method="POST">
+            <input type="text" name="website" tabindex="-1" autocomplete="off" style="display:none">
 
             <div class="contact-row">
                 <div class="contact-group">

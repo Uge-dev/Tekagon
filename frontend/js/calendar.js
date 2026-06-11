@@ -181,7 +181,7 @@ class CalendarManager {
     showTimeSlots() {
         const timeContainer = document.getElementById('sideTimeSlots');
         if (timeContainer) {
-            timeContainer.style.display = 'block';
+            timeContainer.style.display = 'flex';
             this.generateTimeSlots();
 
             // Reset time selection
@@ -333,6 +333,8 @@ class CalendarManager {
         console.log("🔄 Calendar reset");
     }
 }
+
+window.CalendarManager = CalendarManager;
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {

@@ -157,6 +157,25 @@ async function markMessagesRead(userId) {
   }
 }
 
+// ── CONTACT ───────────────────────────────────────────────────────────────────
+async function sendContactMessage(contactData) {
+  try {
+    const res = await fetch(`${API_URL}/api/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contactData)
+    });
+    const result = await res.json().catch(() => ({}));
+    return {
+      success: res.ok && result.success,
+      error: result.error || (!res.ok ? 'Failed to send message. Please try again.' : '')
+    };
+  } catch (err) {
+    console.error('sendContactMessage error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 // ── POLLING ───────────────────────────────────────────────────────────────────
 // Tracks seen message IDs per context key so local optimistic messages
 // and MongoDB messages do not fight each other during polling.
@@ -250,6 +269,7 @@ window.TekagonAPI = {
   getUserMessages,
   getTicketMessages,
   markMessagesRead,
+  sendContactMessage,
   startPolling,
   stopPolling
 };

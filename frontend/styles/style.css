@@ -730,61 +730,42 @@ transition: background 3ms;
 /* Preloader Container */
 .preloader {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #000000;
     z-index: 10001;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 180ms ease, visibility 180ms ease;
 }
 
-/* Icon Styling */
-.icon-shp {
-    position: relative;
-    width: 120px;
-    height: 120px;
+.preloader.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
-/* Outer Circle */
-.outer-circle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 12px solid transparent;
-    border-radius: 50%;
-    border-top: 12px solid #00c9ff;
-    border-right: 12px solid #EE46D3;
-    border-left: 12px solid #9256f4;
-    border-bottom: 12px solid #18A0FB;
-    animation: spin 5s linear infinite;
-    background: radial-gradient(circle, rgba(0, 201, 255, 0.3), rgba(146, 86, 244, 0.3));
+.preloader-logo {
+    width: clamp(72px, 9vw, 112px);
+    height: auto;
+    object-fit: contain;
+    animation: preloaderLogo 700ms cubic-bezier(.2, .8, .2, 1) infinite alternate;
+    filter: drop-shadow(0 0 18px rgba(147, 255, 246, 0.22));
 }
 
-/* Inner Circle */
-.inner-circle {
-    position: absolute;
-    top: 25%;
-    left: 25%;
-    width: 50%;
-    height: 50%;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #00c9ff, #9256f4);
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Animations */
-@keyframes spin {
+@keyframes preloaderLogo {
     from {
-        transform: rotate(0deg);
+        opacity: 0.72;
+        transform: translateY(4px) scale(0.94);
+        filter: drop-shadow(0 0 8px rgba(111, 101, 255, 0.18));
     }
 
     to {
-        transform: rotate(360deg);
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: drop-shadow(0 0 24px rgba(147, 255, 246, 0.38));
     }
 }
 

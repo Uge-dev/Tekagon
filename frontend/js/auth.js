@@ -206,6 +206,38 @@
         color: #6ee7b7; border-radius: 8px; padding: 12px 16px;
         font-size: .9rem; margin-bottom: 16px;
       }
+
+      #tekagon-policy-consent {
+        position: fixed; inset: 0; z-index: 100001;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; background: rgba(0,0,0,.78);
+        backdrop-filter: blur(7px); animation: authFadeIn .2s ease;
+      }
+      .policy-consent-card {
+        width: 100%; max-width: 520px; padding: 30px;
+        background: #1e293b; color: #e2e8f0;
+        border: 1px solid rgba(147,255,246,.18);
+        border-radius: 14px; box-shadow: 0 22px 60px rgba(0,0,0,.55);
+        animation: authSlideUp .25s cubic-bezier(.2,.9,.3,1);
+      }
+      .policy-consent-icon {
+        width: 48px; height: 48px; display: flex;
+        align-items: center; justify-content: center;
+        border-radius: 10px; margin-bottom: 18px;
+        color: #93fff6; background: rgba(111,101,255,.16);
+        border: 1px solid rgba(111,101,255,.28); font-size: 1.2rem;
+      }
+      .policy-consent-card h3 { margin: 0 0 10px; font-size: 1.3rem; }
+      .policy-consent-card p {
+        margin: 0 0 24px; color: #aebbd0; line-height: 1.65;
+      }
+      .btn-policy-accept {
+        width: 100%; padding: 13px; border: 0; border-radius: 9px;
+        background: linear-gradient(135deg, #6f65ff, #93fff6);
+        color: #0f172a; font-weight: 700; font-size: 1rem;
+        cursor: pointer; transition: opacity .2s, transform .2s;
+      }
+      .btn-policy-accept:hover { opacity: .92; transform: translateY(-1px); }
     `;
     document.head.appendChild(style);
   }
@@ -286,6 +318,37 @@
     const el = document.getElementById('tekagon-auth-overlay');
     if (el) el.remove();
   }
+
+  function showPolicyConsent(userId) {
+    if (!userId || document.getElementById('tekagon-policy-consent')) return;
+    const storageKey = `tekagon_policy_acceptance_v1:${userId}`;
+    if (localStorage.getItem(storageKey)) return;
+
+    const popup = document.createElement('div');
+    popup.id = 'tekagon-policy-consent';
+    popup.setAttribute('role', 'dialog');
+    popup.setAttribute('aria-modal', 'true');
+    popup.setAttribute('aria-labelledby', 'policy-consent-title');
+    popup.innerHTML = `
+      <div class="policy-consent-card">
+        <div class="policy-consent-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3 id="policy-consent-title">Terms and Privacy</h3>
+        <p>By using this website, you agree to our Terms &amp; Conditions and Privacy Policy.</p>
+        <button type="button" class="btn-policy-accept" id="policy-consent-accept">Accept</button>
+      </div>
+    `;
+    document.body.appendChild(popup);
+
+    document.getElementById('policy-consent-accept').addEventListener('click', () => {
+      localStorage.setItem(storageKey, JSON.stringify({
+        acceptedAt: new Date().toISOString(),
+        version: 1
+      }));
+      popup.remove();
+    });
+  }
+
+  window.showTekagonPolicyConsent = showPolicyConsent;
 
   function showAuthError(msg) {
     const el = document.getElementById('auth-error');
@@ -514,6 +577,7 @@
     if (typeof window.buildPage === 'function') {
       window.buildPage(window._currentPage || 'home');
     }
+    setTimeout(() => showPolicyConsent(user.userId), 0);
   }
 
   // ── Session handler — runs on every page load ──────────────────────────────
@@ -550,6 +614,7 @@
     if (typeof window.buildPage === 'function') {
       window.buildPage(window._currentPage || 'home');
     }
+    setTimeout(() => showPolicyConsent(userId), 0);
   }
 
   function onUserSignedOut() {
@@ -560,6 +625,7 @@
       if (typeof window.buildPage === 'function') {
         window.buildPage(window._currentPage || 'home');
       }
+      setTimeout(() => showPolicyConsent(existingUserId), 0);
       return;
     }
 

@@ -37,6 +37,10 @@ const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_TEMPLATE_ID = process.env.SENDGRID_TEMPLATE_ID;
 const SENDER_EMAIL = process.env.SENDGRID_SENDER_EMAIL;
 const TEAM_BOOKING_EMAIL = process.env.TEAM_BOOKING_EMAIL || process.env.TEKAGON_BOOKING_EMAIL || 'tekagon.digital@gmail.com';
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const CONTACT_RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || 'tekagon.digital@gmail.com';
+const CONTACT_SENDER_EMAIL = process.env.CONTACT_SENDER_EMAIL;
+const CONTACT_SENDER_NAME = process.env.CONTACT_SENDER_NAME || 'Tekagon Website';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
@@ -317,6 +321,73 @@ app.patch('/api/messages/read/:userId', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── CONTACT ROUTE ─────────────────────────────────────────────────────────────
+app.post('/api/contact', async (req, res) => {
+  try {
+    if (!BREVO_API_KEY || !CONTACT_SENDER_EMAIL || !CONTACT_RECIPIENT_EMAIL) {
+      return res.status(503).json({ success: false, error: 'Contact email service is not configured' });
+    }
+
+    const clean = value => String(value || '').trim();
+    const name = clean(req.body.name);
+    const company = clean(req.body.company);
+    const phone = clean(req.body.phone);
+    const email = clean(req.body.email).toLowerCase();
+    const subject = clean(req.body.subject);
+    const message = clean(req.body.message);
+    const honeypot = clean(req.body.website);
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (honeypot) return res.json({ success: true });
+    if (!name || !phone || !emailPattern.test(email) || !subject || !message) {
+      return res.status(400).json({ success: false, error: 'Please complete all required fields correctly' });
+    }
+    if (name.length > 120 || company.length > 160 || phone.length > 40 || subject.length > 180 || message.length > 5000) {
+      return res.status(400).json({ success: false, error: 'One or more fields are too long' });
+    }
+
+    const textContent = [
+      'New Tekagon contact form message',
+      '',
+      `Name: ${name}`,
+      `Company: ${company || 'Not provided'}`,
+      `Phone: ${phone}`,
+      `Email: ${email}`,
+      `Subject: ${subject}`,
+      '',
+      message
+    ].join('\n');
+
+    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: CONTACT_SENDER_EMAIL, name: CONTACT_SENDER_NAME },
+        to: [{ email: CONTACT_RECIPIENT_EMAIL, name: 'Tekagon Team' }],
+        replyTo: { email, name },
+        subject: `Website contact: ${subject}`,
+        textContent
+      })
+    });
+
+    if (!brevoResponse.ok) {
+      const providerError = await brevoResponse.text();
+      console.error('Brevo contact email failed:', brevoResponse.status, providerError);
+      return res.status(502).json({ success: false, error: 'Email service could not send your message. Please try again.' });
+    }
+
+    const providerResult = await brevoResponse.json().catch(() => ({}));
+    res.json({ success: true, messageId: providerResult.messageId || null });
+  } catch (error) {
+    console.error('Contact route failed:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message. Please try again.' });
   }
 });
 

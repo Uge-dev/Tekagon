@@ -9,6 +9,8 @@ function initializeContactForm() {
             console.error('Contact form not found!');
             return;
         }
+        if (contactForm.dataset.contactInitialized === 'true') return;
+        contactForm.dataset.contactInitialized = 'true';
         console.log('Contact form found!');
 
         // Get all elements
@@ -183,21 +185,24 @@ function initializeContactForm() {
             if (sendingOverlay) sendingOverlay.classList.add('active');
 
             try {
-                const formData = new FormData(this);
+                if (!window.TekagonAPI || typeof window.TekagonAPI.sendContactMessage !== 'function') {
+                    throw new Error('Contact service is unavailable. Please try again shortly.');
+                }
 
-                // Send to FormSubmit
-                const response = await fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                const result = await window.TekagonAPI.sendContactMessage({
+                    name: inputs.name.value.trim(),
+                    company: document.getElementById('companyName')?.value.trim() || '',
+                    phone: inputs.phone.value.trim(),
+                    email: inputs.email.value.trim(),
+                    subject: inputs.subject.value.trim(),
+                    message: inputs.message.value.trim(),
+                    website: this.elements.website?.value || ''
                 });
 
                 // Hide loading
                 if (sendingOverlay) sendingOverlay.classList.remove('active');
 
-                if (response.ok) {
+                if (result.success) {
                     // Show success
                     if (successPopup) successPopup.classList.add('active');
 
@@ -213,16 +218,7 @@ function initializeContactForm() {
                     });
                     if (formError) formError.classList.remove('active');
                 } else {
-                    const errorText = await response.text();
-                    let errorMessage = 'Failed to send message. Please try again.';
-
-                    if (response.status === 429) {
-                        errorMessage = 'Too many requests. Please try again later.';
-                    } else if (errorText.includes('unconfirmed')) {
-                        errorMessage = 'Form is not activated. Please check your email for confirmation link.';
-                    }
-
-                    throw new Error(errorMessage);
+                    throw new Error(result.error || 'Failed to send message. Please try again.');
                 }
             } catch (error) {
                 // Show error
@@ -264,4 +260,12 @@ function initializeContactForm() {
         });
 
     }, 50); // Small delay
+}
+
+window.initializeContactForm = initializeContactForm;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeContactForm, { once: true });
+} else {
+    initializeContactForm();
 }
