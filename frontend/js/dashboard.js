@@ -797,6 +797,10 @@ document.addEventListener('DOMContentLoaded', () => {
       items: []
     },
 
+    notifications: {
+      title: 'Notifications'
+    },
+
     portfolio: {
       title: 'Portfolio',
       banners: [{ title: 'Selected Work', meta: 'Portfolio', desc: 'A selection of recent projects.', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1650&q=80' }],
@@ -909,9 +913,155 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
       }
       pageData.events.event = result.content.event || null;
+      pageData.events.updatedAt = result.content.updatedAt || null;
+      syncEventNotification();
+      updateDashboardCounters();
     } catch (error) {
       console.warn('Managed dashboard content could not be loaded', error);
     }
+  }
+
+  function notificationStorageKey() {
+    return `tekagon_notifications_${localStorage.getItem('chatUserId') || 'guest'}`;
+  }
+
+  function getNotifications() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(notificationStorageKey()) || '[]');
+      return Array.isArray(stored) ? stored : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveNotifications(notifications) {
+    localStorage.setItem(notificationStorageKey(), JSON.stringify(notifications.slice(0, 100)));
+    updateDashboardCounters();
+  }
+
+  window.addTekagonNotification = function (notification) {
+    if (!notification || !notification.id || !notification.title) return;
+    const notifications = getNotifications();
+    if (notifications.some(item => item.id === notification.id)) return;
+    notifications.unshift({
+      read: false,
+      createdAt: new Date().toISOString(),
+      targetPage: 'home',
+      ...notification
+    });
+    saveNotifications(notifications);
+  };
+
+  function syncEventNotification() {
+    const event = pageData.events.event;
+    if (!event?.published) return;
+    const version = pageData.events.updatedAt || [
+      event.title,
+      event.date,
+      event.time,
+      event.bannerImageUrl
+    ].join('|');
+    window.addTekagonNotification({
+      id: `event_${version}`,
+      type: 'event',
+      title: event.title || 'New Event',
+      description: String(event.description || 'A new Tekagon event is available.').slice(0, 140),
+      iconUrl: event.bannerImageUrl || '../Images/Tekagon_Icon.png',
+      targetPage: 'events'
+    });
+  }
+
+  function hasUnreadChatMessages() {
+    try {
+      const userId = localStorage.getItem('chatUserId');
+      const conversations = JSON.parse(localStorage.getItem('tekagon_chat_conversations') || '{}');
+      const generalUnread = (conversations[userId] || []).some(message =>
+        message.sender === 'admin' && message.read === false
+      );
+      const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
+      const ticketUnread = Object.values(ticketChats).some(messages =>
+        Array.isArray(messages) && messages.some(message =>
+          message.sender === 'admin' && message.read === false
+        )
+      );
+      return generalUnread || ticketUnread;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function updateDashboardCounters() {
+    const eventCounter = document.getElementById('eventNavCounter');
+    const ticketCounter = document.getElementById('ticketNavCounter');
+    const chatCounter = document.getElementById('chatNavCounter');
+    const notificationCounter = document.getElementById('notificationCount');
+
+    if (eventCounter) eventCounter.textContent = pageData.events.event?.published ? '1' : '0';
+    if (chatCounter) chatCounter.classList.toggle('is-hidden', !hasUnreadChatMessages());
+
+    const unreadNotifications = getNotifications().filter(item => !item.read).length;
+    if (notificationCounter) {
+      notificationCounter.textContent = unreadNotifications ? String(unreadNotifications) : '';
+      notificationCounter.classList.toggle('is-hidden', unreadNotifications === 0);
+    }
+
+    const userId = localStorage.getItem('chatUserId');
+    if (!ticketCounter || !userId || typeof window.getUserTickets !== 'function') return;
+    try {
+      const tickets = await Promise.resolve(window.getUserTickets(userId));
+      ticketCounter.textContent = String(Object.keys(tickets || {}).length);
+    } catch (error) {
+      ticketCounter.textContent = '0';
+    }
+  }
+
+  function firstSentence(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^.*?[.!?](?:\s|$)/);
+    return (match ? match[0] : text).slice(0, 150);
+  }
+
+  function startDashboardMessageNotifications() {
+    const userId = localStorage.getItem('chatUserId');
+    if (!userId || !window.TekagonAPI?.getUserMessages) return;
+    const seenKey = `tekagon_seen_admin_messages_${userId}`;
+    let seen = new Set(JSON.parse(localStorage.getItem(seenKey) || '[]'));
+    let initialized = seen.size > 0;
+
+    const poll = async () => {
+      try {
+        const result = await window.TekagonAPI.getUserMessages(userId);
+        if (!result.success || !Array.isArray(result.messages)) return;
+        if (!initialized) {
+          result.messages.forEach(message => seen.add(message.id || message._id || message.clientId));
+          initialized = true;
+        } else {
+          result.messages.forEach(message => {
+            const id = message.id || message._id || message.clientId || `${message.sender}|${message.timestamp}|${message.content}`;
+            if (seen.has(id)) return;
+            seen.add(id);
+            if (message.sender === 'admin' && window._currentPage !== 'chat') {
+              window.addTekagonNotification({
+                id: `chat_${id}`,
+                type: 'chat',
+                title: 'Message From Admin',
+                description: firstSentence(message.content),
+                iconUrl: '../Images/Tekagon_Icon.png',
+                targetPage: 'chat'
+              });
+            }
+          });
+        }
+        const compactSeen = Array.from(seen).filter(Boolean).slice(-300);
+        seen = new Set(compactSeen);
+        localStorage.setItem(seenKey, JSON.stringify(compactSeen));
+      } catch (error) {
+        console.warn('Dashboard message notification poll failed', error);
+      }
+    };
+
+    poll();
+    window.setInterval(poll, 3000);
   }
 
   // Add this function near the top of dashboard.js
@@ -1517,7 +1667,7 @@ async function buildPage(pageKey) {
                 <img src="${escapeHtml(event.bannerImageUrl || '')}" alt="${escapeHtml(event.title || 'Event')}">
               </div>
               <div class="event-hero-content">
-                <h2>${escapeHtml(event.title || '')} <span>${escapeHtml(event.highlightedText || '')}</span></h2>
+                <h2>${escapeHtml(event.title || '')}</h2>
                 <p>${escapeHtml(event.description || '')}</p>
                 <div class="event-date-line">
                   <strong>${escapeHtml(event.date || '')}</strong>
@@ -1549,6 +1699,43 @@ async function buildPage(pageKey) {
         `;
       }
       cleanupScrollAnimations();
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (pageKey === 'notifications') {
+      const notifications = getNotifications();
+      pageEl.innerHTML = `
+        <section class="notifications-page">
+          <h2>Notifications</h2>
+          <div class="notification-list">
+            ${notifications.length ? notifications.map(item => `
+              <button class="notification-item ${item.read ? '' : 'is-unread'}" data-notification-id="${escapeHtml(item.id)}">
+                <span class="notification-icon">
+                  ${item.iconUrl
+                    ? `<img src="${escapeHtml(item.iconUrl)}" alt="">`
+                    : `<i class="${escapeHtml(item.iconClass || 'fas fa-check')}" aria-hidden="true"></i>`}
+                </span>
+                <span class="notification-copy">
+                  <h3>${escapeHtml(item.title)}</h3>
+                  <p>${escapeHtml(item.description || '')}</p>
+                </span>
+                <time class="notification-time">${new Date(item.createdAt).toLocaleString()}</time>
+              </button>
+            `).join('') : '<div class="events-empty-state"><h2>No Notifications</h2></div>'}
+          </div>
+        </section>
+      `;
+      pageEl.querySelectorAll('[data-notification-id]').forEach(button => {
+        button.addEventListener('click', () => {
+          const stored = getNotifications();
+          const selected = stored.find(item => item.id === button.dataset.notificationId);
+          if (!selected) return;
+          selected.read = true;
+          saveNotifications(stored);
+          buildPage(selected.targetPage || 'home');
+        });
+      });
       window.scrollTo(0, 0);
       return;
     }
@@ -2296,19 +2483,8 @@ async function buildPage(pageKey) {
     function updateUnreadNotification() {
       const hasUnread = checkForUnreadMessages();
 
-      // Update badge in navigation
-      const chatNav = document.querySelector('[data-page="chat"]');
-      if (chatNav) {
-        let badge = chatNav.querySelector('.nav-badge');
-        if (hasUnread && !badge) {
-          badge = document.createElement('span');
-          badge.className = 'nav-badge';
-          badge.textContent = '!';
-          chatNav.appendChild(badge);
-        } else if (!hasUnread && badge) {
-          badge.remove();
-        }
-      }
+      const chatCounter = document.getElementById('chatNavCounter');
+      if (chatCounter) chatCounter.classList.toggle('is-hidden', !hasUnread);
 
       // Update page title
       if (hasUnread) {
@@ -2808,21 +2984,8 @@ async function buildPage(pageKey) {
         if (notification) notification.remove();
       }
 
-      // Update badge in navigation
-      const chatNav = document.querySelector('[data-page="chat"]');
-      if (chatNav) {
-        let badge = chatNav.querySelector('.nav-badge');
-
-        if (hasUnread && !badge) {
-          badge = document.createElement('span');
-          badge.className = 'nav-badge';
-          badge.textContent = '!';
-          badge.id = 'chatNavBadge';
-          chatNav.appendChild(badge);
-        } else if (!hasUnread && badge) {
-          badge.remove();
-        }
-      }
+      const chatCounter = document.getElementById('chatNavCounter');
+      if (chatCounter) chatCounter.classList.toggle('is-hidden', !hasUnread);
 
       // Update page title
       if (hasUnread) {
@@ -6899,22 +7062,9 @@ async function buildPage(pageKey) {
 
   // Update your existing notifBtn event listener:
   notifBtn.addEventListener('click', () => {
-    if (isAdmin) {
-      // Admin: Show chat notifications
-      const unreadCount = getUnreadCount();
-      if (unreadCount > 0) {
-        // Go to chat page to see messages
-        buildPage('chat');
-        // Mark current nav as active
-        navMainBtns.forEach(n => n.classList.remove('active'));
-        const chatNav = document.querySelector('[data-page="chat"]');
-        if (chatNav) chatNav.classList.add('active');
-      } else {
-        alert('No new messages');
-      }
-    } else {
-      alert('No new notifications (placeholder)');
-    }
+    navMainBtns.forEach(item => item.classList.remove('active'));
+    buildPage('notifications');
+    if (window.matchMedia('(max-width:768px)').matches) closeDrawer();
   });
 
   // --- Drawer open/close (mobile)
@@ -7969,7 +8119,7 @@ async function buildPage(pageKey) {
     return question ? question.label.replace('*', '').trim() : questionId;
   }
 
-  function handleQuestionnaireSubmit(serviceName, planName) {
+  async function handleQuestionnaireSubmit(serviceName, planName) {
     try {
       console.log('=== STARTING FORM SUBMISSION ===');
       console.log('Service:', serviceName);
@@ -8044,7 +8194,7 @@ async function buildPage(pageKey) {
       console.log('Calling createTicket...');
       let ticket;
       try {
-        ticket = window.createTicket(serviceName, data, userId);
+        ticket = await window.createTicket(serviceName, data, userId);
         console.log('✅ Ticket created successfully:', ticket.id);
       } catch (ticketError) {
         console.error('❌ Ticket creation failed:', ticketError);
@@ -8087,6 +8237,15 @@ async function buildPage(pageKey) {
       // Store brief for chat (optional - you might not need this anymore)
       localStorage.setItem('pending_brief', brief);
       localStorage.setItem('pending_ticket_id', ticket.id);
+      window.addTekagonNotification?.({
+        id: `ticket_${ticket.id}`,
+        type: 'ticket',
+        title: 'Service Ordered Successfully',
+        description: 'Admin will respond to your Ticket shortly',
+        iconClass: 'fas fa-circle-check',
+        targetPage: 'tickets'
+      });
+      updateDashboardCounters();
 
       // REMOVE or COMMENT OUT this part - we're NOT adding to general conversations anymore
       // to keep tickets completely separate
@@ -8809,7 +8968,11 @@ async function buildPage(pageKey) {
     document.head.appendChild(style);
   }
 
-  loadManagedDashboardContent().finally(initFromHash);
+  loadManagedDashboardContent().finally(() => {
+    initFromHash();
+    updateDashboardCounters();
+    startDashboardMessageNotifications();
+  });
 
   // Make functions globally accessible
   window.buildPage = buildPage;

@@ -44,15 +44,15 @@
 
         <!-- nav area (scrollable) -->
         <nav class="nav-area" role="navigation" aria-label="Primary navigation">
-          <button class="nav-item nav-main active" data-page="home">
-            <span class="icon" data-feather="home"></span>
-            <span class="label">Dashboard</span>
-          </button>
-
           <a class="nav-item nav-home-link" href="../index.html">
             <span class="icon" data-feather="arrow-left"></span>
             <span class="label">Back to Home</span>
           </a>
+
+          <button class="nav-item nav-main active" data-page="home">
+            <span class="icon" data-feather="home"></span>
+            <span class="label">Dashboard</span>
+          </button>
 
           <button class="nav-item nav-main" data-page="service">
             <span class="icon" data-feather="server"></span>
@@ -72,17 +72,20 @@
           <button class="nav-item nav-main" data-page="chat">
             <span class="icon" data-feather="message-square"></span>
             <span class="label">Chat with Us</span>
+            <span class="nav-counter nav-dot" id="chatNavCounter" aria-label="Unread chat message"></span>
           </button>
 
           <button class="nav-item nav-main" data-page="tickets">
             <span class="icon" data-feather="tag"></span>
             <span class="label">Tickets</span>
+            <span class="nav-counter" id="ticketNavCounter">0</span>
           </button>
 
 
           <button class="nav-item nav-main" data-page="events">
             <span class="icon" data-feather="calendar"></span>
             <span class="label">Events &amp; Blogs</span>
+            <span class="nav-counter" id="eventNavCounter">0</span>
           </button>
         </nav>
 
@@ -135,6 +138,7 @@
         <div class="top-right">
           <button id="notifBtn" class="icon-btn" title="Notifications">
             <i data-feather="bell"></i>
+            <span class="topbar-notification-count" id="notificationCount">0</span>
           </button>
           <button id="profileBtn" class="profile-btn" title="Profile">
               <img style="height: 30px;" src="../Images/Tekagon_Icon.png" alt="">

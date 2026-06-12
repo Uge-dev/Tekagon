@@ -259,6 +259,14 @@ class TekagonScheduler {
                 // Update UI and navigate to confirmation
                 this.updateConfirmationPage(formData, formData.id);
                 this.goToStep(3);
+                window.addTekagonNotification?.({
+                    id: `booking_${formData.id}`,
+                    type: 'booking',
+                    title: 'Session Booked Successfully',
+                    description: 'Check up your calendar not to miss your scheduled Date and Time',
+                    iconClass: 'fas fa-calendar-check',
+                    targetPage: 'book'
+                });
 
                 if (emailResult.success) {
                     this.showNotification('✅ Booking confirmed! Email sent successfully.', 'success');

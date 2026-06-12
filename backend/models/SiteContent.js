@@ -24,7 +24,6 @@ const eventSchema = new mongoose.Schema({
   published: { type: Boolean, default: false },
   bannerImageUrl: { type: String, default: '' },
   title: { type: String, default: '' },
-  highlightedText: { type: String, default: '' },
   description: { type: String, default: '' },
   date: { type: String, default: '' },
   time: { type: String, default: '' },

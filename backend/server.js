@@ -112,8 +112,7 @@ const DEFAULT_SOCIAL_CARDS = [
 const DEFAULT_EVENT = {
   published: false,
   bannerImageUrl: '',
-  title: 'Raising Brand',
-  highlightedText: 'Ambassadors',
+  title: 'Raising Brand Ambassadors',
   description: '',
   date: '',
   time: '',
@@ -154,7 +153,6 @@ function normalizeEvent(event = {}) {
     published: Boolean(event.published),
     bannerImageUrl: sanitizeUrl(event.bannerImageUrl),
     title: sanitizeText(event.title, 120),
-    highlightedText: sanitizeText(event.highlightedText, 120),
     description: sanitizeText(event.description, 1200),
     date: sanitizeText(event.date, 80),
     time: sanitizeText(event.time, 80),
@@ -356,7 +354,8 @@ app.get('/api/content/dashboard', async (req, res) => {
       success: true,
       content: {
         socialCards: content?.socialCards?.length === 4 ? content.socialCards : DEFAULT_SOCIAL_CARDS,
-        event: content?.event ? { ...DEFAULT_EVENT, ...content.event } : DEFAULT_EVENT
+        event: content?.event ? { ...DEFAULT_EVENT, ...content.event } : DEFAULT_EVENT,
+        updatedAt: content?.updatedAt || null
       }
     });
   } catch (err) {

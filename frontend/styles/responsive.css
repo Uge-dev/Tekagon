@@ -316,7 +316,7 @@ html, body {
   }
 
   .thumb {
-    height: 200px !important;
+    height: clamp(300px, 92vw, 380px) !important;
     border-radius: 12px !important;
   }
 

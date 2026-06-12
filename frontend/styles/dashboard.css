@@ -19,6 +19,11 @@
   src: url('../webfonts/ywft-avant-modern-regular-demo.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'YWFT Eurometra';
+  src: url('../webfonts/ywft-eurometra-regular-demo.ttf') format('truetype');
+}
+
 html,
 body {
   height: 100%;
@@ -99,6 +104,39 @@ body {
   text-decoration: none;
 }
 
+.nav-item .label {
+  min-width: 0;
+  flex: 1;
+}
+
+.nav-counter {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 92, 255, 0.24);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.nav-counter:empty,
+.nav-counter.is-hidden {
+  display: none;
+}
+
+.nav-counter.nav-dot {
+  min-width: 9px;
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  background: #ff3b55;
+  box-shadow: 0 0 0 3px rgba(255, 59, 85, 0.14);
+}
+
 .events-empty-state {
   min-height: calc(100vh - 120px);
   display: grid;
@@ -114,22 +152,26 @@ body {
 }
 
 .event-page {
-  width: min(100%, 1080px);
+  width: min(100%, 1220px);
   margin: 0 auto;
 }
 
 .event-hero {
   display: grid;
-  grid-template-columns: minmax(280px, 0.88fr) minmax(320px, 1.12fr);
+  grid-template-columns: minmax(300px, 0.92fr) minmax(360px, 1.08fr);
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(14px, 2vw, 22px);
   overflow: hidden;
   border-radius: 8px;
-  background: linear-gradient(120deg, #08052d, #271050);
+  background: linear-gradient(125deg, #06051d, #13092d 55%, #08091d);
   border: 1px solid rgba(147, 255, 246, 0.12);
 }
 
 .event-hero-media {
-  min-height: 360px;
-  background: #120b3b;
+  min-height: 390px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #09071f;
 }
 
 .event-hero-media img,
@@ -144,18 +186,19 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(28px, 5vw, 64px);
+  padding: clamp(12px, 3vw, 38px) clamp(12px, 3vw, 36px) clamp(12px, 3vw, 38px) 0;
+  font-family: 'YWFT avant modern', sans-serif;
 }
 
 .event-hero-content h2 {
   margin: 0 0 18px;
+  font-family: 'YWFT Eurometra', sans-serif;
   font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 0.96;
-  color: #fff;
-}
-
-.event-hero-content h2 span {
-  color: #93fff6;
+  line-height: 1.02;
+  background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .event-hero-content > p {
@@ -174,7 +217,7 @@ body {
 .event-date-line {
   margin-bottom: 20px;
   color: #fff;
-  font-size: 1.05rem;
+  font-size: clamp(1.18rem, 2vw, 1.5rem);
 }
 
 .event-date-line > span {
@@ -214,7 +257,7 @@ body {
 
 .event-speakers {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 22px;
   margin-top: 22px;
 }
@@ -229,24 +272,25 @@ body {
 }
 
 .event-speaker-image {
-  aspect-ratio: 1.15;
+  height: clamp(210px, 20vw, 285px);
   border-radius: 5px;
 }
 
 .event-speaker-card h3 {
   margin: 10px 0 6px;
-  color: #fff;
+  font-family: 'YWFT Eurometra', sans-serif;
   font-size: 1.1rem;
-}
-
-.event-speaker-card h3::first-letter {
-  color: #93fff6;
+  background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .event-speaker-card p {
   min-height: 56px;
   margin: 0 0 12px;
-  color: #c4c1d6;
+  color: #bbb8ca;
+  font-family: 'YWFT avant modern', sans-serif;
   font-size: 0.8rem;
   line-height: 1.35;
 }
@@ -258,6 +302,7 @@ body {
   justify-content: center;
   gap: 7px;
   color: #93fff6;
+  font-family: 'YWFT avant modern', sans-serif;
   font-size: 0.82rem;
   text-decoration: none;
 }
@@ -266,17 +311,34 @@ body {
   text-decoration: none;
 }
 
+@media (max-width: 920px) {
+  .event-speakers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .event-hero {
     grid-template-columns: 1fr;
   }
 
   .event-hero-media {
-    min-height: 260px;
+    min-height: 300px;
   }
 
+  .event-hero-content {
+    padding: 12px 8px 18px;
+  }
+
+}
+
+@media (max-width: 560px) {
   .event-speakers {
     grid-template-columns: 1fr;
+  }
+
+  .event-speaker-image {
+    height: 320px;
   }
 
   .event-speaker-card p {
@@ -719,7 +781,126 @@ body {
 }
 
 .prf img {
+  width: 40px;
   height: 40px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 40px;
+}
+
+.top-right .icon-btn {
+  position: relative;
+}
+
+.topbar-notification-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff3b55;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border: 2px solid var(--bg);
+}
+
+.topbar-notification-count:empty,
+.topbar-notification-count.is-hidden {
+  display: none;
+}
+
+.notifications-page {
+  width: min(100%, 900px);
+  margin: 0 auto;
+}
+
+.notifications-page h2 {
+  margin: 0 0 20px;
+  font-family: 'YWFT Eurometra', sans-serif;
+}
+
+.notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item.is-unread {
+  background: rgba(124, 92, 255, 0.11);
+  border-color: rgba(147, 255, 246, 0.18);
+}
+
+.notification-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(124, 92, 255, 0.2);
+  color: #93fff6;
+  font-size: 1.25rem;
+}
+
+.notification-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notification-copy h3 {
+  margin: 0 0 5px;
+  font-family: 'YWFT Eurometra', sans-serif;
+  font-size: 1rem;
+}
+
+.notification-copy p,
+.notification-time {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 560px) {
+  .notification-item {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .notification-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .notification-time {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 420px) {
+  #page .grid .card .thumb {
+    height: clamp(300px, 92vw, 380px);
+  }
 }
 
 .it_btn {

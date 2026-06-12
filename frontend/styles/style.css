@@ -1314,16 +1314,24 @@ footer {
 }
 
 .social-icons a {
-  color: #aaaaaa;
-  font-size: 1.5rem;
-  margin: 0 15px;
-  transition: color 0.3s ease, transform 0.3s ease;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #7c5cff;
+  background: rgba(124, 92, 255, 0.15);
+  font-size: 1.3rem;
+  margin: 0 7px;
+  transition: color 0.3s ease, background 0.3s ease, transform 0.3s ease;
   text-decoration: none;
 }
 
 .social-icons a:hover {
-  color: #00ffcc;
-  transform: translateY(-3px); /* Slight jump effect on hover */
+  color: #93fff6;
+  background: rgba(124, 92, 255, 0.3);
+  transform: translateY(-3px);
 }
 
 
@@ -1373,8 +1381,10 @@ footer {
   }
 
   .social-icons a {
-    font-size: 1.2rem; /* Smaller icons */
-    margin: 0 12px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+    margin: 0 5px;
   }
 
   /* Mobile minimum font sizes for legibility */

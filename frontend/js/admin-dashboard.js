@@ -1020,15 +1020,9 @@ initAdminSocket() {
             <input id="event-published" type="checkbox" ${event.published ? 'checked' : ''}>
           </div>
           ${this.imageField('Main banner image', 'event-bannerImageUrl', event.bannerImageUrl)}
-          <div class="managed-form-grid">
-            <div class="form-group">
-              <label for="event-title">Main title</label>
-              <input id="event-title" value="${this.escapeValue(event.title)}" placeholder="Raising Brand">
-            </div>
-            <div class="form-group">
-              <label for="event-highlightedText">Highlighted title text</label>
-              <input id="event-highlightedText" value="${this.escapeValue(event.highlightedText)}" placeholder="Ambassadors">
-            </div>
+          <div class="form-group">
+            <label for="event-title">Main title</label>
+            <input id="event-title" value="${this.escapeValue(event.title)}" placeholder="Raising Brand Ambassadors">
           </div>
           <div class="form-group">
             <label for="event-description">Event description</label>
@@ -1169,7 +1163,6 @@ initAdminSocket() {
       published: Boolean(document.getElementById('event-published')?.checked),
       bannerImageUrl: value('event-bannerImageUrl'),
       title: value('event-title'),
-      highlightedText: value('event-highlightedText'),
       description: value('event-description'),
       date: value('event-date'),
       time: value('event-time'),
