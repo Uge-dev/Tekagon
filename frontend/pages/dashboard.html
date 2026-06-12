@@ -131,8 +131,17 @@
           </button>
         </div>
 
-        <div class="top-search">
-          <input id="globalSearch" type="search" placeholder="Search projects, services, articles..." />
+        <div class="top-search" role="search">
+          <div class="dashboard-search">
+            <input id="globalSearch" type="search" placeholder="Search projects, services, pages..."
+              autocomplete="off" aria-label="Search dashboard" aria-controls="dashboardSearchResults"
+              aria-expanded="false" aria-autocomplete="list" />
+            <button id="globalSearchBtn" class="dashboard-search-btn" type="button" aria-label="Search">
+              <i data-feather="search"></i>
+            </button>
+            <div id="dashboardSearchResults" class="dashboard-search-results" role="listbox"
+              aria-label="Search results" hidden></div>
+          </div>
         </div>
 
         <div class="top-right">

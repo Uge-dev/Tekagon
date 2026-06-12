@@ -248,6 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const hamburger = document.getElementById('hamburger');
   const notifBtn = document.getElementById('notifBtn');
   const profileBtn = document.getElementById('profileBtn');
+  const globalSearch = document.getElementById('globalSearch');
+  const globalSearchBtn = document.getElementById('globalSearchBtn');
+  const dashboardSearchResults = document.getElementById('dashboardSearchResults');
   const carouselEl = document.getElementById('carousel');
   const carouselPrev = document.getElementById('carouselPrev');
   const carouselNext = document.getElementById('carouselNext');
@@ -1069,6 +1072,235 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Helpers for building UI
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
+  const dashboardSearchCatalog = [
+    { title: 'Dashboard', page: 'home', pageLabel: 'Dashboard', description: 'Dashboard overview and featured content', icon: 'home' },
+    { title: 'Trending Projects', page: 'home', pageLabel: 'Dashboard', description: 'Browse current featured projects', heading: 'Trending Projects', icon: 'trending-up' },
+    { title: 'Innovation Beyond Boundaries', page: 'home', pageLabel: 'Dashboard', description: 'Tekagon company overview and active orders', heading: 'INNOVATION BEYOND BOUNDARIES', icon: 'zap' },
+    { title: 'Our Values', page: 'home', pageLabel: 'Dashboard', description: 'Tekagon values and growth metrics', heading: 'Our Values', icon: 'heart' },
+    { title: 'Technology Stack', page: 'stack', pageLabel: 'Stack', description: 'Software, languages, platforms, and development tools', icon: 'layers' },
+    { title: 'Services', page: 'service', pageLabel: 'Service', description: 'Explore and order Tekagon digital services', icon: 'server' },
+    { title: 'Graphic Design', page: 'service', pageLabel: 'Service', description: 'Brand identity, UI/UX, motion graphics, and product design', heading: 'Graphic Design', icon: 'pen-tool' },
+    { title: 'Brand Identity', page: 'service', pageLabel: 'Service', description: 'Full branding and visual identity services', selector: '[data-key="Brand Identity"]', icon: 'bookmark' },
+    { title: 'UI/UX Design', page: 'service', pageLabel: 'Service', description: 'Mobile and digital product interface design', selector: '[data-key="UI/UX"]', icon: 'layout' },
+    { title: 'Motion Graphics', page: 'service', pageLabel: 'Service', description: 'Animated visual and media design services', selector: '[data-key="Motion Graphics"]', icon: 'video' },
+    { title: 'Product Design', page: 'service', pageLabel: 'Service', description: 'Product experience and visual design', selector: '[data-key="Product Design"]', icon: 'box' },
+    { title: 'Coding Services', page: 'service', pageLabel: 'Service', description: 'Web, app, integration, and management services', heading: 'Coding Services', icon: 'code' },
+    { title: 'Web Development', page: 'service', pageLabel: 'Service', description: 'Modern website and web application development', heading: 'Coding Services', icon: 'globe' },
+    { title: 'Mobile App Development', page: 'service', pageLabel: 'Service', description: 'Mobile application design and development', heading: 'Coding Services', icon: 'smartphone' },
+    { title: 'Digital Marketing', page: 'service', pageLabel: 'Service', description: 'Marketing strategy and business visibility', selector: '.serviceContact', icon: 'bar-chart-2' },
+    { title: 'Book a Session', page: 'book', pageLabel: 'Booking', description: 'Schedule a consultation with the Tekagon team', icon: 'calendar' },
+    { title: 'Chat with Us', page: 'chat', pageLabel: 'Support', description: 'Send and receive live support messages', icon: 'message-square' },
+    { title: 'Tickets', page: 'tickets', pageLabel: 'Support', description: 'View and manage your service tickets', icon: 'tag' },
+    { title: 'Events & Blogs', page: 'events', pageLabel: 'Events', description: 'View current Tekagon events and speakers', icon: 'calendar' },
+    { title: 'Contact Us', page: 'contact', pageLabel: 'Contact', description: 'Send a message to the Tekagon team', icon: 'mail' },
+    { title: 'Profile', page: 'profile', pageLabel: 'Company', description: 'About Tekagon and social media profiles', icon: 'user' },
+    { title: 'Notifications', page: 'notifications', pageLabel: 'Notifications', description: 'View messages, booking, ticket, and event alerts', icon: 'bell' }
+  ];
+
+  function normalizeSearchValue(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9\s/&+-]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function buildDashboardSearchIndex() {
+    const index = [...dashboardSearchCatalog];
+
+    (pageData.home.items || []).forEach((item, itemIndex) => {
+      index.push({
+        title: item.title || `Project ${itemIndex + 1}`,
+        page: 'home',
+        pageLabel: 'Project',
+        description: [item.meta, item.prf, item.prfTxt].filter(Boolean).join(' - '),
+        cardIndex: itemIndex,
+        icon: 'briefcase'
+      });
+    });
+
+    const event = pageData.events.event;
+    if (event?.published) {
+      index.push({
+        title: event.title || 'Current Event',
+        page: 'events',
+        pageLabel: 'Event',
+        description: [event.description, event.date, event.time].filter(Boolean).join(' - '),
+        selector: '.event-hero',
+        icon: 'calendar'
+      });
+      (event.speakers || []).forEach((speaker, speakerIndex) => {
+        index.push({
+          title: speaker.name || `Speaker ${speakerIndex + 1}`,
+          page: 'events',
+          pageLabel: 'Event Speaker',
+          description: [speaker.bio, speaker.socialHandle].filter(Boolean).join(' - '),
+          speakerIndex,
+          icon: 'mic'
+        });
+      });
+    }
+
+    return index;
+  }
+
+  function scoreSearchResult(item, query) {
+    const title = normalizeSearchValue(item.title);
+    const description = normalizeSearchValue(item.description);
+    const pageLabel = normalizeSearchValue(item.pageLabel);
+    const terms = query.split(' ').filter(Boolean);
+    if (!terms.every(term => title.includes(term) || description.includes(term) || pageLabel.includes(term))) return -1;
+
+    let score = 0;
+    if (title === query) score += 100;
+    if (title.startsWith(query)) score += 55;
+    if (title.includes(query)) score += 35;
+    terms.forEach(term => {
+      if (title.startsWith(term)) score += 14;
+      else if (title.includes(term)) score += 8;
+      if (pageLabel.includes(term)) score += 4;
+      if (description.includes(term)) score += 2;
+    });
+    return score;
+  }
+
+  let activeSearchResult = -1;
+  let visibleSearchResults = [];
+
+  function closeDashboardSearch() {
+    if (!dashboardSearchResults || !globalSearch) return;
+    dashboardSearchResults.hidden = true;
+    dashboardSearchResults.innerHTML = '';
+    globalSearch.setAttribute('aria-expanded', 'false');
+    globalSearch.removeAttribute('aria-activedescendant');
+    activeSearchResult = -1;
+    visibleSearchResults = [];
+  }
+
+  function renderDashboardSearch(queryValue) {
+    if (!dashboardSearchResults || !globalSearch) return;
+    const query = normalizeSearchValue(queryValue);
+    const fullIndex = buildDashboardSearchIndex();
+    visibleSearchResults = query
+      ? fullIndex
+        .map(item => ({ ...item, score: scoreSearchResult(item, query) }))
+        .filter(item => item.score >= 0)
+        .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+        .slice(0, 12)
+      : fullIndex.filter(item => ['home', 'service', 'book', 'chat', 'events', 'tickets'].includes(item.page)).slice(0, 6);
+
+    activeSearchResult = visibleSearchResults.length ? 0 : -1;
+    dashboardSearchResults.hidden = false;
+    globalSearch.setAttribute('aria-expanded', 'true');
+
+    if (!visibleSearchResults.length) {
+      dashboardSearchResults.innerHTML = `
+        <div class="search-empty-state">
+          <strong>No matching content</strong>
+          Try a service, project, event, ticket, or page name.
+        </div>
+      `;
+      return;
+    }
+
+    dashboardSearchResults.innerHTML = `
+      <div class="search-results-heading">
+        <span>${query ? 'Related content' : 'Quick destinations'}</span>
+        <span>${visibleSearchResults.length} result${visibleSearchResults.length === 1 ? '' : 's'}</span>
+      </div>
+      ${visibleSearchResults.map((item, resultIndex) => `
+        <button id="dashboardSearchResult-${resultIndex}"
+          class="search-result-item ${resultIndex === activeSearchResult ? 'is-active' : ''}"
+          type="button" role="option" aria-selected="${resultIndex === activeSearchResult}"
+          data-search-result-index="${resultIndex}">
+          <span class="search-result-icon"><i data-feather="${escapeHtml(item.icon || 'arrow-right')}"></i></span>
+          <span class="search-result-copy">
+            <strong>${escapeHtml(item.title)}</strong>
+            <span>${escapeHtml(item.description || `Open ${item.pageLabel}`)}</span>
+          </span>
+          <span class="search-result-page">${escapeHtml(item.pageLabel)}</span>
+        </button>
+      `).join('')}
+    `;
+    globalSearch.setAttribute('aria-activedescendant', 'dashboardSearchResult-0');
+    if (window.feather) feather.replace();
+  }
+
+  function setActiveSearchResult(nextIndex) {
+    if (!visibleSearchResults.length || !dashboardSearchResults) return;
+    activeSearchResult = (nextIndex + visibleSearchResults.length) % visibleSearchResults.length;
+    dashboardSearchResults.querySelectorAll('[data-search-result-index]').forEach((element, resultIndex) => {
+      const isActive = resultIndex === activeSearchResult;
+      element.classList.toggle('is-active', isActive);
+      element.setAttribute('aria-selected', String(isActive));
+      if (isActive) element.scrollIntoView({ block: 'nearest' });
+    });
+    globalSearch?.setAttribute('aria-activedescendant', `dashboardSearchResult-${activeSearchResult}`);
+  }
+
+  function findSearchDestination(item) {
+    if (item.cardIndex !== undefined) return pageEl.querySelector(`[data-search-card-index="${item.cardIndex}"]`);
+    if (item.speakerIndex !== undefined) return pageEl.querySelector(`[data-search-speaker-index="${item.speakerIndex}"]`);
+    if (item.selector) return pageEl.querySelector(item.selector);
+    if (item.heading) {
+      const targetHeading = normalizeSearchValue(item.heading);
+      return Array.from(pageEl.querySelectorAll('h1, h2, h3, h4, h5')).find(heading =>
+        normalizeSearchValue(heading.textContent).includes(targetHeading)
+      );
+    }
+    return pageEl;
+  }
+
+  async function openDashboardSearchResult(item) {
+    if (!item) return;
+    closeDashboardSearch();
+    if (globalSearch) globalSearch.value = '';
+    navMainBtns.forEach(button => button.classList.toggle('active', button.dataset.page === item.page));
+    navSubitems.forEach(button => button.classList.toggle('active', button.dataset.page === item.page));
+    await buildPage(item.page);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const destination = findSearchDestination(item);
+        if (!destination) return;
+        destination.scrollIntoView({ behavior: 'smooth', block: destination === pageEl ? 'start' : 'center' });
+        destination.classList.remove('search-target-highlight');
+        void destination.offsetWidth;
+        destination.classList.add('search-target-highlight');
+        window.setTimeout(() => destination.classList.remove('search-target-highlight'), 1800);
+      });
+    });
+  }
+
+  globalSearch?.addEventListener('input', () => renderDashboardSearch(globalSearch.value));
+  globalSearch?.addEventListener('focus', () => renderDashboardSearch(globalSearch.value));
+  globalSearch?.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveSearchResult(activeSearchResult + 1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveSearchResult(activeSearchResult - 1);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      openDashboardSearchResult(visibleSearchResults[activeSearchResult] || visibleSearchResults[0]);
+    } else if (event.key === 'Escape') {
+      closeDashboardSearch();
+      globalSearch.blur();
+    }
+  });
+  globalSearchBtn?.addEventListener('click', () => {
+    if (dashboardSearchResults?.hidden) {
+      renderDashboardSearch(globalSearch?.value || '');
+      globalSearch?.focus();
+    } else {
+      openDashboardSearchResult(visibleSearchResults[activeSearchResult] || visibleSearchResults[0]);
+    }
+  });
+  dashboardSearchResults?.addEventListener('click', event => {
+    const resultButton = event.target.closest('[data-search-result-index]');
+    if (!resultButton) return;
+    openDashboardSearchResult(visibleSearchResults[Number(resultButton.dataset.searchResultIndex)]);
+  });
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.dashboard-search')) closeDashboardSearch();
+  });
+
   // --- Card pages registry (separate from pageData)
   // Use this map to register per-card innerHTML detail pages keyed by "sourcePage::index".
   const cardPages = {};
@@ -1686,7 +1918,7 @@ async function buildPage(pageKey) {
                   ? `<a href="${escapeHtml(speaker.socialUrl)}" target="_blank" rel="noopener noreferrer">${socialIcon}<span>${escapeHtml(speaker.socialHandle || '')}</span></a>`
                   : `<div class="event-speaker-social">${socialIcon}<span>${escapeHtml(speaker.socialHandle || '')}</span></div>`;
                 return `
-                  <article class="event-speaker-card">
+                  <article class="event-speaker-card" data-search-speaker-index="${speakers.indexOf(speaker)}">
                     <img class="event-speaker-image" src="${escapeHtml(speaker.imageUrl || '')}" alt="${escapeHtml(speaker.name || 'Speaker')}">
                     <h3>${escapeHtml(speaker.name || '')}</h3>
                     <p>${escapeHtml(speaker.bio || '')}</p>
@@ -4619,6 +4851,7 @@ async function buildPage(pageKey) {
       items.forEach((it, idx) => {
         const c = document.createElement('div');
         c.className = 'card';
+        c.dataset.searchCardIndex = String(idx);
         const cardAction = it.buttonUrl
           ? `<a class="it_btn" href="${escapeHtml(it.buttonUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.btn || 'View Now')}</a>`
           : `<span class="it_btn">${escapeHtml(it.btn || 'View Now')}</span>`;
