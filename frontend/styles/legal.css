@@ -5,8 +5,8 @@
   --legal-border: rgba(255, 255, 255, 0.12);
   --legal-border-soft: rgba(255, 255, 255, 0.08);
 
-  --legal-purple: #8373E7;
-  --legal-blue: #18A0FB;
+  --legal-purple: #8373e7;
+  --legal-blue: #18a0fb;
   --legal-cyan: #93fff6;
 
   --legal-white: #ffffff;
@@ -33,7 +33,7 @@ body {
   left: 0;
   width: 100%;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.92);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -47,8 +47,12 @@ body {
   color: var(--legal-white);
 }
 
+/* ================================
+   BANNER / HERO SECTION
+================================ */
+
 .legal-hero {
-  width: min(96%, 1500px);
+  width: min(92%, 1400px);
   margin: 0 auto 35px;
   padding: clamp(45px, 6vw, 85px) clamp(20px, 5vw, 80px);
   border-radius: 34px;
@@ -96,11 +100,11 @@ body {
 
 .legal-hero h1 {
   max-width: 1100px;
-  margin: 0 auto 18px;
-  font-size: clamp(38px, 6.5vw, 86px);
+  margin: 0 auto 25px;
+  font-size: clamp(35px, 7vw, 70px);
   line-height: 1.04;
   letter-spacing: -2.5px;
-  font-weight: 800;
+  font-weight: 500;
   background: linear-gradient(90deg, #ffffff, var(--legal-cyan), var(--legal-purple), var(--legal-blue));
   background-size: 250%;
   -webkit-background-clip: text;
@@ -137,8 +141,12 @@ body {
   box-shadow: 0 22px 42px rgba(24, 160, 251, 0.3);
 }
 
+/* ================================
+   MAIN LEGAL LAYOUT - DESKTOP
+================================ */
+
 .legal-wrapper {
-  width: min(96%, 1500px);
+  width: min(92%, 1400px);
   margin: 0 auto 90px;
   display: grid;
   grid-template-columns: 365px minmax(0, 1fr);
@@ -148,7 +156,7 @@ body {
 
 .legal-selector {
   position: sticky;
-  top: calc(var(--legal-header-height) + 18px);
+ top: var(--legal-header-height);
   z-index: 20;
   padding: 20px;
   border-radius: 30px;
@@ -183,6 +191,10 @@ body {
   font-size: 12.5px;
   color: var(--legal-muted);
 }
+
+/* ================================
+   LEGAL BUTTONS
+================================ */
 
 .legal-tab {
   width: 100%;
@@ -245,6 +257,10 @@ body {
   margin-top: 3px;
   line-height: 1.35;
 }
+
+/* ================================
+   POLICY CONTENT
+================================ */
 
 .legal-content {
   width: 100%;
@@ -420,6 +436,10 @@ body {
   border-bottom: none;
 }
 
+/* ================================
+   ANIMATIONS
+================================ */
+
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -455,6 +475,10 @@ body {
   }
 }
 
+/* ================================
+   TABLET VIEW
+================================ */
+
 @media screen and (max-width: 1180px) {
   :root {
     --legal-header-height: 86px;
@@ -466,6 +490,12 @@ body {
   }
 }
 
+/* ================================
+   MOBILE VIEW
+   Buttons become sticky horizontal scroll.
+   Content scrolls normally below it.
+================================ */
+
 @media screen and (max-width: 940px) {
   :root {
     --legal-header-height: 78px;
@@ -475,59 +505,118 @@ body {
     padding-top: calc(var(--legal-header-height) + 24px);
   }
 
+  .legal-hero,
   .legal-wrapper {
-    grid-template-columns: 1fr;
+    width: 92%;
+  }
+
+  .legal-wrapper {
+    display: block;
+    margin: 0 auto 75px;
   }
 
   .legal-selector {
-    top: calc(var(--legal-header-height) + 10px);
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    border-radius: 24px;
+    position: sticky;
+   top: var(--legal-header-height);
+    z-index: 999;
+
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+
+    padding: 14px;
+    margin-bottom: 24px;
+
+    border-radius: 22px;
+    background: #000000;
+    border: 1px solid var(--legal-border);
+
+    box-shadow:
+      0 16px 28px rgba(0, 0, 0, 1),
+      0 28px 50px rgba(0, 0, 0, 0.95);
+
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .legal-selector::-webkit-scrollbar {
+    display: none;
   }
 
   .selector-title {
-    grid-column: 1 / -1;
-    margin-bottom: 4px;
+    display: none;
   }
 
   .legal-tab {
-    margin-bottom: 0;
-    padding: 13px;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 210px;
+
+    margin: 0;
+    padding: 12px 14px;
+
+    border-radius: 18px;
+    white-space: nowrap;
+  }
+
+  .legal-tab:hover {
+    transform: translateY(-2px);
   }
 
   .tab-icon {
-    width: 38px;
-    height: 38px;
-    flex-basis: 38px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    font-size: 13px;
+  }
+
+  .tab-info {
+    width: auto;
   }
 
   .tab-info strong {
     font-size: 13px;
+    white-space: nowrap;
   }
 
   .tab-info small {
-    display: none;
+    display: block;
+    font-size: 10.5px;
+    white-space: nowrap;
   }
 
-  .legal-tab:hover {
-    transform: translateY(-3px);
+  .legal-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin-top: 24px;
+  }
+
+  .policy-panel {
+    position: relative;
+    z-index: 1;
   }
 }
 
+/* ================================
+   SMALL MOBILE VIEW
+================================ */
+
 @media screen and (max-width: 640px) {
   :root {
-    --legal-header-height: 72px;
+    --legal-header-height: 55px;
   }
 
   .legal-page {
     padding-top: calc(var(--legal-header-height) + 18px);
-  }
-
-  .legal-hero,
-  .legal-wrapper {
-    width: 92%;
   }
 
   .legal-hero {
@@ -535,36 +624,47 @@ body {
     border-radius: 24px;
   }
 
+  .back-home {
+  padding: 10px 17px;
+  font-size: 12px;
+  margin-top: 20px;
+}
+
   .legal-hero h1 {
-    letter-spacing: -1.4px;
+     font-size: clamp(20px, 7vw, 20px);
+    letter-spacing: -1px;
+  }
+
+  .legal-hero p {
+    font-size: 12px;
   }
 
   .legal-selector {
-    padding: 13px;
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
-    border-radius: 22px;
-  }
-
-  .selector-title {
-    padding-bottom: 13px;
+   top: var(--legal-header-height);
+    padding: 12px;
+    gap: 10px;
+    border-radius: 20px;
   }
 
   .legal-tab {
-    gap: 8px;
-    padding: 10px;
+    min-width: 190px;
+    padding: 11px 12px;
     border-radius: 16px;
   }
 
   .tab-icon {
     width: 32px;
     height: 32px;
-    flex-basis: 32px;
+    flex: 0 0 32px;
     font-size: 12px;
   }
 
   .tab-info strong {
-    font-size: 11.5px;
+    font-size: 12px;
+  }
+
+  .tab-info small {
+    font-size: 10px;
   }
 
   .policy-panel {
@@ -581,8 +681,12 @@ body {
   .policy-heading-icon {
     width: 58px;
     height: 58px;
-    flex-basis: 58px;
+    flex: 0 0 58px;
     border-radius: 20px;
+  }
+
+  .policy-heading h2 {
+    font-size: 28px;
   }
 
   .policy-panel h3 {
@@ -592,7 +696,7 @@ body {
   .section-icon {
     width: 34px;
     height: 34px;
-    flex-basis: 34px;
+    flex: 0 0 34px;
     margin-top: -4px;
   }
 
@@ -605,20 +709,20 @@ body {
   }
 }
 
-@media screen and (max-width: 420px) {
-  .legal-selector {
-    grid-template-columns: 1fr;
-  }
+/* ================================
+   EXTRA SMALL PHONES
+================================ */
 
-  .tab-info small {
-    display: block;
+@media screen and (max-width: 420px) {
+  .legal-tab {
+    min-width: 180px;
   }
 
   .legal-hero h1 {
-    font-size: 34px;
+    font-size: 25px;
   }
 
   .policy-heading h2 {
-    font-size: 28px;
+    font-size: 27px;
   }
 }
