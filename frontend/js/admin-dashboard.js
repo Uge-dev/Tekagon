@@ -123,7 +123,7 @@ constructor() {
       const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
       messages = ticketChats[ticketId] || [];
     } else {
-      messages = this.conversations[userId] || [];
+      messages = (this.conversations[userId] || []).filter(message => !message.ticketId);
     }
 
     messagesDiv.innerHTML = messages.map(msg => this.renderAdminChatMessage(msg, userName)).join('');
@@ -313,14 +313,21 @@ initAdminSocket() {
     if (window.TekagonAPI) {
       console.log('📊 Loading data from MongoDB...');
 
-      // Load users
-      const usersResult = await window.TekagonAPI.getAllUsers();
-      if (usersResult.success) {
-        this.registeredUsers = {};
-        usersResult.users.forEach(u => {
-          this.registeredUsers[u.userId] = u;
+      const conversationResult = await window.TekagonAPI.getAdminConversations?.();
+      if (conversationResult?.success) {
+        this.registeredUsers = conversationResult.users || {};
+        Object.entries(conversationResult.conversations || {}).forEach(([userId, messages]) => {
+          this.conversations[userId] = this.mergeMessages(this.conversations[userId] || [], messages);
         });
-        console.log('✅ Users loaded:', usersResult.users.length);
+      } else {
+        const usersResult = await window.TekagonAPI.getAllUsers();
+        if (usersResult.success) {
+          this.registeredUsers = {};
+          usersResult.users.forEach(u => {
+            this.registeredUsers[u.userId] = u;
+          });
+          console.log('✅ Users loaded:', usersResult.users.length);
+        }
       }
 
       // Load tickets
@@ -335,13 +342,12 @@ initAdminSocket() {
         this.managedContent = contentResult.content;
       }
 
-      // Load messages for all users without discarding live optimistic messages.
-      const existingConversations = { ...this.conversations };
-      this.conversations = existingConversations;
-      for (const userId of Object.keys(this.registeredUsers)) {
-        const msgResult = await window.TekagonAPI.getUserMessages(userId);
-        if (msgResult.success) {
-          this.conversations[userId] = this.mergeMessages(this.conversations[userId] || [], msgResult.messages);
+      if (!conversationResult?.success) {
+        for (const userId of Object.keys(this.registeredUsers)) {
+          const msgResult = await window.TekagonAPI.getUserMessages(userId);
+          if (msgResult.success) {
+            this.conversations[userId] = this.mergeMessages(this.conversations[userId] || [], msgResult.messages);
+          }
         }
       }
 
@@ -561,6 +567,23 @@ initAdminSocket() {
     }
     this.bindImageUploadInputs();
     this.bindContentEditorActions();
+    this.bindAdminPageActions();
+  }
+
+  bindAdminPageActions() {
+    const filterItems = (inputId, itemSelector, textSelector = null) => {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        document.querySelectorAll(itemSelector).forEach(item => {
+          const target = textSelector ? item.querySelector(textSelector) : item;
+          item.style.display = (target?.textContent || '').toLowerCase().includes(query) ? '' : 'none';
+        });
+      });
+    };
+    filterItems('searchChats', '.conversation-item');
+    filterItems('searchUsers', '.users-table tbody tr');
   }
 
   renderDashboardPage() {
@@ -690,8 +713,8 @@ initAdminSocket() {
             <h2><i class="fas fa-comments"></i> All Conversations</h2>
             <div class="header-actions">
               <input type="text" id="searchChats" placeholder="Search conversations..." class="search-input">
-              <button class="btn-primary" onclick="adminDashboard.selectUser(null)">
-                <i class="fas fa-plus"></i> New Chat
+              <button class="btn-primary" onclick="adminDashboard.loadPage('users')">
+                <i class="fas fa-user"></i> Select User
               </button>
             </div>
           </div>
@@ -1496,7 +1519,7 @@ initAdminSocket() {
   }
 
   // Update the openConversation method to support ticket chats
-  async openConversation(userId, ticketId = null) {
+  openConversation(userId, ticketId = null) {
     if (!userId) {
       alert('Please select a user first');
       return;
@@ -1505,32 +1528,9 @@ initAdminSocket() {
     this.selectedUser = userId;
     this.selectedTicket = ticketId || null;
 
-    // Load fresh messages from MongoDB
-    if (window.TekagonAPI) {
-      try {
-        if (ticketId) {
-          const result = await window.TekagonAPI.getTicketMessages(ticketId);
-          if (result.success) {
-            const ticketChats = JSON.parse(localStorage.getItem('tekagon_ticket_chats') || '{}');
-            ticketChats[ticketId] = this.mergeMessages(ticketChats[ticketId] || [], result.messages);
-            localStorage.setItem('tekagon_ticket_chats', JSON.stringify(ticketChats));
-            console.log('✅ Ticket messages loaded from MongoDB');
-          }
-        } else {
-          const result = await window.TekagonAPI.getUserMessages(userId);
-          if (result.success) {
-            this.setConversationMessages(userId, result.messages);
-            console.log('✅ User messages loaded from MongoDB');
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load messages from MongoDB:', err);
-      }
-    }
-
     // Get user info from registration data
     const users = JSON.parse(localStorage.getItem('tekagon_chat_users') || '{}');
-    const userInfo = users[userId] || {};
+    const userInfo = this.registeredUsers[userId] || users[userId] || {};
     const userName = this.getUserDisplayName(userId, userInfo);
 
     // Mark messages as read
@@ -1552,14 +1552,14 @@ initAdminSocket() {
             <i class="fas fa-ticket-alt"></i>
             Ticket #${ticketId.substring(0, 10)}
           </div>
-          <div class="ticket-chat-service">${ticket.serviceName}</div>
-          <div class="ticket-chat-status ${ticket.status}">${ticket.status}</div>
+          <div class="ticket-chat-service">${this.escapeHtml(ticket.serviceName)}</div>
+          <div class="ticket-chat-status ${this.escapeHtml(ticket.status)}">${this.escapeHtml(ticket.status)}</div>
         </div>
       `;
       }
     } else {
       // Load general conversation messages
-      messages = this.conversations[userId] || [];
+      messages = (this.conversations[userId] || []).filter(message => !message.ticketId);
     }
 
     // Open conversation in modal
@@ -1572,8 +1572,8 @@ initAdminSocket() {
               <i class="fas fa-user"></i>
             </div>
             <div>
-              <h3>${userName}</h3>
-              <div class="user-id">ID: ${userId.substring(0, 15)}...</div>
+              <h3>${this.escapeHtml(userName)}</h3>
+              <div class="user-id">ID: ${this.escapeHtml(userId.substring(0, 15))}...</div>
             </div>
           </div>
           <button class="modal-close" onclick="adminDashboard.closeModal()">×</button>
@@ -1583,7 +1583,7 @@ initAdminSocket() {
         
         <div class="modal-body">
           <div class="conversation-messages" id="conversationMessages">
-            ${messages.map(msg => this.renderChatMessage(msg, userName)).join('')}
+            ${messages.map(msg => this.renderChatMessage(msg, userName)).join('') || '<div class="empty-state compact"><p>No messages in this conversation yet.</p></div>'}
           </div>
           
           <div class="message-input">
@@ -1608,6 +1608,15 @@ initAdminSocket() {
 
     // Add new modal
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.getElementById('adminReply')?.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        this.sendAdminReply(userId, ticketId || '');
+      }
+    });
+    document.getElementById('conversationModal')?.addEventListener('click', event => {
+      if (event.target.id === 'conversationModal') this.closeModal();
+    });
 
     // Scroll to bottom
     setTimeout(() => {
@@ -1616,11 +1625,37 @@ initAdminSocket() {
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       }
     }, 100);
+
+    this.refreshConversation(userId, ticketId);
+  }
+
+  async refreshConversation(userId, ticketId = null) {
+    if (!window.TekagonAPI) return;
+    try {
+      if (ticketId) {
+        const result = await window.TekagonAPI.getTicketMessages(ticketId);
+        if (result.success) {
+          const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
+          ticketChats[ticketId] = this.mergeMessages(ticketChats[ticketId] || [], result.messages);
+          localStorage.setItem(TICKET_CHAT_KEY, JSON.stringify(ticketChats));
+        }
+      } else {
+        const result = await window.TekagonAPI.getUserMessages(userId);
+        if (result.success) this.setConversationMessages(userId, result.messages);
+      }
+      this.renderOpenConversationMessages(userId, ticketId);
+      this.markAsRead(userId, ticketId);
+    } catch (error) {
+      console.warn('Conversation refresh failed:', error);
+      this.showNotification('Conversation opened from cached messages. Live refresh will retry.', 'info');
+    }
   }
 
   closeModal() {
     const modal = document.getElementById('conversationModal');
     if (modal) modal.remove();
+    this.selectedUser = null;
+    this.selectedTicket = null;
   }
 
  
@@ -1661,18 +1696,23 @@ initAdminSocket() {
     URL.revokeObjectURL(url);
   }
 
-  deleteConversation(userId) {
-    if (confirm('Are you sure you want to delete this conversation?')) {
+  async deleteConversation(userId) {
+    if (confirm('Delete this conversation and all of its messages?')) {
+      const result = await window.TekagonAPI?.deleteAdminConversation?.(userId);
+      if (result && !result.success) {
+        this.showNotification(result.error || 'Failed to delete conversation', 'error');
+        return;
+      }
       delete this.conversations[userId];
       localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
       this.calculateStats();
       this.updateBadge();
       this.loadPage('chats');
+      this.showNotification('Conversation deleted', 'success');
     }
   }
 
-  sendEmail() {
-    const recipients = document.getElementById('emailRecipients').value;
+  async sendEmail() {
     const subject = document.getElementById('emailSubject').value;
     const message = document.getElementById('emailMessage').value;
 
@@ -1681,29 +1721,33 @@ initAdminSocket() {
       return;
     }
 
-    // Simulate sending email
-    alert(`Email sent to ${recipients === 'all' ? 'all users' : 'selected users'}:\n\nSubject: ${subject}\n\nMessage sent successfully!`);
+    const selected = Array.from(document.getElementById('emailRecipients').selectedOptions).map(option => option.value);
+    if (!selected.length) {
+      this.showNotification('Select at least one email recipient', 'error');
+      return;
+    }
+    const userIds = selected.includes('all') ? [] : selected;
+    const result = await window.TekagonAPI?.sendAdminEmail?.({ userIds, subject, message });
+    if (!result?.success) {
+      this.showNotification(result?.error || 'Email could not be sent', 'error');
+      return;
+    }
+    this.showNotification(`Email sent to ${result.sent} recipient${result.sent === 1 ? '' : 's'}`, 'success');
   }
 
-  broadcastMessage() {
+  async broadcastMessage() {
     const message = prompt('Enter broadcast message to send to all users:');
     if (message && message.trim()) {
-      // Add broadcast message to all conversations
-      Object.keys(this.conversations).forEach(userId => {
-        const broadcastMsg = {
-          id: 'broadcast_' + Date.now(),
-          sender: 'admin',
-          content: message.trim(),
-          timestamp: new Date().toISOString(),
-          read: false,
-          isBroadcast: true
-        };
-
-        this.conversations[userId].push(broadcastMsg);
+      const result = await window.TekagonAPI?.broadcastAdminMessage?.(message.trim());
+      if (!result?.success) {
+        this.showNotification(result?.error || 'Broadcast failed', 'error');
+        return;
+      }
+      (result.messages || []).forEach(savedMessage => {
+        this.setConversationMessages(savedMessage.userId, savedMessage);
       });
-
-      localStorage.setItem('tekagon_chat_conversations', JSON.stringify(this.conversations));
-      alert(`Broadcast sent to ${Object.keys(this.conversations).length} users`);
+      this.calculateStats();
+      this.showNotification(`Broadcast sent to ${result.sent} user${result.sent === 1 ? '' : 's'}`, 'success');
     }
   }
 
@@ -1721,6 +1765,162 @@ initAdminSocket() {
     a.download = `tekagon-chats-export-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async clearOldChats() {
+    const configuredDays = Number(localStorage.getItem('tekagon_auto_delete_days') || 90);
+    const entered = prompt('Delete messages older than how many days?', String(configuredDays));
+    if (entered === null) return;
+    const days = Math.min(Math.max(Number(entered) || configuredDays, 1), 3650);
+    if (!confirm(`Delete all messages older than ${days} days?`)) return;
+    const result = await window.TekagonAPI?.clearOldAdminMessages?.(days);
+    if (!result?.success) {
+      this.showNotification(result?.error || 'Old chats could not be cleared', 'error');
+      return;
+    }
+    await this.loadData();
+    this.loadPage(this.currentPage);
+    this.showNotification(`${result.deletedMessages || 0} old message${result.deletedMessages === 1 ? '' : 's'} deleted`, 'success');
+  }
+
+  sendTestEmail() {
+    this.loadPage('email');
+    this.useTemplate('update');
+    this.showNotification('Email composer opened. Select a recipient to send a test.', 'info');
+  }
+
+  sendEmailToUser(userId) {
+    this.loadPage('email');
+    const select = document.getElementById('emailRecipients');
+    if (select) {
+      Array.from(select.options).forEach(option => {
+        option.selected = option.value === userId;
+      });
+    }
+    this.useTemplate('welcome');
+  }
+
+  async deleteUser(userId) {
+    const name = this.getUserDisplayName(userId);
+    if (!confirm(`Delete ${name}, their tickets, and all of their messages?`)) return;
+    const result = await window.TekagonAPI?.deleteAdminUser?.(userId);
+    if (!result?.success) {
+      this.showNotification(result?.error || 'User could not be deleted', 'error');
+      return;
+    }
+    delete this.registeredUsers[userId];
+    delete this.conversations[userId];
+    this.allTicketsList = this.allTicketsList.filter(ticket => ticket.userId !== userId);
+    this.calculateStats();
+    this.loadPage('users');
+    this.showNotification('User and related records deleted', 'success');
+  }
+
+  useTemplate(type) {
+    const templates = {
+      welcome: {
+        subject: 'Welcome to Tekagon',
+        message: 'Hello,\n\nWelcome to Tekagon. We are glad to have you with us. Reply to this email if you need any assistance.\n\nTekagon Team'
+      },
+      update: {
+        subject: 'Important Update from Tekagon',
+        message: 'Hello,\n\nWe have an important update to share with you. Please log in to your Tekagon dashboard for the latest information.\n\nTekagon Team'
+      },
+      promo: {
+        subject: 'A Special Offer from Tekagon',
+        message: 'Hello,\n\nWe have a special offer available for selected Tekagon services. Contact our team to learn more.\n\nTekagon Team'
+      },
+      survey: {
+        subject: 'Share Your Feedback with Tekagon',
+        message: 'Hello,\n\nWe would appreciate your feedback about your experience with Tekagon. Your response helps us improve.\n\nTekagon Team'
+      }
+    };
+    const template = templates[type] || templates.update;
+    const subject = document.getElementById('emailSubject');
+    const message = document.getElementById('emailMessage');
+    if (subject) subject.value = template.subject;
+    if (message) message.value = template.message;
+  }
+
+  loadTemplate() {
+    this.useTemplate('update');
+  }
+
+  saveChatSettings() {
+    const settings = {
+      autoResponseDelay: Number(document.getElementById('autoResponseDelay')?.value || 5),
+      enableAutoResponses: Boolean(document.getElementById('enableAutoResponses')?.checked),
+      welcomeMessage: document.getElementById('welcomeMessage')?.value || ''
+    };
+    localStorage.setItem('tekagon_admin_chat_settings', JSON.stringify(settings));
+    this.showNotification('Chat settings saved', 'success');
+  }
+
+  async saveNotificationSettings() {
+    const settings = {
+      emailNotifications: Boolean(document.getElementById('emailNotifications')?.checked),
+      desktopNotifications: Boolean(document.getElementById('desktopNotifications')?.checked),
+      sound: document.getElementById('notificationSound')?.value || 'default'
+    };
+    if (settings.desktopNotifications && window.Notification?.permission === 'default') {
+      const permission = await window.Notification.requestPermission();
+      settings.desktopNotifications = permission === 'granted';
+    }
+    localStorage.setItem('tekagon_admin_notification_settings', JSON.stringify(settings));
+    this.showNotification('Notification settings saved', 'success');
+  }
+
+  changePassword() {
+    const password = document.getElementById('newPassword')?.value || '';
+    const confirmation = document.getElementById('confirmPassword')?.value || '';
+    if (password.length < 8) {
+      this.showNotification('Password must be at least 8 characters', 'error');
+      return;
+    }
+    if (password !== confirmation) {
+      this.showNotification('Passwords do not match', 'error');
+      return;
+    }
+    this.showNotification('For security, change ADMIN_PASSWORD in Render and redeploy the backend.', 'info');
+  }
+
+  exportAllData() {
+    const payload = {
+      users: this.registeredUsers,
+      conversations: this.conversations,
+      tickets: this.allTicketsList,
+      content: this.managedContent,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `tekagon-admin-export-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async clearAllData() {
+    if (!confirm('This will permanently delete every user, message, and ticket. Continue?')) return;
+    const confirmation = prompt('Type DELETE ALL DATA to confirm');
+    if (confirmation !== 'DELETE ALL DATA') {
+      this.showNotification('Data deletion cancelled', 'info');
+      return;
+    }
+    for (const userId of Object.keys(this.registeredUsers)) {
+      const result = await window.TekagonAPI?.deleteAdminUser?.(userId);
+      if (!result?.success) {
+        this.showNotification(`Deletion stopped at ${this.getUserDisplayName(userId)}`, 'error');
+        return;
+      }
+    }
+    this.registeredUsers = {};
+    this.conversations = {};
+    this.allTicketsList = [];
+    this.calculateStats();
+    this.loadPage('dashboard');
+    this.showNotification('All user data was deleted', 'success');
   }
 
   updateBadge() {
@@ -2040,7 +2240,7 @@ initAdminSocket() {
       console.log('Viewing ticket:', { userId, ticketId });
 
       const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
-      const ticket = tickets[userId] ? tickets[userId][ticketId] : null;
+      const ticket = this.getTicket(userId, ticketId);
 
       if (!ticket) {
         alert('Ticket not found');
@@ -2266,7 +2466,7 @@ initAdminSocket() {
     this.closeAdminModal();
 
     // Open conversation
-    this.openConversation(userId);
+    this.openConversation(userId, ticketId);
 
     // Auto-fill message about the ticket
     setTimeout(() => {
@@ -2284,14 +2484,16 @@ initAdminSocket() {
   getTicket(userId, ticketId) {
     try {
       const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
-      return tickets[userId] ? tickets[userId][ticketId] : null;
+      return tickets[userId]?.[ticketId] ||
+        this.allTicketsList.find(ticket => (ticket.id || ticket.ticketId) === ticketId && ticket.userId === userId) ||
+        null;
     } catch (error) {
       console.error('Error getting ticket:', error);
       return null;
     }
   }
 
-  updateTicketStatus(userId, ticketId, newStatus) {
+  async updateTicketStatus(userId, ticketId, newStatus) {
     try {
       console.log('Updating ticket status:', { userId, ticketId, newStatus });
 
@@ -2331,6 +2533,16 @@ initAdminSocket() {
           localStorage.setItem('tekagon_all_tickets', JSON.stringify(allTickets));
           console.log('Added to tekagon_all_tickets');
         }
+      }
+
+      const backendResult = await window.TekagonAPI?.updateTicketStatus?.(ticketId, newStatus);
+      if (backendResult && !backendResult.success) {
+        throw new Error(backendResult.error || 'Backend status update failed');
+      }
+      const inMemoryTicket = this.allTicketsList.find(ticket => (ticket.id || ticket.ticketId) === ticketId);
+      if (inMemoryTicket) {
+        inMemoryTicket.status = newStatus;
+        inMemoryTicket.updatedAt = new Date().toISOString();
       }
 
       // Show success notification
@@ -2523,7 +2735,7 @@ initAdminSocket() {
             </span>
             <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${msg.content}</div>
+        <div class="message-content">${this.escapeHtml(msg.content)}</div>
         ${msg.ticketId ? `
             <div class="message-context">
                 <i class="fas fa-ticket-alt"></i>
@@ -2601,7 +2813,7 @@ initAdminSocket() {
 
 
   // Mark messages as read (with ticket context)
-  markAsRead(userId, ticketId = null) {
+  async markAsRead(userId, ticketId = null) {
     if (ticketId) {
       // Mark ticket messages as read
       const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
@@ -2637,6 +2849,10 @@ initAdminSocket() {
 
     this.calculateStats();
     this.updateBadge();
+    if (!ticketId) {
+      const result = await window.TekagonAPI?.markMessagesRead?.(userId);
+      if (result && !result.success) console.warn('Backend read status update failed', result.error);
+    }
   }
 
   renderChatMessage(msg, userName) {
@@ -2650,7 +2866,7 @@ initAdminSocket() {
           <span class="message-sender">${userName}</span>
           <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${msg.content}</div>
+        <div class="message-content">${this.escapeHtml(msg.content)}</div>
       </div>
     `;
     } else {
@@ -2661,7 +2877,7 @@ initAdminSocket() {
           <span class="message-sender">${senderName}</span>
           <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${msg.content}</div>
+        <div class="message-content">${this.escapeHtml(msg.content)}</div>
         ${msg.read ? '<div class="message-status"><i class="fas fa-check-double"></i> Read</div>' : ''}
       </div>
     `;
@@ -3307,7 +3523,7 @@ initAdminSocket() {
     if (modal) modal.remove();
   }
 
-  saveTicketNotes(userId, ticketId) {
+  async saveTicketNotes(userId, ticketId) {
     try {
       const notes = document.getElementById('adminTicketNotes')?.value || '';
       const tickets = JSON.parse(localStorage.getItem('tekagon_tickets') || '{}');
@@ -3315,8 +3531,12 @@ initAdminSocket() {
       if (tickets[userId] && tickets[userId][ticketId]) {
         tickets[userId][ticketId].adminNotes = notes;
         localStorage.setItem('tekagon_tickets', JSON.stringify(tickets));
-        this.showNotification('Notes saved successfully', 'success');
       }
+      const result = await window.TekagonAPI?.updateAdminTicketNotes?.(ticketId, notes);
+      if (result && !result.success) throw new Error(result.error || 'Backend notes update failed');
+      const ticket = this.allTicketsList.find(item => (item.id || item.ticketId) === ticketId);
+      if (ticket) ticket.adminNotes = notes;
+      this.showNotification('Notes saved successfully', 'success');
     } catch (error) {
       console.error('Error saving notes:', error);
       this.showNotification('Failed to save notes', 'error');
@@ -5878,4 +6098,12 @@ function showAdminNotification(message, type = 'info') {
 let adminDashboard;
 document.addEventListener('DOMContentLoaded', () => {
   adminDashboard = new AdminChatDashboard();
+  window.adminDashboard = adminDashboard;
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      adminDashboard.closeModal();
+      adminDashboard.closeAdminModal();
+      adminDashboard.closeStatusModal();
+    }
+  });
 });

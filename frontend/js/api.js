@@ -113,6 +113,77 @@ async function getAllUsers() {
   }
 }
 
+async function getAdminConversations() {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/conversations`, { headers: adminHeaders() });
+    return await res.json();
+  } catch (err) {
+    return { success: false, users: {}, conversations: {} };
+  }
+}
+
+async function deleteAdminConversation(userId) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/conversations/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      headers: adminHeaders()
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function deleteAdminUser(userId) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      headers: adminHeaders()
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function clearOldAdminMessages(days) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/messages/older-than/${encodeURIComponent(days)}`, {
+      method: 'DELETE',
+      headers: adminHeaders()
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function broadcastAdminMessage(content) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/messages/broadcast`, {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ content })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function sendAdminEmail(emailData) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/email`, {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify(emailData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 // ── TICKETS ───────────────────────────────────────────────────────────────────
 async function createTicket(ticketData) {
   try {
@@ -155,6 +226,19 @@ async function updateTicketStatus(ticketId, status) {
     return await res.json();
   } catch (err) {
     return { success: false };
+  }
+}
+
+async function updateAdminTicketNotes(ticketId, adminNotes) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/tickets/${encodeURIComponent(ticketId)}/notes`, {
+      method: 'PATCH',
+      headers: adminHeaders(),
+      body: JSON.stringify({ adminNotes })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
@@ -311,10 +395,17 @@ window.TekagonAPI = {
   updateSocialCard,
   updateDashboardEvent,
   getAllUsers,
+  getAdminConversations,
+  deleteAdminConversation,
+  deleteAdminUser,
+  clearOldAdminMessages,
+  broadcastAdminMessage,
+  sendAdminEmail,
   createTicket,
   getUserTickets,
   getAllTickets,
   updateTicketStatus,
+  updateAdminTicketNotes,
   sendMessage,
   getUserMessages,
   getTicketMessages,

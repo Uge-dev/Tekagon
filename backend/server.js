@@ -410,6 +410,127 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.get('/api/admin/conversations', requireAdmin, async (req, res) => {
+  try {
+    const [users, messages] = await Promise.all([
+      User.find().sort({ lastActive: -1 }).lean(),
+      Message.find().sort({ timestamp: 1 }).lean()
+    ]);
+    const usersById = Object.fromEntries(users.map(user => [user.userId, user]));
+    const conversations = {};
+
+    messages.forEach(message => {
+      if (!conversations[message.userId]) conversations[message.userId] = [];
+      conversations[message.userId].push(message);
+      if (!usersById[message.userId]) {
+        usersById[message.userId] = {
+          userId: message.userId,
+          name: 'User',
+          email: '',
+          phone: '',
+          company: ''
+        };
+      }
+    });
+
+    res.json({ success: true, users: usersById, conversations });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/admin/conversations/:userId', requireAdmin, async (req, res) => {
+  try {
+    const result = await Message.deleteMany({ userId: req.params.userId });
+    res.json({ success: true, deletedMessages: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const [userResult, messageResult, ticketResult] = await Promise.all([
+      User.deleteOne({ userId }),
+      Message.deleteMany({ userId }),
+      Ticket.deleteMany({ userId })
+    ]);
+    res.json({
+      success: true,
+      deletedUser: userResult.deletedCount,
+      deletedMessages: messageResult.deletedCount,
+      deletedTickets: ticketResult.deletedCount
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/admin/messages/older-than/:days', requireAdmin, async (req, res) => {
+  try {
+    const days = Math.min(Math.max(Number(req.params.days) || 90, 1), 3650);
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const result = await Message.deleteMany({ timestamp: { $lt: cutoff } });
+    res.json({ success: true, deletedMessages: result.deletedCount, cutoff });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/messages/broadcast', requireAdmin, async (req, res) => {
+  try {
+    const content = sanitizeText(req.body.content, 2000);
+    if (!content) return res.status(400).json({ success: false, error: 'Message is required' });
+    const users = await User.find({}, { userId: 1 }).lean();
+    const userIds = [...new Set(users.map(user => user.userId).filter(Boolean))];
+    if (!userIds.length) return res.json({ success: true, sent: 0, messages: [] });
+
+    const messages = await Message.insertMany(userIds.map(userId => ({
+      clientId: `broadcast_${Date.now()}_${userId}`,
+      sender: 'admin',
+      content,
+      userId,
+      ticketId: null,
+      read: false
+    })));
+    res.json({ success: true, sent: messages.length, messages });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/email', requireAdmin, async (req, res) => {
+  try {
+    if (!SENDGRID_API_KEY || !SENDER_EMAIL) {
+      return res.status(503).json({ success: false, error: 'SendGrid is not configured' });
+    }
+    const subject = sanitizeText(req.body.subject, 200);
+    const message = sanitizeText(req.body.message, 10000);
+    const requestedUserIds = Array.isArray(req.body.userIds) ? req.body.userIds : [];
+    if (!subject || !message) {
+      return res.status(400).json({ success: false, error: 'Subject and message are required' });
+    }
+
+    const query = requestedUserIds.length ? { userId: { $in: requestedUserIds } } : { email: { $ne: '' } };
+    const users = await User.find(query).lean();
+    const recipients = [...new Set(users.map(user => user.email).filter(Boolean))];
+    if (!recipients.length) {
+      return res.status(400).json({ success: false, error: 'No user email addresses were found' });
+    }
+
+    await Promise.all(recipients.map(email => sgMail.send({
+      to: email,
+      from: SENDER_EMAIL,
+      subject,
+      text: message
+    })));
+    res.json({ success: true, sent: recipients.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── TICKET ROUTES ─────────────────────────────────────────────────────────────
 app.post('/api/tickets/create', async (req, res) => {
   try {
@@ -445,6 +566,20 @@ app.patch('/api/tickets/:ticketId/status', async (req, res) => {
       { status: req.body.status, updatedAt: new Date() },
       { new: true }
     );
+    res.json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/admin/tickets/:ticketId/notes', requireAdmin, async (req, res) => {
+  try {
+    const ticket = await Ticket.findOneAndUpdate(
+      { id: req.params.ticketId },
+      { adminNotes: sanitizeText(req.body.adminNotes, 10000), updatedAt: new Date() },
+      { new: true }
+    );
+    if (!ticket) return res.status(404).json({ success: false, error: 'Ticket not found' });
     res.json({ success: true, ticket });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
