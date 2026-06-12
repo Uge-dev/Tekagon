@@ -174,9 +174,15 @@ body {
   background: #09071f;
 }
 
-.event-hero-media img,
+.event-hero-media img{
+  width: 85%;
+  height: 85%;
+  display: block;
+  object-fit: cover;
+}
+
 .event-speaker-image {
-  width: 100%;
+   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
@@ -193,7 +199,7 @@ body {
 .event-hero-content h2 {
   margin: 0 0 18px;
   font-family: 'YWFT Eurometra', sans-serif;
-  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-size: clamp(2rem, 4vw, 2.6rem);
   line-height: 1.02;
   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
   -webkit-background-clip: text;
@@ -265,7 +271,7 @@ body {
 .event-speaker-card {
   overflow: hidden;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 20px;
   background: linear-gradient(155deg, #08052d, #1d0b48);
   border: 1px solid rgba(147, 255, 246, 0.12);
   text-align: center;
@@ -273,13 +279,13 @@ body {
 
 .event-speaker-image {
   height: clamp(210px, 20vw, 285px);
-  border-radius: 5px;
+  border-radius: 20px;
 }
 
 .event-speaker-card h3 {
-  margin: 10px 0 6px;
+  margin: 20px 0 6px;
   font-family: 'YWFT Eurometra', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
   -webkit-background-clip: text;
   background-clip: text;
@@ -288,7 +294,7 @@ body {
 
 .event-speaker-card p {
   min-height: 56px;
-  margin: 0 0 12px;
+  margin: 0 7px 12px;
   color: #bbb8ca;
   font-family: 'YWFT avant modern', sans-serif;
   font-size: 0.8rem;
@@ -301,7 +307,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  color: #93fff6;
+   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-family: 'YWFT avant modern', sans-serif;
   font-size: 0.82rem;
   text-decoration: none;
@@ -309,6 +318,9 @@ body {
 
 .it_btn {
   text-decoration: none;
+  background-color: #0175C2;
+  border-radius: 50px;
+  padding: 10px;
 }
 
 @media (max-width: 920px) {
