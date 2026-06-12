@@ -9,6 +9,10 @@ constructor() {
   this.ticketChats = {};
   this.registeredUsers = {}; // ← add this line
   this.allTicketsList = [];  // ← add this line too
+  this.managedContent = {
+    socialCards: [],
+    event: { published: false, speakers: [] }
+  };
   this.stats = {
     totalUsers: 0,
     activeToday: 0,
@@ -238,7 +242,9 @@ initAdminSocket() {
 
   checkAuth() {
     const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
-    if (!isAdmin) {
+    const hasToken = Boolean(sessionStorage.getItem('tekagonAdminToken'));
+    if (!isAdmin || !hasToken) {
+      localStorage.removeItem('adminLoggedIn');
       this.showLogin();
       return false;
     }
@@ -322,6 +328,11 @@ initAdminSocket() {
       if (ticketsResult.success) {
         this.allTicketsList = ticketsResult.tickets;
         console.log('✅ Tickets loaded:', ticketsResult.tickets.length);
+      }
+
+      const contentResult = await window.TekagonAPI.getDashboardContent();
+      if (contentResult.success && contentResult.content) {
+        this.managedContent = contentResult.content;
       }
 
       // Load messages for all users without discarding live optimistic messages.
@@ -472,6 +483,12 @@ initAdminSocket() {
           <button class="nav-btn" data-page="email">
             <i class="fas fa-envelope"></i> Email
           </button>
+          <button class="nav-btn" data-page="social-content">
+            <i class="fas fa-images"></i> Social Cards
+          </button>
+          <button class="nav-btn" data-page="events-content">
+            <i class="fas fa-calendar-alt"></i> Events
+          </button>
           <button class="nav-btn" data-page="settings">
             <i class="fas fa-cog"></i> Settings
           </button>
@@ -489,6 +506,7 @@ initAdminSocket() {
     // Load default page
     this.loadPage('dashboard');
     this.addAdminStyles();
+    this.addContentManagerStyles();
   }
 
 
@@ -531,10 +549,18 @@ initAdminSocket() {
       case 'tickets':
         mainContent.innerHTML = this.renderTicketsPage();
         break;
+      case 'social-content':
+        mainContent.innerHTML = this.renderSocialContentPage();
+        break;
+      case 'events-content':
+        mainContent.innerHTML = this.renderEventsContentPage();
+        break;
       case 'settings':
         mainContent.innerHTML = this.renderSettingsPage();
         break;
     }
+    this.bindImageUploadInputs();
+    this.bindContentEditorActions();
   }
 
   renderDashboardPage() {
@@ -886,6 +912,465 @@ initAdminSocket() {
         </div>
       </div>
     `;
+  }
+
+  escapeValue(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  imageField(label, inputId, value, previewClass = '') {
+    const safeValue = this.escapeValue(value);
+    return `
+      <div class="content-image-field">
+        <label for="${inputId}">${label}</label>
+        <div class="content-image-row">
+          <input type="url" id="${inputId}" value="${safeValue}" placeholder="https://res.cloudinary.com/...">
+          <label class="upload-image-btn" for="${inputId}-file">
+            <i class="fas fa-cloud-upload-alt"></i> Upload
+          </label>
+          <input class="content-file-input" id="${inputId}-file" type="file" accept="image/*" data-url-target="${inputId}">
+        </div>
+        ${safeValue ? `<img class="content-image-preview ${previewClass}" src="${safeValue}" alt="">` : ''}
+      </div>
+    `;
+  }
+
+  renderSocialContentPage() {
+    const cards = Array.isArray(this.managedContent.socialCards) ? this.managedContent.socialCards : [];
+    return `
+      <div class="managed-content-page">
+        <div class="managed-page-heading">
+          <div>
+            <h2><i class="fas fa-images"></i> Dashboard Social Cards</h2>
+            <p>Edit and publish one card at a time. Changes appear on the user dashboard after refresh.</p>
+          </div>
+        </div>
+        <div class="managed-cards-grid">
+          ${[0, 1, 2, 3].map(index => {
+            const card = cards[index] || {};
+            return `
+              <form class="managed-editor-card social-card-editor" data-card-index="${index}">
+                <div class="managed-card-title">
+                  <span>Card ${index + 1}</span>
+                  <button class="btn-primary" type="submit"><i class="fas fa-save"></i> Save Card</button>
+                </div>
+                ${this.imageField('Main card image', `social-${index}-imageUrl`, card.imageUrl)}
+                <div class="managed-form-grid">
+                  <div class="form-group">
+                    <label for="social-${index}-title">Title</label>
+                    <input id="social-${index}-title" value="${this.escapeValue(card.title)}" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="social-${index}-profileName">Profile or brand name</label>
+                    <input id="social-${index}-profileName" value="${this.escapeValue(card.profileName)}">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="social-${index}-description">Description</label>
+                  <textarea id="social-${index}-description" rows="3">${this.escapeValue(card.description)}</textarea>
+                </div>
+                ${this.imageField('Small profile image', `social-${index}-profileImageUrl`, card.profileImageUrl, 'is-avatar')}
+                <div class="managed-form-grid">
+                  <div class="form-group">
+                    <label for="social-${index}-profileSubtitle">Profile subtitle</label>
+                    <input id="social-${index}-profileSubtitle" value="${this.escapeValue(card.profileSubtitle)}">
+                  </div>
+                  <div class="form-group">
+                    <label for="social-${index}-buttonText">Button text</label>
+                    <input id="social-${index}-buttonText" value="${this.escapeValue(card.buttonText || 'View Now')}">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="social-${index}-buttonUrl">Button link</label>
+                  <input type="url" id="social-${index}-buttonUrl" value="${this.escapeValue(card.buttonUrl)}" placeholder="https://instagram.com/...">
+                </div>
+              </form>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderEventsContentPage() {
+    const event = this.managedContent.event || {};
+    const speakers = Array.isArray(event.speakers) ? event.speakers : [];
+    return `
+      <div class="managed-content-page">
+        <div class="managed-page-heading">
+          <div>
+            <h2><i class="fas fa-calendar-alt"></i> Events & Blogs Content</h2>
+            <p>The hero and speaker cards retain the dashboard event layout shown to users.</p>
+          </div>
+          <button class="btn-primary" id="saveEventContentBtn" type="button">
+            <i class="fas fa-save"></i> Save Event
+          </button>
+        </div>
+
+        <section class="managed-editor-card">
+          <div class="publish-row">
+            <div>
+              <strong>Publish this event</strong>
+              <p>Turn this off to show “No Event” on the dashboard.</p>
+            </div>
+            <input id="event-published" type="checkbox" ${event.published ? 'checked' : ''}>
+          </div>
+          ${this.imageField('Main banner image', 'event-bannerImageUrl', event.bannerImageUrl)}
+          <div class="managed-form-grid">
+            <div class="form-group">
+              <label for="event-title">Main title</label>
+              <input id="event-title" value="${this.escapeValue(event.title)}" placeholder="Raising Brand">
+            </div>
+            <div class="form-group">
+              <label for="event-highlightedText">Highlighted title text</label>
+              <input id="event-highlightedText" value="${this.escapeValue(event.highlightedText)}" placeholder="Ambassadors">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="event-description">Event description</label>
+            <textarea id="event-description" rows="4">${this.escapeValue(event.description)}</textarea>
+          </div>
+          <div class="managed-form-grid managed-form-grid-3">
+            <div class="form-group">
+              <label for="event-date">Date</label>
+              <input id="event-date" value="${this.escapeValue(event.date)}" placeholder="15th Feb, 2026">
+            </div>
+            <div class="form-group">
+              <label for="event-time">Time</label>
+              <input id="event-time" value="${this.escapeValue(event.time)}" placeholder="2:00PM">
+            </div>
+            <div class="form-group">
+              <label for="event-platformName">Platform name</label>
+              <input id="event-platformName" value="${this.escapeValue(event.platformName)}" placeholder="Google Meet">
+            </div>
+          </div>
+          ${this.imageField('Platform image icon', 'event-platformIconUrl', event.platformIconUrl, 'is-icon')}
+          <div class="managed-form-grid">
+            <div class="form-group">
+              <label for="event-registerButtonText">Register button text</label>
+              <input id="event-registerButtonText" value="${this.escapeValue(event.registerButtonText || 'Register Now')}">
+            </div>
+            <div class="form-group">
+              <label for="event-registerUrl">Registration link</label>
+              <input type="url" id="event-registerUrl" value="${this.escapeValue(event.registerUrl)}" placeholder="https://meet.google.com/...">
+            </div>
+          </div>
+        </section>
+
+        <div class="managed-page-heading speaker-heading">
+          <div>
+            <h2>Speakers</h2>
+            <p>Add speakers in the same order they should appear.</p>
+          </div>
+          <button class="btn-secondary" id="addEventSpeakerBtn" type="button">
+            <i class="fas fa-plus"></i> Add Speaker
+          </button>
+        </div>
+        <div id="speakerEditors" class="speaker-editor-grid">
+          ${speakers.map((speaker, index) => `
+            <article class="managed-editor-card speaker-editor" data-speaker-index="${index}">
+              <div class="managed-card-title">
+                <span>Speaker ${index + 1}</span>
+                <button class="icon-delete-btn remove-speaker-btn" data-speaker-index="${index}" type="button" title="Remove speaker">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+              ${this.imageField('Speaker image', `speaker-${index}-imageUrl`, speaker.imageUrl)}
+              <div class="form-group">
+                <label for="speaker-${index}-name">Speaker name</label>
+                <input id="speaker-${index}-name" value="${this.escapeValue(speaker.name)}">
+              </div>
+              <div class="form-group">
+                <label for="speaker-${index}-bio">About speaker</label>
+                <textarea id="speaker-${index}-bio" rows="4">${this.escapeValue(speaker.bio)}</textarea>
+              </div>
+              ${this.imageField('Social platform icon', `speaker-${index}-socialIconUrl`, speaker.socialIconUrl, 'is-icon')}
+              <div class="managed-form-grid">
+                <div class="form-group">
+                  <label for="speaker-${index}-socialHandle">Social handle</label>
+                  <input id="speaker-${index}-socialHandle" value="${this.escapeValue(speaker.socialHandle)}" placeholder="@pedroahmed">
+                </div>
+                <div class="form-group">
+                  <label for="speaker-${index}-socialUrl">Social profile link</label>
+                  <input type="url" id="speaker-${index}-socialUrl" value="${this.escapeValue(speaker.socialUrl)}">
+                </div>
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  async saveSocialCard(event, index) {
+    event.preventDefault();
+    const value = field => document.getElementById(`social-${index}-${field}`)?.value.trim() || '';
+    const card = {
+      imageUrl: value('imageUrl'),
+      title: value('title'),
+      description: value('description'),
+      profileImageUrl: value('profileImageUrl'),
+      profileName: value('profileName'),
+      profileSubtitle: value('profileSubtitle'),
+      buttonText: value('buttonText'),
+      buttonUrl: value('buttonUrl')
+    };
+    const result = await window.TekagonAPI.updateSocialCard(index, card);
+    if (!result.success) {
+      this.showNotification(result.error || 'Card could not be saved', 'error');
+      return;
+    }
+    this.managedContent.socialCards = result.socialCards;
+    this.showNotification(`Card ${index + 1} saved`, 'success');
+  }
+
+  addEventSpeaker() {
+    const speakers = Array.isArray(this.managedContent.event?.speakers)
+      ? this.managedContent.event.speakers
+      : [];
+    if (speakers.length >= 12) {
+      this.showNotification('A maximum of 12 speakers is supported', 'error');
+      return;
+    }
+    this.captureEventDraft();
+    this.managedContent.event.speakers.push({
+      imageUrl: '',
+      name: '',
+      bio: '',
+      socialIconUrl: '',
+      socialHandle: '',
+      socialUrl: ''
+    });
+    this.loadPage('events-content');
+  }
+
+  removeEventSpeaker(index) {
+    this.captureEventDraft();
+    this.managedContent.event.speakers.splice(index, 1);
+    this.loadPage('events-content');
+  }
+
+  captureEventDraft() {
+    if (!document.getElementById('event-title')) return this.managedContent.event;
+    const value = id => document.getElementById(id)?.value.trim() || '';
+    const speakers = Array.from(document.querySelectorAll('.speaker-editor')).map((editor, index) => ({
+      imageUrl: value(`speaker-${index}-imageUrl`),
+      name: value(`speaker-${index}-name`),
+      bio: value(`speaker-${index}-bio`),
+      socialIconUrl: value(`speaker-${index}-socialIconUrl`),
+      socialHandle: value(`speaker-${index}-socialHandle`),
+      socialUrl: value(`speaker-${index}-socialUrl`)
+    }));
+    this.managedContent.event = {
+      published: Boolean(document.getElementById('event-published')?.checked),
+      bannerImageUrl: value('event-bannerImageUrl'),
+      title: value('event-title'),
+      highlightedText: value('event-highlightedText'),
+      description: value('event-description'),
+      date: value('event-date'),
+      time: value('event-time'),
+      platformName: value('event-platformName'),
+      platformIconUrl: value('event-platformIconUrl'),
+      registerButtonText: value('event-registerButtonText'),
+      registerUrl: value('event-registerUrl'),
+      speakers
+    };
+    return this.managedContent.event;
+  }
+
+  async saveEventContent() {
+    const event = this.captureEventDraft();
+    const result = await window.TekagonAPI.updateDashboardEvent(event);
+    if (!result.success) {
+      this.showNotification(result.error || 'Event could not be saved', 'error');
+      return;
+    }
+    this.managedContent.event = result.event;
+    this.showNotification('Event content saved', 'success');
+  }
+
+  bindImageUploadInputs() {
+    document.querySelectorAll('.content-file-input').forEach(input => {
+      input.addEventListener('change', async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const target = document.getElementById(input.dataset.urlTarget);
+        try {
+          const url = await this.uploadImageToCloudinary(file);
+          if (target) target.value = url;
+          const field = input.closest('.content-image-field');
+          let preview = field?.querySelector('.content-image-preview');
+          if (!preview && field) {
+            preview = document.createElement('img');
+            preview.className = 'content-image-preview';
+            preview.alt = '';
+            field.appendChild(preview);
+          }
+          if (preview) preview.src = url;
+          this.showNotification('Image uploaded. Save the card or event to publish it.', 'success');
+        } catch (error) {
+          this.showNotification(error.message || 'Image upload failed', 'error');
+        }
+      });
+    });
+  }
+
+  bindContentEditorActions() {
+    document.querySelectorAll('.social-card-editor').forEach(form => {
+      form.addEventListener('submit', event => {
+        this.saveSocialCard(event, Number(form.dataset.cardIndex));
+      });
+    });
+    document.getElementById('saveEventContentBtn')?.addEventListener('click', () => this.saveEventContent());
+    document.getElementById('addEventSpeakerBtn')?.addEventListener('click', () => this.addEventSpeaker());
+    document.querySelectorAll('.remove-speaker-btn').forEach(button => {
+      button.addEventListener('click', () => this.removeEventSpeaker(Number(button.dataset.speakerIndex)));
+    });
+  }
+
+  async uploadImageToCloudinary(file) {
+    const config = window.TEKAGON_PUBLIC_CONFIG || {};
+    const cloudName = config.CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = config.CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) {
+      throw new Error('Cloudinary cloud name and unsigned upload preset are not configured in Vercel');
+    }
+    if (!file.type.startsWith('image/')) throw new Error('Please choose an image file');
+    if (file.size > 10 * 1024 * 1024) throw new Error('Image must be smaller than 10MB');
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('upload_preset', uploadPreset);
+    form.append('folder', 'tekagon/dashboard-content');
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
+      method: 'POST',
+      body: form
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.secure_url) {
+      throw new Error(result.error?.message || 'Cloudinary rejected the upload');
+    }
+    return result.secure_url;
+  }
+
+  addContentManagerStyles() {
+    if (document.getElementById('contentManagerStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'contentManagerStyles';
+    style.textContent = `
+      .managed-content-page { display: grid; gap: 22px; }
+      .managed-page-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+      .managed-page-heading h2 { margin-bottom: 6px; }
+      .managed-page-heading p,
+      .publish-row p { color: #94a3b8; line-height: 1.45; }
+      .managed-cards-grid,
+      .speaker-editor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+      .managed-editor-card {
+        min-width: 0;
+        padding: 22px;
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+      }
+      .managed-card-title,
+      .publish-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .managed-card-title > span { font-size: 1.1rem; font-weight: 700; }
+      .managed-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+      }
+      .managed-form-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .content-image-field { margin-bottom: 20px; }
+      .content-image-field > label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+      .content-image-row { display: flex; gap: 10px; }
+      .content-image-row input[type="url"] {
+        min-width: 0;
+        flex: 1;
+        padding: 12px 14px;
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 6px;
+        background: rgba(255,255,255,.03);
+        color: #e2e8f0;
+      }
+      .content-file-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .upload-image-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 14px;
+        border: 1px solid rgba(147,255,246,.3);
+        border-radius: 6px;
+        color: #93fff6;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .content-image-preview {
+        width: 100%;
+        max-height: 220px;
+        display: block;
+        margin-top: 12px;
+        border-radius: 6px;
+        object-fit: cover;
+        background: #080d18;
+      }
+      .content-image-preview.is-avatar,
+      .content-image-preview.is-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .content-image-preview.is-icon { border-radius: 6px; object-fit: contain; }
+      .publish-row input[type="checkbox"] { width: 24px; height: 24px; accent-color: #6f65ff; }
+      .speaker-heading { margin-top: 6px; }
+      .icon-delete-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid rgba(239,68,68,.35);
+        border-radius: 6px;
+        background: rgba(239,68,68,.1);
+        color: #ef4444;
+        cursor: pointer;
+      }
+      @media (max-width: 900px) {
+        .managed-cards-grid,
+        .speaker-editor-grid,
+        .managed-form-grid,
+        .managed-form-grid-3 { grid-template-columns: 1fr; }
+        .managed-page-heading { align-items: flex-start; flex-direction: column; }
+      }
+      @media (max-width: 520px) {
+        .managed-editor-card { padding: 16px; }
+        .managed-card-title { align-items: flex-start; }
+        .content-image-row { flex-direction: column; }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   renderSettingsPage() {
@@ -1268,6 +1753,7 @@ initAdminSocket() {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('adminLoggedIn');
+        sessionStorage.removeItem('tekagonAdminToken');
         location.reload();
       });
     }

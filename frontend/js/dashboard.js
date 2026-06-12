@@ -890,6 +890,30 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   portfolioPageKeys.forEach(key => delete pageData[key]);
 
+  async function loadManagedDashboardContent() {
+    if (!window.TekagonAPI || typeof window.TekagonAPI.getDashboardContent !== 'function') return;
+    try {
+      const result = await window.TekagonAPI.getDashboardContent();
+      if (!result.success || !result.content) return;
+
+      if (Array.isArray(result.content.socialCards) && result.content.socialCards.length === 4) {
+        pageData.home.items = result.content.socialCards.map(card => ({
+          title: card.title || '',
+          meta: card.description || '',
+          img: card.imageUrl || '',
+          inlineImage: card.profileImageUrl || '',
+          prf: card.profileName || '',
+          prfTxt: card.profileSubtitle || '',
+          btn: card.buttonText || 'View Now',
+          buttonUrl: card.buttonUrl || ''
+        }));
+      }
+      pageData.events.event = result.content.event || null;
+    } catch (error) {
+      console.warn('Managed dashboard content could not be loaded', error);
+    }
+  }
+
   // Add this function near the top of dashboard.js
 
   // --- Helpers for building UI
@@ -1470,11 +1494,60 @@ async function buildPage(pageKey) {
     }
 
     if (pageKey === 'events') {
-      pageEl.innerHTML = `
-        <section class="events-empty-state" aria-live="polite">
-          <h2>No Event</h2>
-        </section>
-      `;
+      const event = data.event;
+      if (!event || !event.published) {
+        pageEl.innerHTML = `
+          <section class="events-empty-state" aria-live="polite">
+            <h2>No Event</h2>
+          </section>
+        `;
+      } else {
+        const speakers = Array.isArray(event.speakers) ? event.speakers : [];
+        const platformIcon = event.platformIconUrl
+          ? `<img src="${escapeHtml(event.platformIconUrl)}" alt="">`
+          : '<i class="fas fa-video" aria-hidden="true"></i>';
+        const registerButton = event.registerUrl
+          ? `<a class="event-register-btn" href="${escapeHtml(event.registerUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(event.registerButtonText || 'Register Now')}</a>`
+          : `<span class="event-register-btn is-disabled">${escapeHtml(event.registerButtonText || 'Register Now')}</span>`;
+
+        pageEl.innerHTML = `
+          <section class="event-page" aria-label="${escapeHtml(event.title || 'Event')}">
+            <div class="event-hero">
+              <div class="event-hero-media">
+                <img src="${escapeHtml(event.bannerImageUrl || '')}" alt="${escapeHtml(event.title || 'Event')}">
+              </div>
+              <div class="event-hero-content">
+                <h2>${escapeHtml(event.title || '')} <span>${escapeHtml(event.highlightedText || '')}</span></h2>
+                <p>${escapeHtml(event.description || '')}</p>
+                <div class="event-date-line">
+                  <strong>${escapeHtml(event.date || '')}</strong>
+                  ${event.time ? `<span aria-hidden="true"></span><strong>${escapeHtml(event.time)}</strong>` : ''}
+                </div>
+                <div class="event-platform">${platformIcon}<span>${escapeHtml(event.platformName || '')}</span></div>
+                ${registerButton}
+              </div>
+            </div>
+            <div class="event-speakers">
+              ${speakers.map(speaker => {
+                const socialIcon = speaker.socialIconUrl
+                  ? `<img src="${escapeHtml(speaker.socialIconUrl)}" alt="">`
+                  : '<i class="fas fa-link" aria-hidden="true"></i>';
+                const social = speaker.socialUrl
+                  ? `<a href="${escapeHtml(speaker.socialUrl)}" target="_blank" rel="noopener noreferrer">${socialIcon}<span>${escapeHtml(speaker.socialHandle || '')}</span></a>`
+                  : `<div class="event-speaker-social">${socialIcon}<span>${escapeHtml(speaker.socialHandle || '')}</span></div>`;
+                return `
+                  <article class="event-speaker-card">
+                    <img class="event-speaker-image" src="${escapeHtml(speaker.imageUrl || '')}" alt="${escapeHtml(speaker.name || 'Speaker')}">
+                    <h3>${escapeHtml(speaker.name || '')}</h3>
+                    <p>${escapeHtml(speaker.bio || '')}</p>
+                    ${social}
+                  </article>
+                `;
+              }).join('')}
+            </div>
+          </section>
+        `;
+      }
       cleanupScrollAnimations();
       window.scrollTo(0, 0);
       return;
@@ -4383,7 +4456,10 @@ async function buildPage(pageKey) {
       items.forEach((it, idx) => {
         const c = document.createElement('div');
         c.className = 'card';
-        c.innerHTML = `<div class="thumb" style="background-image:url('${it.img}')"></div>
+        const cardAction = it.buttonUrl
+          ? `<a class="it_btn" href="${escapeHtml(it.buttonUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(it.btn || 'View Now')}</a>`
+          : `<span class="it_btn">${escapeHtml(it.btn || 'View Now')}</span>`;
+        c.innerHTML = `<div class="thumb" style="background-image:url('${escapeHtml(it.img || '')}')"></div>
                        <h4>${escapeHtml(it.title)}</h4>
                        <p class="thumbTxt" style="color:${getCssVar('--muted')}">${escapeHtml(it.meta || '')}</p>
                        <div class="prf" style="">
@@ -4393,7 +4469,7 @@ async function buildPage(pageKey) {
                           <p>${escapeHtml(it.prfTxt || '')}</p>
                          </div>
                            </div>
-                         <p class="it_btn">${escapeHtml(it.btn || '')}</p>
+                         ${cardAction}
                        </div>`;
 
         grid.appendChild(c);
@@ -8733,7 +8809,7 @@ async function buildPage(pageKey) {
     document.head.appendChild(style);
   }
 
-  initFromHash();
+  loadManagedDashboardContent().finally(initFromHash);
 
   // Make functions globally accessible
   window.buildPage = buildPage;

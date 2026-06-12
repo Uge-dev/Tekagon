@@ -8,6 +8,7 @@ const connectDB = require('./db');
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Message = require('./models/Message');
+const SiteContent = require('./models/SiteContent');
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -63,6 +64,146 @@ function safeCompare(left, right) {
   const leftBuffer = Buffer.from(left || '');
   const rightBuffer = Buffer.from(right || '');
   return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+const DEFAULT_SOCIAL_CARDS = [
+  {
+    imageUrl: '../Images/trending (2).jpeg',
+    title: 'Social Betting Platform',
+    description: 'Atreides returns, Business visibility can be enhanced by design',
+    profileImageUrl: '../Images/thumb_1.png',
+    profileName: 'Luelink',
+    profileSubtitle: 'Social betting',
+    buttonText: 'View Now',
+    buttonUrl: ''
+  },
+  {
+    imageUrl: '../Images/trending (1).jpeg',
+    title: 'All In one Solution',
+    description: 'Atreides returns, Business visibility can be enhanced by design',
+    profileImageUrl: '../Images/thumb_2.png',
+    profileName: 'TeckIQ',
+    profileSubtitle: 'Tech Services',
+    buttonText: 'View Now',
+    buttonUrl: ''
+  },
+  {
+    imageUrl: '../Images/trending (3).jpeg',
+    title: 'Food Brand',
+    description: 'Atreides returns, Business visibility can be enhanced by design',
+    profileImageUrl: '../Images/thumb_3.png',
+    profileName: 'Deylish Kitchen',
+    profileSubtitle: 'All in one movies',
+    buttonText: 'View Now',
+    buttonUrl: ''
+  },
+  {
+    imageUrl: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?auto=format&fit=crop&w=800&q=60',
+    title: 'Medical Branding',
+    description: 'Atreides returns, Business visibility can be enhanced by design',
+    profileImageUrl: '../Images/thumb_4.png',
+    profileName: 'City of Hope',
+    profileSubtitle: 'Medical treatment & services',
+    buttonText: 'View Now',
+    buttonUrl: ''
+  }
+];
+
+const DEFAULT_EVENT = {
+  published: false,
+  bannerImageUrl: '',
+  title: 'Raising Brand',
+  highlightedText: 'Ambassadors',
+  description: '',
+  date: '',
+  time: '',
+  platformName: 'Google Meet',
+  platformIconUrl: '',
+  registerButtonText: 'Register Now',
+  registerUrl: '',
+  speakers: []
+};
+
+function sanitizeText(value, maxLength = 500) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+function sanitizeUrl(value) {
+  const url = sanitizeText(value, 2000);
+  if (!url) return '';
+  if (/^(https?:\/\/|\/|\.\.?\/)/i.test(url)) return url;
+  return '';
+}
+
+function normalizeSocialCard(card = {}) {
+  return {
+    imageUrl: sanitizeUrl(card.imageUrl),
+    title: sanitizeText(card.title, 120),
+    description: sanitizeText(card.description, 500),
+    profileImageUrl: sanitizeUrl(card.profileImageUrl),
+    profileName: sanitizeText(card.profileName, 120),
+    profileSubtitle: sanitizeText(card.profileSubtitle, 180),
+    buttonText: sanitizeText(card.buttonText, 60) || 'View Now',
+    buttonUrl: sanitizeUrl(card.buttonUrl)
+  };
+}
+
+function normalizeEvent(event = {}) {
+  const speakers = Array.isArray(event.speakers) ? event.speakers.slice(0, 12) : [];
+  return {
+    published: Boolean(event.published),
+    bannerImageUrl: sanitizeUrl(event.bannerImageUrl),
+    title: sanitizeText(event.title, 120),
+    highlightedText: sanitizeText(event.highlightedText, 120),
+    description: sanitizeText(event.description, 1200),
+    date: sanitizeText(event.date, 80),
+    time: sanitizeText(event.time, 80),
+    platformName: sanitizeText(event.platformName, 120),
+    platformIconUrl: sanitizeUrl(event.platformIconUrl),
+    registerButtonText: sanitizeText(event.registerButtonText, 60) || 'Register Now',
+    registerUrl: sanitizeUrl(event.registerUrl),
+    speakers: speakers.map(speaker => ({
+      imageUrl: sanitizeUrl(speaker.imageUrl),
+      name: sanitizeText(speaker.name, 120),
+      bio: sanitizeText(speaker.bio, 600),
+      socialIconUrl: sanitizeUrl(speaker.socialIconUrl),
+      socialHandle: sanitizeText(speaker.socialHandle, 120),
+      socialUrl: sanitizeUrl(speaker.socialUrl)
+    }))
+  };
+}
+
+function createAdminToken(username) {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    expiresAt: Date.now() + (8 * 60 * 60 * 1000)
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', ADMIN_PASSWORD).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    return res.status(500).json({ success: false, error: 'Admin credentials are not configured' });
+  }
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) {
+    return res.status(401).json({ success: false, error: 'Admin login required' });
+  }
+  const expected = crypto.createHmac('sha256', ADMIN_PASSWORD).update(payload).digest('base64url');
+  if (!safeCompare(signature, expected)) {
+    return res.status(401).json({ success: false, error: 'Invalid admin session' });
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (parsed.username !== ADMIN_USERNAME || parsed.expiresAt < Date.now()) {
+      return res.status(401).json({ success: false, error: 'Admin session expired' });
+    }
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, error: 'Invalid admin session' });
+  }
 }
 
 if (!SENDGRID_API_KEY) {
@@ -201,7 +342,61 @@ app.post('/api/admin/login', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    res.json({ success: true });
+    res.json({ success: true, token: createAdminToken(username) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── MANAGED DASHBOARD CONTENT ────────────────────────────────────────────────
+app.get('/api/content/dashboard', async (req, res) => {
+  try {
+    const content = await SiteContent.findOne({ key: 'dashboard' }).lean();
+    res.json({
+      success: true,
+      content: {
+        socialCards: content?.socialCards?.length === 4 ? content.socialCards : DEFAULT_SOCIAL_CARDS,
+        event: content?.event ? { ...DEFAULT_EVENT, ...content.event } : DEFAULT_EVENT
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/admin/content/social-cards/:index', requireAdmin, async (req, res) => {
+  try {
+    const index = Number(req.params.index);
+    if (!Number.isInteger(index) || index < 0 || index > 3) {
+      return res.status(400).json({ success: false, error: 'Card index must be between 0 and 3' });
+    }
+
+    const existing = await SiteContent.findOne({ key: 'dashboard' }).lean();
+    const cards = existing?.socialCards?.length === 4
+      ? existing.socialCards.map(card => normalizeSocialCard(card))
+      : DEFAULT_SOCIAL_CARDS.map(card => ({ ...card }));
+    cards[index] = normalizeSocialCard(req.body);
+
+    const content = await SiteContent.findOneAndUpdate(
+      { key: 'dashboard' },
+      { $set: { socialCards: cards }, $setOnInsert: { event: DEFAULT_EVENT } },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json({ success: true, socialCards: content.socialCards });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/admin/content/event', requireAdmin, async (req, res) => {
+  try {
+    const event = normalizeEvent(req.body);
+    const content = await SiteContent.findOneAndUpdate(
+      { key: 'dashboard' },
+      { $set: { event }, $setOnInsert: { socialCards: DEFAULT_SOCIAL_CARDS } },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json({ success: true, event: content.event });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

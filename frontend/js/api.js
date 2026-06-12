@@ -50,9 +50,56 @@ async function adminLogin(credentials) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials)
     });
-    return await res.json();
+    const result = await res.json();
+    if (result.success && result.token) {
+      sessionStorage.setItem('tekagonAdminToken', result.token);
+    }
+    return result;
   } catch (err) {
     console.error('adminLogin error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+function adminHeaders() {
+  const token = sessionStorage.getItem('tekagonAdminToken') || '';
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  };
+}
+
+async function getDashboardContent() {
+  try {
+    const res = await fetch(`${API_URL}/api/content/dashboard`);
+    return await res.json();
+  } catch (err) {
+    return { success: false, content: null };
+  }
+}
+
+async function updateSocialCard(index, card) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/content/social-cards/${index}`, {
+      method: 'PUT',
+      headers: adminHeaders(),
+      body: JSON.stringify(card)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function updateDashboardEvent(event) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/content/event`, {
+      method: 'PUT',
+      headers: adminHeaders(),
+      body: JSON.stringify(event)
+    });
+    return await res.json();
+  } catch (err) {
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -260,6 +307,9 @@ window.TekagonAPI = {
   signupWithEmail,
   signinWithEmail,
   adminLogin,
+  getDashboardContent,
+  updateSocialCard,
+  updateDashboardEvent,
   getAllUsers,
   createTicket,
   getUserTickets,
