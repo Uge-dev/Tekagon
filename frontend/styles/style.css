@@ -16,6 +16,16 @@ body {
 
 html {
     scroll-behavior: smooth;
+    min-height: 100%;
+    background: #000000;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+}
+
+body {
+    min-height: 100%;
+    background-color: #000000;
+    overflow-x: hidden;
 }
 
 .main-header {
@@ -1572,8 +1582,8 @@ footer {
 /* Scroll Animation Styles */
 .scroll-animate {
     opacity: 0;
-    transform: translateY(60px);
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(24px);
+    transition: opacity 0.32s ease, transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: opacity, transform;
 }
 
@@ -1583,7 +1593,7 @@ footer {
 }
 
 .scroll-animate.reverse {
-    transform: translateY(-60px);
+    transform: translateY(-24px);
 }
 
 .scroll-animate.reverse.active {

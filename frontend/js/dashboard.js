@@ -792,6 +792,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }]
     },
 
+    events: {
+      title: 'Events & Blogs',
+      items: []
+    },
+
     portfolio: {
       title: 'Portfolio',
       banners: [{ title: 'Selected Work', meta: 'Portfolio', desc: 'A selection of recent projects.', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1650&q=80' }],
@@ -875,6 +880,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   };
+
+  const portfolioPageKeys = [
+    'portfolio',
+    'portfolio-mobile',
+    'portfolio-web',
+    'portfolio-brand',
+    'portfolio-uiux'
+  ];
+  portfolioPageKeys.forEach(key => delete pageData[key]);
 
   // Add this function near the top of dashboard.js
 
@@ -1453,6 +1467,17 @@ async function buildPage(pageKey) {
       if (carouselNext) carouselNext.style.display = 'none';
       slideCount = 0;
       currentSlide = 0;
+    }
+
+    if (pageKey === 'events') {
+      pageEl.innerHTML = `
+        <section class="events-empty-state" aria-live="polite">
+          <h2>No Event</h2>
+        </section>
+      `;
+      cleanupScrollAnimations();
+      window.scrollTo(0, 0);
+      return;
     }
 
 
@@ -3888,11 +3913,11 @@ async function buildPage(pageKey) {
                         <div class="form-group">
                             <label for="timezone"><i class="fas fa-globe"></i> Time Zone</label>
                             <select id="timezone">
-                                <option value="Africa/Lagos">🇳🇬 West Africa Time (WAT)</option>
-                                <option value="UTC">🌐 Coordinated Universal Time (UTC)</option>
-                                <option value="America/New_York">🇺🇸 Eastern Time (ET)</option>
-                                <option value="Europe/London">🇬🇧 Greenwich Mean Time (GMT)</option>
-                                <option value="Asia/Dubai">🇦🇪 Gulf Standard Time (GST)</option>
+                                <option value="Africa/Lagos">West Africa Time (WAT)</option>
+                                <option value="UTC">Coordinated Universal Time (UTC)</option>
+                                <option value="America/New_York">Eastern Time (ET)</option>
+                                <option value="Europe/London">Greenwich Mean Time (GMT)</option>
+                                <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
                             </select>
                         </div>
                     </div>
@@ -4348,22 +4373,7 @@ async function buildPage(pageKey) {
 
     const grid = document.createElement('div');
     grid.className = 'grid';
-    // allow home page to show a representative item from each portfolio section
     let items = data.items || [];
-    if (pageKey === 'home') {
-      items = [];
-      Object.keys(pageData).forEach(k => {
-        if (k && k.startsWith && k.startsWith('portfolio')) {
-          const p = pageData[k];
-          if (p && Array.isArray(p.items) && p.items.length) {
-            const it = Object.assign({}, p.items[0]);
-            it.__sourcePage = k;
-            it.__sourceIndex = 0;
-            items.push(it);
-          }
-        }
-      });
-    }
     if ((pageKey !== "service" && page.items && page.items.length > 0)) {
       const note = document.createElement('div');
       note.className = 'card';
@@ -4391,37 +4401,6 @@ async function buildPage(pageKey) {
         // You must register each card's detail HTML manually using registerCardPage('<sourcePage>::<index>', htmlString).
         // This allows each card to use a completely custom structure independent of pageData.
 
-        // attach click handler to the button area to open the item detail page
-        // use a small timeout to ensure element is in DOM
-        setTimeout(() => {
-          const btn = c.querySelector('.it_btn');
-          if (btn) {
-            btn.style.cursor = 'pointer';
-            btn.addEventListener('click', (e) => {
-              // capture exact previous view state so Back can restore nav and scroll
-              const activeMain = (navMainBtns.find(n => n.classList.contains('active')) || {}).dataset?.page || null;
-              const activeSub = (navSubitems.find(s => s.classList.contains('active')) || {}).dataset?.page || null;
-              const sourcePage = it.__sourcePage || pageKey;
-              lastViewState = {
-                // when clicking from a portfolio-sourced card, record its original portfolio page
-                page: sourcePage || currentPage || 'home',
-                scrollY: (typeof window !== 'undefined' && window.scrollY) ? window.scrollY : 0,
-                activeMain,
-                activeSub,
-                navExpanded: !!(navGroup && navGroup.classList.contains('expanded'))
-              };
-              // set current page placeholder and render item detail
-              previousPage = lastViewState.page;
-              currentPage = 'portfolio-item';
-              // open the registered card page (or auto-register a default) using a unique key
-              const key = (sourcePage || pageKey) + '::' + (typeof it.__sourceIndex !== 'undefined' ? it.__sourceIndex : idx);
-              // log the computed key so you can register it via registerCardPage(key, html)
-              console.log('Opening card key:', key, 'title:', it.title);
-              if (!getCardPage(key)) console.warn('No registered page for', key, ' — registered keys:', Object.keys(cardPages).slice(0, 50));
-              openCardByKey(key, { item: it, sourcePage: sourcePage, index: (typeof it.__sourceIndex !== 'undefined' ? it.__sourceIndex : idx) });
-            });
-          }
-        }, 0);
       });
     }
     pageEl.appendChild(grid);
@@ -6327,6 +6306,10 @@ async function buildPage(pageKey) {
 
 
 
+    if (window.feather) {
+      try { feather.replace(); } catch (e) { console.warn('Feather icon refresh failed', e); }
+    }
+
     // initialize or cleanup scroll-triggered animations for home page
     if (pageKey === 'home') {
       initScrollAnimations();
@@ -6527,7 +6510,7 @@ async function buildPage(pageKey) {
         te.dataset._init = 'init-bottom';
         te.dataset._initRev = 'init-top';
         // small stagger for readability
-        te.style.transitionDelay = `${(i % 6) * 40}ms`;
+        te.style.transitionDelay = `${(i % 6) * 15}ms`;
         itemsToObserve.push(te);
       });
     });
@@ -6551,7 +6534,7 @@ async function buildPage(pageKey) {
       softIcons.forEach((ic, i) => {
         ic.classList.add('anim-initial', 'init-bottom');
         // set staggered delay
-        ic.style.transitionDelay = `${(i % 6) * 80}ms`;
+        ic.style.transitionDelay = `${(i % 6) * 25}ms`;
         itemsToObserve.push(ic);
       });
     }
@@ -6601,7 +6584,7 @@ async function buildPage(pageKey) {
           if (_scrollDir < 0 && out) el.classList.add(out);
         }
       });
-    }, { root: null, rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    }, { root: null, rootMargin: '0px 0px -3% 0px', threshold: 0.03 });
 
     itemsToObserve.forEach(n => _animObserver.observe(n));
 
@@ -6625,7 +6608,7 @@ async function buildPage(pageKey) {
           }
         });
       } catch (e) { /* ignore */ }
-    }, 650);
+    }, 180);
   }
 
   function cleanupScrollAnimations() {
@@ -6750,15 +6733,15 @@ async function buildPage(pageKey) {
       const page = btn.dataset.page;
 
       if (btn.classList.contains('nav-group-toggle')) {
-        const was = navGroup.classList.toggle('expanded');
-        navGroupList.setAttribute('aria-hidden', String(!was));
+        const was = navGroup?.classList.toggle('expanded');
+        navGroupList?.setAttribute('aria-hidden', String(!was));
 
         return;
       }
 
 
-      navGroup.classList.remove('expanded');
-      navGroupList.setAttribute('aria-hidden', 'true');
+      navGroup?.classList.remove('expanded');
+      navGroupList?.setAttribute('aria-hidden', 'true');
 
 
       navMainBtns.forEach(n => n.classList.remove('active'));
@@ -6786,8 +6769,8 @@ async function buildPage(pageKey) {
       sub.classList.add('active');
 
       // keep group open
-      navGroup.classList.add('expanded');
-      navGroupList.setAttribute('aria-hidden', 'false');
+      navGroup?.classList.add('expanded');
+      navGroupList?.setAttribute('aria-hidden', 'false');
 
       // render subpage
       buildPage(page);
@@ -6823,11 +6806,11 @@ async function buildPage(pageKey) {
 
     // If the goto page is a subitem, make sure the nav-group remains expanded
     if (navSubitems.some(s => s.dataset.page === goto)) {
-      navGroup.classList.add('expanded');
-      navGroupList.setAttribute('aria-hidden', 'false');
+      navGroup?.classList.add('expanded');
+      navGroupList?.setAttribute('aria-hidden', 'false');
     } else {
-      navGroup.classList.remove('expanded');
-      navGroupList.setAttribute('aria-hidden', 'true');
+      navGroup?.classList.remove('expanded');
+      navGroupList?.setAttribute('aria-hidden', 'true');
     }
 
     // Render previous page and update state

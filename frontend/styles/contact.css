@@ -15,6 +15,12 @@
 
  }
 
+ .contact-page .contact-section {
+   width: calc(100% - 20rem);
+   max-width: 1200px;
+   margin: 8rem auto 0;
+ }
+
  .contact-title {
    font-size: 1.8rem;
    font-weight: 600;
@@ -368,12 +374,15 @@
  }
 
  @media (max-width: 768px) {
-   body {
-     padding: 1rem;
+   body.contact-page {
+     padding: 0;
    }
 
-   .contact-section {
+   .contact-page .contact-section {
+     width: calc(100% - 2rem);
+     margin: 7rem auto 0;
      padding: 2rem 1.5rem;
+     gap: 1.5rem;
    }
 
    .contact-row {
@@ -391,7 +400,8 @@
  }
 
  @media (max-width: 480px) {
-   .contact-section {
+   .contact-page .contact-section {
+     width: calc(100% - 1rem);
      padding: 1.5rem 1rem;
    }
 

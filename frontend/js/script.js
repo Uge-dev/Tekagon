@@ -46,13 +46,13 @@ function dismissPreloader() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(dismissPreloader, 180), { once: true });
+  document.addEventListener('DOMContentLoaded', () => setTimeout(dismissPreloader, 3180), { once: true });
 } else {
-  setTimeout(dismissPreloader, 180);
+  setTimeout(dismissPreloader, 3180);
 }
 
 // Hard fallback: the overlay must never trap the visitor.
-setTimeout(dismissPreloader, 900);
+setTimeout(dismissPreloader, 4000);
 
 
 
@@ -216,7 +216,7 @@ window.addEventListener('scroll', () => {
     const windowHeight = window.innerHeight;
 
     // Check if element is in viewport
-    if (elementTop < windowHeight * 0.85 && elementTop > -100) {
+    if (elementTop < windowHeight * 0.96 && elementTop > -100) {
       if (!isAnimated) {
         // Remove reverse class if it exists
         element.classList.remove('reverse');
@@ -242,7 +242,7 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       initScrollAnimations();
-    }, 50);
+    }, 0);
   });
 } else {
   initScrollAnimations();

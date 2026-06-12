@@ -17,7 +17,7 @@
 
   <script src="https://unpkg.com/feather-icons"></script>
   <link rel="stylesheet" href="../styles/service.css" />
-  <link rel="stylesheet" href="../styles/onScroll.css" />
+  <link id="scroll-anim-styles-link" rel="stylesheet" href="../styles/onScroll.css" />
   <link rel="stylesheet" href="../styles/dashboard.css" />
   <link rel="stylesheet" href="../styles/portfolio.css">
   <link rel="stylesheet" href="../styles/contact.css">
@@ -46,8 +46,13 @@
         <nav class="nav-area" role="navigation" aria-label="Primary navigation">
           <button class="nav-item nav-main active" data-page="home">
             <span class="icon" data-feather="home"></span>
-            <span class="label">Home</span>
+            <span class="label">Dashboard</span>
           </button>
+
+          <a class="nav-item nav-home-link" href="../index.html">
+            <span class="icon" data-feather="arrow-left"></span>
+            <span class="label">Back to Home</span>
+          </a>
 
           <button class="nav-item nav-main" data-page="service">
             <span class="icon" data-feather="server"></span>
@@ -75,28 +80,10 @@
           </button>
 
 
-          <div class="nav-group" data-group="portfolio">
-            <button class="nav-item nav-main nav-group-toggle" data-page="portfolio">
-              <span class="icon" data-feather="briefcase"></span>
-              <span class="label">Portfolio</span>
-              <span class="caret" data-feather="chevron-down"></span>
-            </button>
-
-            <div class="nav-group-list" aria-hidden="true">
-              <button class="nav-subitem" data-page="portfolio-mobile">
-                <span class="sub-icon" data-feather="smartphone"></span><span class="sub-label">Mobile App</span>
-              </button>
-              <button class="nav-subitem" data-page="portfolio-web">
-                <span class="sub-icon" data-feather="monitor"></span><span class="sub-label">Web Dev</span>
-              </button>
-              <button class="nav-subitem" data-page="portfolio-brand">
-                <span class="sub-icon" data-feather="pen-tool"></span><span class="sub-label">Branding</span>
-              </button>
-              <button class="nav-subitem" data-page="portfolio-uiux">
-                <span class="sub-icon" data-feather="layout"></span><span class="sub-label">UI/UX & Product</span>
-              </button>
-            </div>
-          </div>
+          <button class="nav-item nav-main" data-page="events">
+            <span class="icon" data-feather="calendar"></span>
+            <span class="label">Events &amp; Blogs</span>
+          </button>
         </nav>
 
         <!-- spacer to push footer to bottom -->
