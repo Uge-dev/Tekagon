@@ -199,7 +199,7 @@ body {
 .event-hero-content h2 {
   margin: 0 0 18px;
   font-family: 'YWFT Eurometra', sans-serif;
-  font-size: clamp(4rem, 4vw, 2.2rem);
+  font-size: clamp(3rem, 4vw, 2.1rem);
   line-height: 1.02;
   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
   -webkit-background-clip: text;
@@ -344,6 +344,13 @@ body {
   .event-hero-content {
     padding: 12px 8px 18px;
   }
+
+  .event-hero-content h2 {
+  margin: 0 0 10px;
+  
+  font-size: clamp(1.9rem, 4vw, 1.5rem);
+ 
+}
 
 }
 
