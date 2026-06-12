@@ -162,7 +162,7 @@ body {
   gap: clamp(24px, 4vw, 56px);
   padding: clamp(14px, 2vw, 22px);
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 15px;
   background: linear-gradient(125deg, #06051d, #13092d 55%, #08091d);
   border: 1px solid rgba(147, 255, 246, 0.12);
 }
@@ -170,13 +170,13 @@ body {
 .event-hero-media {
   min-height: 390px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 15px;
   background: #09071f;
 }
 
 .event-hero-media img{
-  width: 85%;
-  height: 85%;
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: cover;
 }
@@ -199,7 +199,7 @@ body {
 .event-hero-content h2 {
   margin: 0 0 18px;
   font-family: 'YWFT Eurometra', sans-serif;
-  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-size: clamp(2rem, 4vw, 2.1rem);
   line-height: 1.02;
   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
   -webkit-background-clip: text;
@@ -279,13 +279,13 @@ body {
 
 .event-speaker-image {
   height: clamp(210px, 20vw, 285px);
-  border-radius: 20px;
+  border-radius: 15px;
 }
 
 .event-speaker-card h3 {
   margin: 20px 0 6px;
   font-family: 'YWFT Eurometra', sans-serif;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   background: linear-gradient(to right, #fff 8%, #93fff6 56%, #7c6cff);
   -webkit-background-clip: text;
   background-clip: text;
@@ -314,13 +314,14 @@ body {
   font-family: 'YWFT avant modern', sans-serif;
   font-size: 0.82rem;
   text-decoration: none;
+    background-color: #002b48;
+  border-radius: 50px;
+  padding: 10 30 10px;
 }
 
 .it_btn {
   text-decoration: none;
-  background-color: #0175C2;
-  border-radius: 50px;
-  padding: 10px;
+
 }
 
 @media (max-width: 920px) {
