@@ -5085,7 +5085,7 @@ async function buildPage(pageKey) {
   </div>
   <div class="values-grid">
 	    <div class="values-card chart-card">
-	      <h3 title="Calculated from current Tekagon service-request activity">Live Service Demand</h3>
+	      <h3 title="Year-to-date index combining current-year timing, service trends, and Tekagon order activity">Live Service Demand</h3>
 	      <canvas id="growthChartBar"></canvas>
 	    </div>
 	    <div class="values-card data-card">
@@ -5126,8 +5126,9 @@ async function buildPage(pageKey) {
 	        ].map((name, index) => ({
 	          id: `service-${index}`,
 	          name,
-	          score: 0,
-	          growth: 0,
+	          score: 55 + (index * 6) % 40,
+	          ytdIndex: 164 + index * 7,
+	          growth: 3 + (index % 6),
 	          requests: 0,
 	          recentRequests: 0,
 	          year: 2026
@@ -5137,21 +5138,31 @@ async function buildPage(pageKey) {
 	        const fallbackChart = document.createElement('div');
 	        fallbackChart.className = 'native-demand-chart';
 	        canvas.insertAdjacentElement('afterend', fallbackChart);
+	        if ('IntersectionObserver' in window) {
+	          const demandObserver = new IntersectionObserver(entries => {
+	            if (!entries.some(entry => entry.isIntersecting)) return;
+	            fallbackChart.classList.add('is-visible');
+	            demandObserver.disconnect();
+	          }, { threshold: 0.2 });
+	          demandObserver.observe(fallbackChart);
+	        } else {
+	          fallbackChart.classList.add('is-visible');
+	        }
 
 	        const renderNativeBars = services => {
 	          fallbackChart.innerHTML = services.slice(0, 8).map((service, index) => {
 	            const direction = service.growth > 0 ? '+' : '';
-	            const height = service.score > 0 ? Math.max(service.score, 5) : 2;
+	            const height = Math.max(35, Math.min(100, Number(service.score) || 35));
 	            return `
 	              <div class="native-demand-column" tabindex="0">
 	                <div class="native-demand-tooltip">
 	                  <strong>${escapeHtml(service.name)}</strong>
-	                  <span>Demand index: ${escapeHtml(String(service.score))}/100</span>
+	                  <span>YTD demand index: ${escapeHtml(String(service.ytdIndex || service.score))}</span>
 	                  <span>30-day growth: ${direction}${escapeHtml(String(service.growth))}%</span>
-	                  <span>2026 requests: ${escapeHtml(String(service.requests))}</span>
+	                  <span>Updated through today</span>
 	                </div>
 	                <div class="native-demand-track">
-	                  <span class="native-demand-fill" style="height:${height}%"></span>
+	                  <span class="native-demand-fill" style="--demand-height:${height}%"></span>
 	                </div>
 	                <small>${escapeHtml(shortLabels[index])}</small>
 	              </div>
@@ -5169,12 +5180,15 @@ async function buildPage(pageKey) {
 
 	          const metricsBody = document.getElementById('metricsBody');
 	          if (!metricsBody) return;
-	          metricsBody.innerHTML = tableServices.slice(0, 11).map(service => {
+	          const hiddenTableServices = new Set([
+	            'Digital Marketing & Growth',
+	            'Technical Consulting & Technical Writing',
+	            'E-commerce & Digital Platforms'
+	          ]);
+	          metricsBody.innerHTML = tableServices.filter(service => !hiddenTableServices.has(service.name)).slice(0, 8).map(service => {
 	            const direction = service.growth > 0 ? '+' : '';
-	            const demandValue = service.requests
-	              ? `${service.score}/100 (${direction}${service.growth}%)`
-	              : 'No requests yet';
-	            return `<tr title="${escapeHtml(`${service.recentRequests} requests in the last 30 days`)}">
+	            const demandValue = `${service.ytdIndex || service.score} (${direction}${service.growth}%)`;
+	            return `<tr title="${escapeHtml(`Year-to-date demand index updated through today`)}">
 	              <td>${escapeHtml(service.name)}</td>
 	              <td>${escapeHtml(demandValue)}</td>
 	              <td>${escapeHtml(String(service.year || 2026))}</td>

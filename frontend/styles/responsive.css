@@ -459,7 +459,7 @@ html, body {
   }
 
   .native-demand-chart {
-    height: 320px !important;
+    height: 300px !important;
     gap: 5px !important;
     padding-inline: 2px !important;
   }

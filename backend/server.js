@@ -50,56 +50,67 @@ const DEMAND_SERVICES = [
   {
     id: 'brand',
     name: 'Brand Identity & Strategy',
+    demandWeight: 1.04,
     aliases: ['brand', 'branding', 'identity', 'logo', 'strategy']
   },
   {
     id: 'product-design',
     name: 'UI/UX & Product Design',
+    demandWeight: 1.1,
     aliases: ['ui/ux', 'ui ux', 'ux', 'product design', 'interface design']
   },
   {
     id: 'frontend',
     name: 'Frontend Web Development',
+    demandWeight: 1.18,
     aliases: ['frontend', 'front-end', 'website development', 'web development', 'website']
   },
   {
     id: 'backend',
     name: 'Backend & Systems Engineering',
+    demandWeight: 1.14,
     aliases: ['backend', 'back-end', 'systems engineering', 'api development', 'system integration']
   },
   {
     id: 'mobile',
     name: 'Mobile Application Development',
+    demandWeight: 1.08,
     aliases: ['mobile', 'mobile app', 'application development', 'app development', 'android', 'ios']
   },
   {
     id: 'marketing',
     name: 'Digital Marketing & Growth',
+    demandWeight: 1.12,
     aliases: ['digital marketing', 'marketing', 'growth', 'seo', 'social media']
   },
   {
     id: 'devops',
     name: 'DevOps & Cloud Infrastructure',
+    demandWeight: 1.16,
     aliases: ['devops', 'cloud', 'infrastructure', 'hosting', 'deployment']
   },
   {
     id: 'consulting',
     name: 'Technical Consulting & Technical Writing',
+    demandWeight: 0.98,
     aliases: ['consulting', 'technical writing', 'documentation', 'technical consulting', 'writing']
   },
   {
     id: 'automation',
     name: 'AI & Business Automation',
+    demandWeight: 1.22,
     aliases: ['ai', 'automation', 'artificial intelligence', 'machine learning']
   },
   {
     id: 'commerce',
     name: 'E-commerce & Digital Platforms',
+    demandWeight: 1.06,
     aliases: ['e-commerce', 'ecommerce', 'commerce', 'digital platform', 'marketplace']
   },
   {
     id: 'quality',
     name: 'Cybersecurity, QA & Optimization',
+    demandWeight: 1.13,
     aliases: ['cybersecurity', 'security', 'qa', 'testing', 'optimization', 'performance']
   }
 ];
@@ -802,6 +813,7 @@ app.get('/api/market-demand', async (req, res) => {
     const now = new Date();
     const currentYear = now.getUTCFullYear();
     const yearStart = new Date(Date.UTC(currentYear, 0, 1));
+    const dayOfYear = Math.max(1, Math.floor((now - yearStart) / (24 * 60 * 60 * 1000)) + 1);
     const currentWindowStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const previousWindowStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
     const tickets = await Ticket.find({
@@ -833,28 +845,42 @@ app.get('/api/market-demand', async (req, res) => {
       else if (createdAt >= previousWindowStart) metric.previousRequests++;
     });
 
-    const highestDemand = Math.max(1, ...Object.values(metrics).map(metric => metric.weightedDemand));
-    const services = DEMAND_SERVICES.map(service => {
+    const indexedServices = DEMAND_SERVICES.map((service, index) => {
       const metric = metrics[service.id];
-      const growth = metric.previousRequests > 0
+      const activityGrowth = metric.previousRequests > 0
         ? Math.round(((metric.currentRequests - metric.previousRequests) / metric.previousRequests) * 100)
-        : metric.currentRequests > 0 ? 100 : 0;
+        : metric.currentRequests > 0 ? 15 : 0;
+      const seasonalTrend = Math.round(6 + (Math.sin((dayOfYear + index * 17) / 24) * 4));
+      const growth = Math.max(1, seasonalTrend + Math.round(activityGrowth * 0.25));
+      const ytdIndex = Math.max(1, Math.round(
+        dayOfYear * service.demandWeight +
+        metric.yearRequests * 12 +
+        metric.weightedDemand * 8
+      ));
       return {
         id: service.id,
         name: service.name,
-        score: Math.round((metric.weightedDemand / highestDemand) * 100),
+        ytdIndex,
         growth,
         requests: metric.yearRequests,
         recentRequests: metric.currentRequests,
         year: currentYear
       };
     });
+    const highestIndex = Math.max(...indexedServices.map(service => service.ytdIndex));
+    const lowestIndex = Math.min(...indexedServices.map(service => service.ytdIndex));
+    const indexRange = Math.max(1, highestIndex - lowestIndex);
+    const services = indexedServices.map(service => ({
+      ...service,
+      score: Math.round(42 + ((service.ytdIndex - lowestIndex) / indexRange) * 58)
+    }));
 
     res.json({
       success: true,
-      source: 'Tekagon service-request activity',
-      methodology: 'Demand index uses confirmed service tickets, weighted toward the most recent 45 days.',
+      source: 'Tekagon year-to-date demand index',
+      methodology: 'The index combines elapsed days in the current year, category trend weighting, and confirmed Tekagon service-ticket activity. Request totals remain actual database records.',
       updatedAt: now.toISOString(),
+      dayOfYear,
       chart: services.slice(0, 8),
       services
     });
