@@ -1,3 +1,15 @@
+.landing-hero {
+  font-family: "Poppins", sans-serif;
+}
+
+@font-face {
+  font-family: "YWFT Eurometra";
+  src: url("/webfonts/ywft-eurometra-regular-demo.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 .content {
   opacity: 1;
   transform: none;
@@ -16,26 +28,24 @@ body {
   width: 100%;
   min-width: 0 !important;
   max-width: none !important;
-  height: clamp(780px, 92vw, 1040px) !important;
+  height: 1180px !important;
   overflow: hidden;
   padding: 150px 24px 0;
-  background:
-    radial-gradient(circle at 50% 52%, rgba(92, 70, 255, 0.18), transparent 32%),
-    linear-gradient(180deg, #050608 0%, #07070c 42%, #09051a 70%, #000 100%) !important;
+  background: #030305 !important;
   color: #fff;
 }
 
 .landing-hero::before {
   content: "";
   position: absolute;
-  inset: -25%;
+  inset: 0;
   z-index: -3;
   background:
-    radial-gradient(circle at 50% 68%, rgba(119, 77, 255, 0.33), transparent 27%),
-    radial-gradient(circle at 35% 78%, rgba(70, 223, 255, 0.14), transparent 24%),
-    linear-gradient(180deg, transparent 28%, rgba(58, 25, 138, 0.16) 62%, transparent 82%);
-  background-size: 100% 120%, 120% 140%, 100% 160%;
-  animation: landingAtmosphere 12s ease-in-out infinite alternate;
+    radial-gradient(ellipse 58% 28% at 50% 57%, rgba(102, 71, 222, 0.28), transparent 66%),
+    radial-gradient(ellipse 34% 19% at 50% 58%, rgba(93, 225, 255, 0.12), transparent 68%),
+    linear-gradient(180deg, #050507 0%, #07070a 37%, #0b0716 55%, #020204 77%, #000 100%);
+  background-size: 100% 110%, 108% 115%, 100% 125%;
+  animation: landingAtmosphere 14s ease-in-out infinite alternate;
   will-change: transform, background-position;
 }
 
@@ -120,21 +130,15 @@ body {
 }
 
 .landing-hero-content h1 {
-  max-width: 900px;
-  margin: 24px 0 14px;
+  max-width: 1000px;
+  margin: 24px 0 12px;
+  font-family: "YWFT Eurometra", "Poppins", sans-serif;
   color: #f7f5ff;
-  font-size: clamp(42px, 5.3vw, 76px);
-  font-weight: 500;
-  line-height: 1.04;
+  font-size: clamp(38px, 3.5vw, 48px);
+  font-weight: 400;
+  line-height: 1.12;
   letter-spacing: 0;
-}
-
-.landing-hero-content h1 span {
-  display: block;
-  background: linear-gradient(90deg, #fff 12%, #aefcff 50%, #9d82ff 86%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
 }
 
 .landing-hero-content > p {
@@ -149,7 +153,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-top: 25px;
+  margin-top: 22px;
 }
 
 .landing-action {
@@ -190,26 +194,28 @@ body {
 
 .landing-orbit {
   position: absolute;
-  top: 520px;
+  top: 570px;
   left: 50%;
   z-index: 0;
-  width: max(1220px, 125vw);
-  height: 610px;
-  border: 1px solid rgba(161, 128, 255, 0.7);
-  border-radius: 50% 50% 0 0;
+  width: max(1280px, 132vw);
+  height: 650px;
+  border: 0;
+  border-radius: 50% 50% 0 0 / 25% 25% 0 0;
   background:
-    radial-gradient(ellipse at 50% 2%, rgba(111, 238, 255, 0.32), transparent 11%),
-    radial-gradient(ellipse at 50% -2%, rgba(137, 91, 255, 0.72), rgba(24, 11, 57, 0.88) 26%, #020205 63%);
+    radial-gradient(ellipse at 50% 0%, rgba(87, 73, 174, 0.2), transparent 12%),
+    radial-gradient(ellipse at 50% -2%, #151024 0%, #09080e 19%, #020203 56%, #000 78%);
   box-shadow:
-    0 -3px 18px rgba(130, 99, 255, 0.72),
-    0 -34px 100px rgba(62, 215, 255, 0.11),
-    inset 0 54px 110px rgba(94, 64, 195, 0.26);
+    0 -1px 0 rgba(193, 180, 255, 0.72),
+    0 -4px 16px rgba(124, 101, 255, 0.6),
+    0 -28px 85px rgba(80, 206, 255, 0.12),
+    0 -70px 180px rgba(100, 61, 221, 0.15),
+    inset 0 32px 70px rgba(99, 72, 170, 0.08);
   transform: translateX(-50%);
 }
 
 .landing-trust {
   position: absolute;
-  top: 590px;
+  top: 500px;
   left: 50%;
   z-index: 3;
   width: min(580px, calc(100% - 40px));
@@ -261,10 +267,10 @@ body {
 
 .landing-dashboard-frame {
   position: absolute;
-  top: 680px;
+  top: 690px;
   left: 50%;
   z-index: 5;
-  width: min(1120px, calc(100% - 96px));
+  width: min(900px, calc(100% - 140px));
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 16px 16px 0 0;
@@ -305,13 +311,13 @@ body {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
   object-position: top;
 }
 
 @keyframes landingAtmosphere {
-  0% { transform: translate3d(0, 8%, 0) scale(1); background-position: 50% 100%, 15% 100%, 50% 100%; }
-  100% { transform: translate3d(0, -5%, 0) scale(1.04); background-position: 50% 20%, 80% 25%, 50% 15%; }
+  0% { transform: translate3d(0, 2%, 0) scale(1); background-position: 50% 100%, 50% 100%, 50% 100%; }
+  100% { transform: translate3d(0, -2%, 0) scale(1.025); background-position: 50% 42%, 52% 45%, 50% 28%; }
 }
 
 @keyframes landingCopyIn {
@@ -331,14 +337,15 @@ body {
 
 @media (max-width: 700px) {
   .landing-hero {
-    height: 810px !important;
+    height: 900px !important;
     padding: 112px 18px 0;
   }
 
   .landing-hero-content h1 {
     margin-top: 20px;
-    font-size: clamp(34px, 10vw, 48px);
-    line-height: 1.08;
+    font-size: clamp(31px, 8.8vw, 39px);
+    line-height: 1.12;
+    white-space: normal;
   }
 
   .landing-hero-content > p {
@@ -356,13 +363,13 @@ body {
   }
 
   .landing-orbit {
-    top: 500px;
-    width: 920px;
-    height: 430px;
+    top: 565px;
+    width: 940px;
+    height: 450px;
   }
 
   .landing-trust {
-    top: 536px;
+    top: 520px;
   }
 
   .landing-logo-set {
@@ -371,15 +378,15 @@ body {
   }
 
   .landing-dashboard-frame {
-    top: 652px;
-    width: calc(100% - 30px);
+    top: 685px;
+    width: calc(100% - 46px);
     border-radius: 10px 10px 0 0;
   }
 
   .landing-dashboard-frame img {
-    min-height: 240px;
-    object-fit: cover;
-    object-position: top left;
+    min-height: 0;
+    object-fit: contain;
+    object-position: top;
   }
 }
 
