@@ -54,6 +54,22 @@ if (document.readyState === 'loading') {
 // Hard fallback: the overlay must never trap the visitor.
 setTimeout(dismissPreloader, 900);
 
+const landingHero = document.querySelector('.landing-hero');
+if (landingHero && window.matchMedia('(pointer: fine)').matches) {
+  landingHero.addEventListener('pointermove', event => {
+    const bounds = landingHero.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+    landingHero.style.setProperty('--hero-x', `${x}%`);
+    landingHero.style.setProperty('--hero-y', `${y}%`);
+  }, { passive: true });
+
+  landingHero.addEventListener('pointerleave', () => {
+    landingHero.style.setProperty('--hero-x', '50%');
+    landingHero.style.setProperty('--hero-y', '48%');
+  });
+}
+
 
 
 
@@ -194,7 +210,7 @@ const animatedElements = new Map();
 function initScrollAnimations() {
   // Select all sections (except banner and header), cards, and major container divs to animate
   const sections = document.querySelectorAll(
-    'section:not(.banner):not(header), .card, .carousel-container, .cont-gp, .val-sect, .abt-bg, .ph1, .faq-det, .bg-container, .card-container'
+    'section:not(.banner):not(.content):not(header), .card, .carousel-container, .cont-gp, .val-sect, .abt-bg, .ph1, .faq-det, .bg-container, .card-container'
   );
 
   if (sections.length === 0) return;
