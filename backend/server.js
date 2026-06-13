@@ -9,6 +9,7 @@ const User = require('./models/User');
 const Ticket = require('./models/Ticket');
 const Message = require('./models/Message');
 const SiteContent = require('./models/SiteContent');
+const AdminSettings = require('./models/AdminSettings');
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -58,6 +59,22 @@ function verifyPassword(password, user) {
   if (!user?.passwordHash || !user?.passwordSalt) return false;
   const { hash } = hashPassword(password, user.passwordSalt);
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+}
+
+async function sendWelcomeEmail(user) {
+  if (!SENDGRID_API_KEY || !SENDER_EMAIL || !user?.email) return { sent: false };
+  try {
+    const [result] = await sgMail.send({
+      to: user.email,
+      from: SENDER_EMAIL,
+      subject: 'Welcome to Tekagon',
+      text: `Hello ${user.name || 'there'},\n\nWelcome to Tekagon. Your account is ready, and you can now book sessions, order services, create tickets, and chat with our team from your dashboard.\n\nTekagon Team`
+    });
+    return { sent: true, messageId: result?.headers?.['x-message-id'] || null };
+  } catch (error) {
+    console.error('Welcome email failed:', error.message);
+    return { sent: false, error: error.message };
+  }
 }
 
 function safeCompare(left, right) {
@@ -241,13 +258,18 @@ app.post('/api/users/register', async (req, res) => {
       return res.status(400).json({ success: false, error: 'userId and name are required' });
     }
 
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const existing = normalizedEmail
+      ? await User.findOne({ $or: [{ userId }, { email: normalizedEmail }] }).sort({ lastActive: -1 })
+      : await User.findOne({ userId });
+    const canonicalUserId = existing?.userId || userId;
     const user = await User.findOneAndUpdate(
-      { userId },
+      { userId: canonicalUserId },
       {
         $set: {
           name,
           phone: phone || '',
-          email: email || '',
+          email: normalizedEmail,
           company: company || '',
           lastActive: new Date()
         },
@@ -255,8 +277,9 @@ app.post('/api/users/register', async (req, res) => {
       },
       { new: true, upsert: true, runValidators: true }
     );
-
-    res.json({ success: true, user });
+    const created = !existing;
+    const welcomeEmail = created ? await sendWelcomeEmail(user) : { sent: false };
+    res.json({ success: true, user, created, welcomeEmailSent: welcomeEmail.sent });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -273,7 +296,7 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const existing = await User.findOne({ email: normalizedEmail }).select('+passwordHash +passwordSalt');
+    const existing = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
     if (existing?.passwordHash) {
       return res.status(409).json({ success: false, error: 'An account with this email already exists' });
     }
@@ -298,7 +321,14 @@ app.post('/api/auth/signup', async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    res.json({ success: true, user: { userId: user.userId, name: user.name, phone: user.phone, email: user.email, company: user.company } });
+    const created = !existing;
+    const welcomeEmail = created ? await sendWelcomeEmail(user) : { sent: false };
+    res.json({
+      success: true,
+      created,
+      welcomeEmailSent: welcomeEmail.sent,
+      user: { userId: user.userId, name: user.name, phone: user.phone, email: user.email, company: user.company }
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -312,9 +342,15 @@ app.post('/api/auth/signin', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash +passwordSalt');
-    if (!user || !verifyPassword(password, user)) {
-      return res.status(401).json({ success: false, error: 'Incorrect email or password' });
+    const matchingUsers = await User.find({ email: normalizedEmail })
+      .sort({ lastActive: -1 })
+      .select('+passwordHash +passwordSalt');
+    if (!matchingUsers.length) {
+      return res.status(404).json({ success: false, error: 'User not found. Please create an account first.' });
+    }
+    const user = matchingUsers.find(candidate => verifyPassword(password, candidate));
+    if (!verifyPassword(password, user)) {
+      return res.status(401).json({ success: false, error: 'Incorrect password' });
     }
 
     user.lastActive = new Date();
@@ -336,11 +372,38 @@ app.post('/api/admin/login', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Username and password are required' });
     }
 
-    if (!safeCompare(username, ADMIN_USERNAME) || !safeCompare(password, ADMIN_PASSWORD)) {
+    const settings = await AdminSettings.findOne({ key: 'primary' }).select('+security.passwordHash +security.passwordSalt');
+    const passwordMatches = settings?.security?.passwordHash
+      ? verifyPassword(password, {
+        passwordHash: settings.security.passwordHash,
+        passwordSalt: settings.security.passwordSalt
+      })
+      : safeCompare(password, ADMIN_PASSWORD);
+    if (!safeCompare(username, ADMIN_USERNAME) || !passwordMatches) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    res.json({ success: true, token: createAdminToken(username) });
+    const timeoutMinutes = Math.min(Math.max(settings?.security?.sessionTimeout || 30, 5), 240);
+    const token = createAdminToken(username);
+    const [payload] = token.split('.');
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    parsed.expiresAt = Date.now() + timeoutMinutes * 60 * 1000;
+    const nextPayload = Buffer.from(JSON.stringify(parsed)).toString('base64url');
+    const signature = crypto.createHmac('sha256', ADMIN_PASSWORD).update(nextPayload).digest('base64url');
+    res.json({ success: true, token: `${nextPayload}.${signature}` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/users/:userId/activity', async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { userId: req.params.userId },
+      { lastActive: new Date() },
+      { new: true }
+    );
+    res.json({ success: Boolean(user), lastActive: user?.lastActive || null });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -416,24 +479,108 @@ app.get('/api/admin/conversations', requireAdmin, async (req, res) => {
       User.find().sort({ lastActive: -1 }).lean(),
       Message.find().sort({ timestamp: 1 }).lean()
     ]);
-    const usersById = Object.fromEntries(users.map(user => [user.userId, user]));
+    const usersById = {};
+    const canonicalUserIds = {};
+    users.forEach(user => {
+      const identity = String(user.email || user.userId).trim().toLowerCase();
+      if (!canonicalUserIds[identity]) {
+        canonicalUserIds[identity] = user.userId;
+        usersById[user.userId] = user;
+      }
+      canonicalUserIds[user.userId] = canonicalUserIds[identity];
+    });
     const conversations = {};
 
     messages.forEach(message => {
-      if (!conversations[message.userId]) conversations[message.userId] = [];
-      conversations[message.userId].push(message);
-      if (!usersById[message.userId]) {
-        usersById[message.userId] = {
-          userId: message.userId,
-          name: 'User',
-          email: '',
-          phone: '',
-          company: ''
-        };
-      }
+      const canonicalUserId = canonicalUserIds[message.userId] || message.userId;
+      if (!usersById[canonicalUserId]) return;
+      if (!conversations[canonicalUserId]) conversations[canonicalUserId] = [];
+      conversations[canonicalUserId].push({ ...message, userId: canonicalUserId });
     });
 
     res.json({ success: true, users: usersById, conversations });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/admin/settings', requireAdmin, async (req, res) => {
+  try {
+    const settings = await AdminSettings.findOneAndUpdate(
+      { key: 'primary' },
+      { $setOnInsert: { key: 'primary' } },
+      { new: true, upsert: true }
+    ).lean();
+    if (settings?.security) {
+      delete settings.security.passwordHash;
+      delete settings.security.passwordSalt;
+    }
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/admin/settings', requireAdmin, async (req, res) => {
+  try {
+    const input = req.body || {};
+    const update = {
+      chat: {
+        autoResponseDelay: Math.min(Math.max(Number(input.chat?.autoResponseDelay) || 0, 0), 60),
+        enableAutoResponses: Boolean(input.chat?.enableAutoResponses),
+        welcomeMessage: sanitizeText(input.chat?.welcomeMessage, 1000)
+      },
+      notifications: {
+        emailNotifications: Boolean(input.notifications?.emailNotifications),
+        desktopNotifications: Boolean(input.notifications?.desktopNotifications),
+        sound: ['default', 'chime', 'bell', 'none'].includes(input.notifications?.sound)
+          ? input.notifications.sound
+          : 'default'
+      },
+      'security.sessionTimeout': Math.min(Math.max(Number(input.security?.sessionTimeout) || 30, 5), 240),
+      data: {
+        autoDeleteDays: Math.min(Math.max(Number(input.data?.autoDeleteDays) || 90, 1), 365),
+        exportFormat: ['json', 'csv', 'txt'].includes(input.data?.exportFormat)
+          ? input.data.exportFormat
+          : 'json'
+      }
+    };
+    const settings = await AdminSettings.findOneAndUpdate(
+      { key: 'primary' },
+      { $set: update, $setOnInsert: { key: 'primary' } },
+      { new: true, upsert: true, runValidators: true }
+    ).lean();
+    if (settings?.security) {
+      delete settings.security.passwordHash;
+      delete settings.security.passwordSalt;
+    }
+    const cutoff = new Date(Date.now() - settings.data.autoDeleteDays * 24 * 60 * 60 * 1000);
+    const cleanup = await Message.deleteMany({ timestamp: { $lt: cutoff } });
+    res.json({ success: true, settings, deletedExpiredMessages: cleanup.deletedCount });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/admin/settings/password', requireAdmin, async (req, res) => {
+  try {
+    const password = String(req.body.password || '');
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
+    }
+    const { salt, hash } = hashPassword(password);
+    await AdminSettings.findOneAndUpdate(
+      { key: 'primary' },
+      {
+        $set: {
+          'security.passwordHash': hash,
+          'security.passwordSalt': salt
+        },
+        $setOnInsert: { key: 'primary' }
+      },
+      { new: true, upsert: true }
+    );
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -451,10 +598,15 @@ app.delete('/api/admin/conversations/:userId', requireAdmin, async (req, res) =>
 app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
   try {
     const userId = req.params.userId;
+    const user = await User.findOne({ userId }).lean();
+    const relatedUsers = user?.email
+      ? await User.find({ email: user.email }, { userId: 1 }).lean()
+      : [{ userId }];
+    const relatedUserIds = [...new Set(relatedUsers.map(item => item.userId).filter(Boolean))];
     const [userResult, messageResult, ticketResult] = await Promise.all([
-      User.deleteOne({ userId }),
-      Message.deleteMany({ userId }),
-      Ticket.deleteMany({ userId })
+      User.deleteMany({ userId: { $in: relatedUserIds } }),
+      Message.deleteMany({ userId: { $in: relatedUserIds } }),
+      Ticket.deleteMany({ userId: { $in: relatedUserIds } })
     ]);
     res.json({
       success: true,
@@ -589,7 +741,7 @@ app.patch('/api/admin/tickets/:ticketId/notes', requireAdmin, async (req, res) =
 // ── MESSAGE ROUTES ────────────────────────────────────────────────────────────
 app.post('/api/messages', async (req, res) => {
   try {
-    const { sender, content, userId, ticketId, id, clientId } = req.body;
+    const { sender, content, userId, ticketId, id, clientId, messageType, metadata } = req.body;
     if (!sender || !content || !userId) {
       return res.status(400).json({ success: false, error: 'sender, content, and userId are required' });
     }
@@ -599,9 +751,50 @@ app.post('/api/messages', async (req, res) => {
       content,
       userId,
       ticketId: ticketId || null,
+      messageType: sanitizeText(messageType || 'text', 80),
+      metadata: metadata && typeof metadata === 'object' ? metadata : {},
       read: false
     });
     res.json({ success: true, message });
+
+    if (sender === 'user') {
+      AdminSettings.findOne({ key: 'primary' }).lean().then(settings => {
+        if (settings?.notifications?.emailNotifications && SENDGRID_API_KEY && SENDER_EMAIL && TEAM_BOOKING_EMAIL) {
+          sgMail.send({
+            to: TEAM_BOOKING_EMAIL,
+            from: SENDER_EMAIL,
+            subject: `New Tekagon chat message from ${userId}`,
+            text: `User: ${userId}\nTicket: ${ticketId || 'General chat'}\n\n${content}`
+          }).catch(error => console.error('Admin chat email notification failed:', error.message));
+        }
+        if (settings?.chat?.enableAutoResponses && settings.chat.welcomeMessage) {
+          const delay = Math.min(Math.max(Number(settings.chat.autoResponseDelay) || 0, 0), 60) * 1000;
+          setTimeout(async () => {
+            const recentAutomaticReply = await Message.exists({
+              userId,
+              ticketId: ticketId || null,
+              sender: 'bot',
+              timestamp: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+            });
+            const newerAdminReply = await Message.exists({
+              userId,
+              ticketId: ticketId || null,
+              sender: 'admin',
+              timestamp: { $gt: message.timestamp }
+            });
+            if (recentAutomaticReply || newerAdminReply) return;
+            await Message.create({
+              clientId: `auto_${Date.now()}_${message._id}`,
+              sender: 'bot',
+              content: settings.chat.welcomeMessage,
+              userId,
+              ticketId: ticketId || null,
+              read: false
+            });
+          }, delay).unref?.();
+        }
+      }).catch(error => console.error('Admin setting lookup failed:', error.message));
+    }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

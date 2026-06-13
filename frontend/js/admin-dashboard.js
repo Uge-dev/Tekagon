@@ -13,6 +13,20 @@ constructor() {
     socialCards: [],
     event: { published: false, speakers: [] }
   };
+  this.adminSettings = {
+    chat: {
+      autoResponseDelay: 5,
+      enableAutoResponses: true,
+      welcomeMessage: 'Hello! Welcome to Tekagon Support. How can I help you today?'
+    },
+    notifications: {
+      emailNotifications: true,
+      desktopNotifications: false,
+      sound: 'default'
+    },
+    security: { sessionTimeout: 30 },
+    data: { autoDeleteDays: 90, exportFormat: 'json' }
+  };
   this.stats = {
     totalUsers: 0,
     activeToday: 0,
@@ -205,6 +219,12 @@ initAdminSocket() {
               if (msg.sender !== 'admin') {
                 console.log('📨 New message from user:', msg);
                 this.showNotification(`New message from user`, 'info');
+                if (this.adminSettings.notifications.desktopNotifications && window.Notification?.permission === 'granted') {
+                  new Notification('New Tekagon message', {
+                    body: `${this.getUserDisplayName(userId)}: ${String(msg.content || '').slice(0, 120)}`
+                  });
+                }
+                this.playNotificationSound();
                 this.calculateStats();
                 this.updateBadge();
 
@@ -222,22 +242,27 @@ initAdminSocket() {
   console.log('✅ Admin polling started');
 }
 
-  refreshTickets() {
-    this.loadTickets();
+  async refreshTickets() {
+    await this.loadTickets();
+    this.updateBadge();
     this.loadPage('tickets');
   }
 
   filterTickets() {
-    const filterStatus = document.getElementById('filterStatus').value;
+    const filterStatus = document.getElementById('filterStatus')?.value || '';
+    const query = document.getElementById('searchTickets')?.value.trim().toLowerCase() || '';
     const rows = document.querySelectorAll('.ticket-row');
+    let visibleCount = 0;
 
     rows.forEach(row => {
-      if (!filterStatus || row.classList.contains(filterStatus)) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
+      const matchesStatus = !filterStatus || row.dataset.status === filterStatus;
+      const matchesQuery = !query || (row.dataset.search || row.textContent || '').toLowerCase().includes(query);
+      const visible = matchesStatus && matchesQuery;
+      row.style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
     });
+    const summary = document.getElementById('ticketSearchSummary');
+    if (summary) summary.textContent = `${visibleCount} ticket${visibleCount === 1 ? '' : 's'}`;
   }
 
   checkAuth() {
@@ -270,7 +295,7 @@ initAdminSocket() {
             
             <div class="form-group">
               <label>Password</label>
-              <input type="password" id="password" placeholder="••••••••" required>
+              <input type="password" id="password" placeholder="Enter password" required>
             </div>
             
             <button type="submit" class="btn-login">
@@ -316,9 +341,11 @@ initAdminSocket() {
       const conversationResult = await window.TekagonAPI.getAdminConversations?.();
       if (conversationResult?.success) {
         this.registeredUsers = conversationResult.users || {};
+        const freshConversations = {};
         Object.entries(conversationResult.conversations || {}).forEach(([userId, messages]) => {
-          this.conversations[userId] = this.mergeMessages(this.conversations[userId] || [], messages);
+          freshConversations[userId] = this.mergeMessages(messages);
         });
+        this.conversations = freshConversations;
       } else {
         const usersResult = await window.TekagonAPI.getAllUsers();
         if (usersResult.success) {
@@ -340,6 +367,18 @@ initAdminSocket() {
       const contentResult = await window.TekagonAPI.getDashboardContent();
       if (contentResult.success && contentResult.content) {
         this.managedContent = contentResult.content;
+      }
+
+      const settingsResult = await window.TekagonAPI.getAdminSettings?.();
+      if (settingsResult?.success && settingsResult.settings) {
+        this.adminSettings = {
+          ...this.adminSettings,
+          ...settingsResult.settings,
+          chat: { ...this.adminSettings.chat, ...(settingsResult.settings.chat || {}) },
+          notifications: { ...this.adminSettings.notifications, ...(settingsResult.settings.notifications || {}) },
+          security: { ...this.adminSettings.security, ...(settingsResult.settings.security || {}) },
+          data: { ...this.adminSettings.data, ...(settingsResult.settings.data || {}) }
+        };
       }
 
       if (!conversationResult?.success) {
@@ -376,7 +415,7 @@ initAdminSocket() {
 }
 
   calculateStats() {
-    const userIds = Object.keys(this.conversations);
+    const userIds = Object.keys(this.registeredUsers);
     const today = new Date().toISOString().split('T')[0];
 
     let totalMessages = 0;
@@ -391,11 +430,8 @@ initAdminSocket() {
       const unread = messages.filter(msg => !msg.read && msg.sender === 'user').length;
       unreadMessages += unread;
 
-      // Check if active today
-      const todayMessages = messages.filter(msg =>
-        msg.timestamp.startsWith(today)
-      );
-      if (todayMessages.length > 0) {
+      const lastActive = this.registeredUsers[userId]?.lastActive;
+      if (lastActive && new Date(lastActive).toISOString().startsWith(today)) {
         activeToday++;
       }
     });
@@ -509,8 +545,9 @@ initAdminSocket() {
 
 
 
-    // Load default page
-    this.loadPage('dashboard');
+    const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+    const allowedPages = ['dashboard', 'chats', 'users', 'tickets', 'email', 'social-content', 'events-content', 'settings'];
+    this.loadPage(allowedPages.includes(requestedPage) ? requestedPage : 'dashboard', false);
     this.addAdminStyles();
     this.addContentManagerStyles();
   }
@@ -518,8 +555,6 @@ initAdminSocket() {
 
   getPendingTicketsCount() {
     try {
-      // Load tickets to get count
-      this.loadTickets();
       return this.allTicketsList ? this.allTicketsList.filter(t => t.status === 'pending').length : 0;
     } catch (e) {
       console.error('Error counting pending tickets:', e);
@@ -527,10 +562,12 @@ initAdminSocket() {
     }
   }
 
-  loadPage(page) {
+  loadPage(page, updateHistory = true) {
     this.currentPage = page;
-
-
+    if (updateHistory) {
+      const nextHash = `#page=${encodeURIComponent(page)}`;
+      if (location.hash !== nextHash) history.replaceState(null, '', nextHash);
+    }
 
     // Update active nav button
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -571,19 +608,28 @@ initAdminSocket() {
   }
 
   bindAdminPageActions() {
-    const filterItems = (inputId, itemSelector, textSelector = null) => {
+    const filterItems = (inputId, itemSelector, buttonId = '') => {
       const input = document.getElementById(inputId);
       if (!input) return;
-      input.addEventListener('input', () => {
+      const applyFilter = () => {
         const query = input.value.trim().toLowerCase();
         document.querySelectorAll(itemSelector).forEach(item => {
-          const target = textSelector ? item.querySelector(textSelector) : item;
-          item.style.display = (target?.textContent || '').toLowerCase().includes(query) ? '' : 'none';
+          item.style.display = (item.textContent || '').toLowerCase().includes(query) ? '' : 'none';
         });
+      };
+      input.addEventListener('input', applyFilter);
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') applyFilter();
       });
+      document.getElementById(buttonId)?.addEventListener('click', applyFilter);
     };
     filterItems('searchChats', '.conversation-item');
-    filterItems('searchUsers', '.users-table tbody tr');
+    filterItems('searchUsers', '.users-table tbody tr', 'searchUsersBtn');
+    document.getElementById('searchTicketsBtn')?.addEventListener('click', () => this.filterTickets());
+    document.getElementById('searchTickets')?.addEventListener('input', () => this.filterTickets());
+    document.getElementById('searchTickets')?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') this.filterTickets();
+    });
   }
 
   renderDashboardPage() {
@@ -779,15 +825,18 @@ initAdminSocket() {
 
 
   renderUsersPage() {
-    const userIds = Object.keys(this.conversations);
+    const userIds = Object.keys(this.registeredUsers);
 
     return `
       <div class="users-page">
         <div class="section-card">
           <div class="section-header">
             <h2><i class="fas fa-users"></i> Registered Users</h2>
-            <div class="header-actions">
-              <input type="text" id="searchUsers" placeholder="Search users..." class="search-input">
+            <div class="header-actions admin-search-control">
+              <input type="search" id="searchUsers" placeholder="Search by name, email, or user ID" class="search-input">
+              <button type="button" class="btn-primary search-action" id="searchUsersBtn" title="Search users">
+                <i class="fas fa-search"></i><span>Search</span>
+              </button>
             </div>
           </div>
           
@@ -805,19 +854,20 @@ initAdminSocket() {
             <tbody>
               ${userIds.map(userId => {
       const messages = this.conversations[userId] || [];
-      const lastMessage = messages[messages.length - 1];
-      const userName = this.getUserDisplayName(userId);
-      const unreadCount = messages.filter(msg => !msg.read && msg.sender === 'user').length;
+      const userInfo = this.registeredUsers[userId] || {};
+      const userName = this.getUserDisplayName(userId, userInfo);
+      const lastActive = userInfo.lastActive || userInfo.registeredAt;
+      const isActive = lastActive && Date.now() - new Date(lastActive).getTime() < 2 * 60 * 1000;
 
       return `
-                  <tr>
-                    <td><code>${userId.substring(0, 10)}...</code></td>
-                    <td>${userName}</td>
+                  <tr data-user-id="${this.escapeHtml(userId)}">
+                    <td><code title="${this.escapeHtml(userId)}">${this.escapeHtml(userId.substring(0, 16))}${userId.length > 16 ? '...' : ''}</code></td>
+                    <td><strong>${this.escapeHtml(userName)}</strong><br><small>${this.escapeHtml(userInfo.email || '')}</small></td>
                     <td>${messages.length}</td>
-                    <td>${lastMessage ? new Date(lastMessage.timestamp).toLocaleDateString() : 'Never'}</td>
+                    <td>${lastActive ? new Date(lastActive).toLocaleString() : 'Never'}</td>
                     <td>
-                      <span class="status-badge ${unreadCount > 0 ? 'active' : 'inactive'}">
-                        ${unreadCount > 0 ? 'Active' : 'Inactive'}
+                      <span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                        ${isActive ? 'Active now' : 'Inactive'}
                       </span>
                     </td>
                     <td>
@@ -1390,22 +1440,33 @@ initAdminSocket() {
   }
 
   renderSettingsPage() {
+    const settings = this.adminSettings;
     return `
       <div class="settings-page">
+        <div class="managed-page-heading settings-heading">
+          <div>
+            <span class="managed-eyebrow">Administration</span>
+            <h2>System Settings</h2>
+            <p>These preferences are stored securely in MongoDB and apply across admin sessions.</p>
+          </div>
+          <button class="btn-primary" onclick="adminDashboard.saveAllSettings()">
+            <i class="fas fa-save"></i> Save All Settings
+          </button>
+        </div>
         <div class="settings-grid">
           <div class="settings-card">
             <h3><i class="fas fa-comments"></i> Chat Settings</h3>
             <div class="settings-group">
               <label>Auto-response delay (seconds)</label>
-              <input type="number" id="autoResponseDelay" value="5" min="0" max="60">
+              <input type="number" id="autoResponseDelay" value="${settings.chat.autoResponseDelay}" min="0" max="60">
             </div>
-            <div class="settings-group">
-              <label>Enable auto-responses</label>
-              <input type="checkbox" id="enableAutoResponses" checked>
+            <div class="settings-group settings-toggle-row">
+              <label for="enableAutoResponses">Enable auto-responses</label>
+              <input type="checkbox" id="enableAutoResponses" ${settings.chat.enableAutoResponses ? 'checked' : ''}>
             </div>
             <div class="settings-group">
               <label>Default welcome message</label>
-              <textarea id="welcomeMessage" rows="3">Hello! Welcome to Tekagon Support. How can I help you today?</textarea>
+              <textarea id="welcomeMessage" rows="3">${this.escapeHtml(settings.chat.welcomeMessage)}</textarea>
             </div>
             <button class="btn-primary" onclick="adminDashboard.saveChatSettings()">
               Save Chat Settings
@@ -1414,21 +1475,18 @@ initAdminSocket() {
           
           <div class="settings-card">
             <h3><i class="fas fa-bell"></i> Notifications</h3>
-            <div class="settings-group">
-              <label>Email notifications for new messages</label>
-              <input type="checkbox" id="emailNotifications" checked>
+            <div class="settings-group settings-toggle-row">
+              <label for="emailNotifications">Email notifications for new messages</label>
+              <input type="checkbox" id="emailNotifications" ${settings.notifications.emailNotifications ? 'checked' : ''}>
             </div>
-            <div class="settings-group">
-              <label>Desktop notifications</label>
-              <input type="checkbox" id="desktopNotifications">
+            <div class="settings-group settings-toggle-row">
+              <label for="desktopNotifications">Desktop notifications</label>
+              <input type="checkbox" id="desktopNotifications" ${settings.notifications.desktopNotifications ? 'checked' : ''}>
             </div>
             <div class="settings-group">
               <label>Notification sound</label>
               <select id="notificationSound">
-                <option value="default">Default</option>
-                <option value="chime">Chime</option>
-                <option value="bell">Bell</option>
-                <option value="none">None</option>
+                ${['default', 'chime', 'bell', 'none'].map(value => `<option value="${value}" ${settings.notifications.sound === value ? 'selected' : ''}>${value.charAt(0).toUpperCase() + value.slice(1)}</option>`).join('')}
               </select>
             </div>
             <button class="btn-primary" onclick="adminDashboard.saveNotificationSettings()">
@@ -1448,28 +1506,34 @@ initAdminSocket() {
             </div>
             <div class="settings-group">
               <label>Session timeout (minutes)</label>
-              <input type="number" id="sessionTimeout" value="30" min="5" max="240">
+              <input type="number" id="sessionTimeout" value="${settings.security.sessionTimeout}" min="5" max="240">
             </div>
-            <button class="btn-primary" onclick="adminDashboard.changePassword()">
-              Change Password
-            </button>
+            <div class="actions-group">
+              <button class="btn-secondary" onclick="adminDashboard.saveSecuritySettings()">
+                <i class="fas fa-clock"></i> Save Timeout
+              </button>
+              <button class="btn-primary" onclick="adminDashboard.changePassword()">
+                <i class="fas fa-key"></i> Change Password
+              </button>
+            </div>
           </div>
           
           <div class="settings-card">
             <h3><i class="fas fa-database"></i> Data Management</h3>
             <div class="settings-group">
               <label>Auto-delete old messages (days)</label>
-              <input type="number" id="autoDeleteDays" value="90" min="1" max="365">
+              <input type="number" id="autoDeleteDays" value="${settings.data.autoDeleteDays}" min="1" max="365">
             </div>
             <div class="settings-group">
               <label>Export format</label>
               <select id="exportFormat">
-                <option value="json">JSON</option>
-                <option value="csv">CSV</option>
-                <option value="txt">Text</option>
+                ${['json', 'csv', 'txt'].map(value => `<option value="${value}" ${settings.data.exportFormat === value ? 'selected' : ''}>${value.toUpperCase()}</option>`).join('')}
               </select>
             </div>
             <div class="actions-group">
+              <button class="btn-primary" onclick="adminDashboard.saveDataSettings()">
+                <i class="fas fa-save"></i> Save Data Settings
+              </button>
               <button class="btn-secondary" onclick="adminDashboard.exportAllData()">
                 <i class="fas fa-download"></i> Export All Data
               </button>
@@ -1846,31 +1910,68 @@ initAdminSocket() {
     this.useTemplate('update');
   }
 
-  saveChatSettings() {
-    const settings = {
-      autoResponseDelay: Number(document.getElementById('autoResponseDelay')?.value || 5),
-      enableAutoResponses: Boolean(document.getElementById('enableAutoResponses')?.checked),
-      welcomeMessage: document.getElementById('welcomeMessage')?.value || ''
+  collectSettingsForm() {
+    return {
+      chat: {
+        autoResponseDelay: Number(document.getElementById('autoResponseDelay')?.value ?? this.adminSettings.chat.autoResponseDelay),
+        enableAutoResponses: Boolean(document.getElementById('enableAutoResponses')?.checked),
+        welcomeMessage: document.getElementById('welcomeMessage')?.value || this.adminSettings.chat.welcomeMessage
+      },
+      notifications: {
+        emailNotifications: Boolean(document.getElementById('emailNotifications')?.checked),
+        desktopNotifications: Boolean(document.getElementById('desktopNotifications')?.checked),
+        sound: document.getElementById('notificationSound')?.value || this.adminSettings.notifications.sound
+      },
+      security: {
+        sessionTimeout: Number(document.getElementById('sessionTimeout')?.value || this.adminSettings.security.sessionTimeout)
+      },
+      data: {
+        autoDeleteDays: Number(document.getElementById('autoDeleteDays')?.value || this.adminSettings.data.autoDeleteDays),
+        exportFormat: document.getElementById('exportFormat')?.value || this.adminSettings.data.exportFormat
+      }
     };
-    localStorage.setItem('tekagon_admin_chat_settings', JSON.stringify(settings));
-    this.showNotification('Chat settings saved', 'success');
   }
 
-  async saveNotificationSettings() {
-    const settings = {
-      emailNotifications: Boolean(document.getElementById('emailNotifications')?.checked),
-      desktopNotifications: Boolean(document.getElementById('desktopNotifications')?.checked),
-      sound: document.getElementById('notificationSound')?.value || 'default'
-    };
-    if (settings.desktopNotifications && window.Notification?.permission === 'default') {
+  async saveAllSettings(successMessage = 'Settings saved') {
+    const settings = this.collectSettingsForm();
+    if (settings.notifications.desktopNotifications && window.Notification?.permission === 'default') {
       const permission = await window.Notification.requestPermission();
-      settings.desktopNotifications = permission === 'granted';
+      settings.notifications.desktopNotifications = permission === 'granted';
     }
-    localStorage.setItem('tekagon_admin_notification_settings', JSON.stringify(settings));
-    this.showNotification('Notification settings saved', 'success');
+    const result = await window.TekagonAPI?.updateAdminSettings?.(settings);
+    if (!result?.success) {
+      this.showNotification(result?.error || 'Could not save settings', 'error');
+      return false;
+    }
+    this.adminSettings = {
+      ...this.adminSettings,
+      ...result.settings,
+      chat: { ...this.adminSettings.chat, ...(result.settings?.chat || {}) },
+      notifications: { ...this.adminSettings.notifications, ...(result.settings?.notifications || {}) },
+      security: { ...this.adminSettings.security, ...(result.settings?.security || {}) },
+      data: { ...this.adminSettings.data, ...(result.settings?.data || {}) }
+    };
+    this.showNotification(successMessage, 'success');
+    return true;
   }
 
-  changePassword() {
+  saveChatSettings() {
+    return this.saveAllSettings('Chat settings saved');
+  }
+
+  saveNotificationSettings() {
+    return this.saveAllSettings('Notification settings saved');
+  }
+
+  saveSecuritySettings() {
+    return this.saveAllSettings('Security settings saved');
+  }
+
+  saveDataSettings() {
+    return this.saveAllSettings('Data settings saved');
+  }
+
+  async changePassword() {
     const password = document.getElementById('newPassword')?.value || '';
     const confirmation = document.getElementById('confirmPassword')?.value || '';
     if (password.length < 8) {
@@ -1881,7 +1982,16 @@ initAdminSocket() {
       this.showNotification('Passwords do not match', 'error');
       return;
     }
-    this.showNotification('For security, change ADMIN_PASSWORD in Render and redeploy the backend.', 'info');
+    const settingsSaved = await this.saveAllSettings('Session timeout saved');
+    if (!settingsSaved) return;
+    const result = await window.TekagonAPI?.updateAdminPassword?.(password);
+    if (!result?.success) {
+      this.showNotification(result?.error || 'Could not change password', 'error');
+      return;
+    }
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    this.showNotification('Admin password changed. Use the new password next time you sign in.', 'success');
   }
 
   exportAllData() {
@@ -1892,11 +2002,30 @@ initAdminSocket() {
       content: this.managedContent,
       exportedAt: new Date().toISOString()
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const format = this.adminSettings.data.exportFormat || 'json';
+    let contents = JSON.stringify(payload, null, 2);
+    let mimeType = 'application/json';
+    if (format === 'txt') {
+      contents = [
+        `Tekagon admin export - ${payload.exportedAt}`,
+        `Users: ${Object.keys(payload.users).length}`,
+        `Tickets: ${payload.tickets.length}`,
+        '',
+        JSON.stringify(payload, null, 2)
+      ].join('\n');
+      mimeType = 'text/plain';
+    } else if (format === 'csv') {
+      const rows = [['Type', 'ID', 'Name', 'Status', 'Created']];
+      Object.values(payload.users).forEach(user => rows.push(['User', user.userId, user.name || user.email || '', '', user.registeredAt || '']));
+      payload.tickets.forEach(ticket => rows.push(['Ticket', ticket.id || ticket.ticketId, ticket.serviceName || '', ticket.status || '', ticket.createdAt || '']));
+      contents = rows.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      mimeType = 'text/csv';
+    }
+    const blob = new Blob([contents], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `tekagon-admin-export-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `tekagon-admin-export-${new Date().toISOString().slice(0, 10)}.${format}`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1929,6 +2058,12 @@ initAdminSocket() {
       badge.textContent = this.stats.unreadMessages;
       badge.style.display = this.stats.unreadMessages > 0 ? 'flex' : 'none';
     }
+    const ticketBadge = document.getElementById('ticketBadge');
+    if (ticketBadge) {
+      const pendingTickets = this.getPendingTicketsCount();
+      ticketBadge.textContent = pendingTickets;
+      ticketBadge.style.display = pendingTickets > 0 ? 'flex' : 'none';
+    }
   }
 
   setupEventListeners() {
@@ -1937,6 +2072,10 @@ initAdminSocket() {
       btn.addEventListener('click', () => {
         this.loadPage(btn.dataset.page);
       });
+    });
+    window.addEventListener('hashchange', () => {
+      const page = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+      if (page && page !== this.currentPage) this.loadPage(page, false);
     });
 
 
@@ -1953,7 +2092,7 @@ initAdminSocket() {
   }
 
   startAutoRefresh() {
-    // Check for new messages every 10 seconds
+    // Keep ticket counts and conversations current without requiring a refresh.
     setInterval(async () => {
       await this.loadData();
       this.updateBadge();
@@ -1966,7 +2105,7 @@ initAdminSocket() {
       if (document.getElementById('conversationModal') && this.selectedUser) {
         this.renderOpenConversationMessages(this.selectedUser, this.selectedTicket);
       }
-    }, 10000);
+    }, 3000);
   }
 
 
@@ -1974,9 +2113,6 @@ initAdminSocket() {
   renderTicketsPage() {
     try {
       console.log('=== Starting renderTicketsPage ===');
-
-      // Reload tickets to get latest
-      this.loadTickets();
       console.log('Tickets loaded, count:', this.allTicketsList?.length);
 
       const pendingCount = this.allTicketsList?.filter(t => t.status === 'pending').length || 0;
@@ -2035,8 +2171,11 @@ initAdminSocket() {
       <div class="section-card">
         <div class="section-header">
           <h2><i class="fas fa-ticket-alt"></i> All Service Tickets</h2>
-          <div class="header-actions">
-            <input type="text" id="searchTickets" placeholder="Search tickets..." class="search-input">
+          <div class="header-actions admin-search-control ticket-search-control">
+            <input type="search" id="searchTickets" placeholder="Ticket ID, service, customer, or status" class="search-input">
+            <button type="button" class="btn-primary search-action" id="searchTicketsBtn" title="Search tickets">
+              <i class="fas fa-search"></i><span>Search</span>
+            </button>
             <select id="filterStatus" class="filter-select" onchange="adminDashboard.filterTickets()">
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -2046,8 +2185,7 @@ initAdminSocket() {
             </select>
             <button class="btn-primary" onclick="adminDashboard.refreshTickets()">
               <i class="fas fa-sync-alt"></i> Refresh
-            
-    
+            </button>
           </div>
         </div>
         
@@ -2073,7 +2211,7 @@ initAdminSocket() {
         <div class="ticket-summary">
           <div class="summary-item">
             <span class="summary-label">Showing:</span>
-            <span class="summary-value">${this.allTicketsList?.length || 0} tickets</span>
+            <span class="summary-value" id="ticketSearchSummary">${this.allTicketsList?.length || 0} tickets</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Last Updated:</span>
@@ -2166,7 +2304,7 @@ initAdminSocket() {
           const packageName = ticket.package || '';
 
           return `
-                <tr class="ticket-row ${status}">
+                <tr class="ticket-row ${status}" data-status="${this.escapeHtml(status)}" data-search="${this.escapeHtml([ticketId, userId, serviceName, userName, status, packageName].join(' ').toLowerCase())}">
                     <td>
                         <div class="ticket-id-cell">
                             <code>${ticketId.substring(0, 12)}</code>
@@ -2233,6 +2371,36 @@ initAdminSocket() {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  formatMessageContent(message) {
+    const repaired = String(message?.content || '')
+      .replace(/â¢/g, '-')
+      .replace(/â|â€“/g, '-')
+      .replace(/Ã/g, 'x');
+    if (!/^NEW SERVICE REQUEST/i.test(repaired)) {
+      return this.escapeHtml(repaired).replace(/\n/g, '<br>');
+    }
+    const valueFor = label => repaired.match(new RegExp(`^${label}:\\s*(.+)$`, 'im'))?.[1]?.trim() || '';
+    const fields = repaired.split('\n').map(line => line.trim().match(/^[-*]\s*([^:]+):\s*(.*)$/)).filter(Boolean);
+    const ticketId = repaired.match(/Ticket #([^\s]+)/i)?.[1] || '';
+    return `
+      <article class="ticket-chat-summary">
+        <div class="ticket-chat-summary__header">
+          <span class="ticket-chat-summary__icon"><i class="fas fa-ticket-alt"></i></span>
+          <span><small>Service request</small><strong>${this.escapeHtml(valueFor('Service') || 'New service request')}</strong></span>
+        </div>
+        <div class="ticket-chat-summary__meta">
+          ${ticketId ? `<div><span>Ticket</span><strong>#${this.escapeHtml(ticketId)}</strong></div>` : ''}
+          ${valueFor('Customer') ? `<div><span>Customer</span><strong>${this.escapeHtml(valueFor('Customer'))}</strong></div>` : ''}
+          ${valueFor('Package') ? `<div><span>Package</span><strong>${this.escapeHtml(valueFor('Package'))}</strong></div>` : ''}
+          ${valueFor('Submitted') ? `<div><span>Submitted</span><strong>${this.escapeHtml(valueFor('Submitted'))}</strong></div>` : ''}
+        </div>
+        ${fields.length ? `<div class="ticket-chat-summary__details">${fields.map(field => `
+          <div><span>${this.escapeHtml(field[1])}</span><strong>${this.escapeHtml(field[2])}</strong></div>
+        `).join('')}</div>` : ''}
+      </article>
+    `;
   }
 
   viewAdminTicket(userId, ticketId) {
@@ -2735,7 +2903,7 @@ initAdminSocket() {
             </span>
             <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${this.escapeHtml(msg.content)}</div>
+        <div class="message-content">${this.formatMessageContent(msg)}</div>
         ${msg.ticketId ? `
             <div class="message-context">
                 <i class="fas fa-ticket-alt"></i>
@@ -2866,7 +3034,7 @@ initAdminSocket() {
           <span class="message-sender">${userName}</span>
           <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${this.escapeHtml(msg.content)}</div>
+        <div class="message-content">${this.formatMessageContent(msg)}</div>
       </div>
     `;
     } else {
@@ -2877,7 +3045,7 @@ initAdminSocket() {
           <span class="message-sender">${senderName}</span>
           <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${this.escapeHtml(msg.content)}</div>
+        <div class="message-content">${this.formatMessageContent(msg)}</div>
         ${msg.read ? '<div class="message-status"><i class="fas fa-check-double"></i> Read</div>' : ''}
       </div>
     `;
@@ -3516,6 +3684,26 @@ initAdminSocket() {
       notification.style.transform = 'translateX(100%)';
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+  }
+
+  playNotificationSound() {
+    const sound = this.adminSettings.notifications.sound;
+    if (!sound || sound === 'none') return;
+    try {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = sound === 'bell' ? 'sine' : 'triangle';
+      oscillator.frequency.value = sound === 'chime' ? 660 : sound === 'bell' ? 880 : 520;
+      gain.gain.setValueAtTime(0.08, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.35);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.35);
+    } catch (error) {
+      console.warn('Notification sound could not play', error);
+    }
   }
 
   closeAdminModal() {
@@ -5778,8 +5966,8 @@ initAdminSocket() {
       
       .settings-card {
         background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
         padding: 24px;
       }
       
@@ -5798,6 +5986,37 @@ initAdminSocket() {
         display: block;
         margin-bottom: 8px;
         font-weight: 500;
+      }
+
+      .settings-group input:not([type="checkbox"]),
+      .settings-group select,
+      .settings-group textarea {
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        background: rgba(7, 12, 30, 0.72);
+        color: #f8fafc;
+        font: inherit;
+      }
+
+      .settings-group textarea {
+        min-height: 96px;
+        resize: vertical;
+      }
+
+      .settings-group input:focus,
+      .settings-group select:focus,
+      .settings-group textarea:focus {
+        outline: 2px solid rgba(147, 255, 246, 0.22);
+        border-color: #93fff6;
+      }
+
+      .settings-card > .btn-primary,
+      .settings-card .actions-group > button {
+        justify-content: center;
+        width: 100%;
       }
       
       .actions-group {
@@ -5989,6 +6208,22 @@ initAdminSocket() {
         color: #94a3b8;
       }
 
+      .btn-login {
+        width: 100%;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 0;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #93fff6, #6f65ff);
+        color: #07101f;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
       // Add to addAdminStyles() method:
 .error-container {
   text-align: center;
@@ -6025,6 +6260,119 @@ initAdminSocket() {
       
       .login-footer small {
         opacity: 0.7;
+      }
+
+      .admin-search-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .admin-search-control .search-input {
+        min-width: 260px;
+        flex: 1 1 280px;
+      }
+
+      .search-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+      }
+
+      .settings-heading {
+        margin-bottom: 18px;
+        padding: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .settings-heading h2 {
+        margin: 3px 0 6px;
+      }
+
+      .settings-heading p {
+        margin: 0;
+        color: #94a3b8;
+      }
+
+      .settings-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .settings-toggle-row input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #7c5cff;
+      }
+
+      .ticket-chat-summary {
+        overflow: hidden;
+        border: 1px solid rgba(147, 255, 246, 0.2);
+        border-radius: 8px;
+        background: #0b1028;
+      }
+
+      .ticket-chat-summary__header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px;
+        background: linear-gradient(90deg, rgba(111, 101, 255, 0.2), rgba(147, 255, 246, 0.08));
+      }
+
+      .ticket-chat-summary__header small,
+      .ticket-chat-summary__header strong,
+      .ticket-chat-summary__meta span,
+      .ticket-chat-summary__meta strong,
+      .ticket-chat-summary__details span,
+      .ticket-chat-summary__details strong {
+        display: block;
+      }
+
+      .ticket-chat-summary__icon {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #93fff6, #6f65ff);
+        color: #05081c;
+      }
+
+      .ticket-chat-summary__meta,
+      .ticket-chat-summary__details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .ticket-chat-summary__meta > div,
+      .ticket-chat-summary__details > div {
+        padding: 10px 12px;
+        background: #0b1028;
+      }
+
+      .ticket-chat-summary__meta span,
+      .ticket-chat-summary__details span,
+      .ticket-chat-summary__header small {
+        color: #94a3b8;
+        font-size: 0.75rem;
+      }
+
+      .ticket-chat-summary__meta strong,
+      .ticket-chat-summary__details strong {
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+        color: #f8fafc;
+        font-size: 0.82rem;
       }
       
       @media (max-width: 768px) {
@@ -6063,6 +6411,14 @@ initAdminSocket() {
         
         .form-actions {
           flex-direction: column;
+        }
+
+        .admin-search-control,
+        .admin-search-control .search-input,
+        .admin-search-control .search-action,
+        .ticket-search-control .filter-select {
+          width: 100%;
+          min-width: 0;
         }
       }
     `;

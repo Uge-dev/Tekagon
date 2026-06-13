@@ -6,6 +6,8 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },          // WAS 'message' — now 'content' everywhere
   userId: { type: String, required: true },
   ticketId: { type: String, default: null },
+  messageType: { type: String, default: 'text' },
+  metadata: { type: Object, default: {} },
   read: { type: Boolean, default: false },
   timestamp: { type: Date, default: Date.now }
 });

@@ -15,6 +15,18 @@ async function registerUser(userData) {
   }
 }
 
+async function updateUserActivity(userId) {
+  try {
+    const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}/activity`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false };
+  }
+}
+
 async function signupWithEmail(userData) {
   try {
     const res = await fetch(`${API_URL}/api/auth/signup`, {
@@ -119,6 +131,41 @@ async function getAdminConversations() {
     return await res.json();
   } catch (err) {
     return { success: false, users: {}, conversations: {} };
+  }
+}
+
+async function getAdminSettings() {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/settings`, { headers: adminHeaders() });
+    return await res.json();
+  } catch (err) {
+    return { success: false, settings: null };
+  }
+}
+
+async function updateAdminSettings(settings) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/settings`, {
+      method: 'PUT',
+      headers: adminHeaders(),
+      body: JSON.stringify(settings)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function updateAdminPassword(password) {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/settings/password`, {
+      method: 'PUT',
+      headers: adminHeaders(),
+      body: JSON.stringify({ password })
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }
 
@@ -388,6 +435,7 @@ function stopPolling() {
 // ── EXPORT ────────────────────────────────────────────────────────────────────
 window.TekagonAPI = {
   registerUser,
+  updateUserActivity,
   signupWithEmail,
   signinWithEmail,
   adminLogin,
@@ -396,6 +444,9 @@ window.TekagonAPI = {
   updateDashboardEvent,
   getAllUsers,
   getAdminConversations,
+  getAdminSettings,
+  updateAdminSettings,
+  updateAdminPassword,
   deleteAdminConversation,
   deleteAdminUser,
   clearOldAdminMessages,

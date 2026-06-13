@@ -122,7 +122,7 @@ function minifyJs(input) {
 
 function obfuscateJs(input) {
   const payload = Buffer.from(input, 'utf8').toString('base64');
-  return `(()=>{const c='${payload}';(0,eval)(atob(c));})();`;
+  return `(()=>{const c='${payload}',b=Uint8Array.from(atob(c),x=>x.charCodeAt(0));(0,eval)(new TextDecoder().decode(b));})();`;
 }
 
 function publicEnv(name, fallback = '') {

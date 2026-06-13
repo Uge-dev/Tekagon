@@ -272,7 +272,7 @@
             </div>
             <div class="auth-field">
               <label>Password</label>
-              <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password">
+              <input type="password" id="si-password" placeholder="Enter password" autocomplete="current-password">
             </div>
             <button class="btn-auth-submit" id="btn-signin">Sign In</button>
             <div class="auth-divider">or</div>
@@ -294,7 +294,7 @@
             </div>
             <div class="auth-field">
               <label>Password (min 6 characters)</label>
-              <input type="password" id="su-password" placeholder="••••••••" autocomplete="new-password">
+              <input type="password" id="su-password" placeholder="Create password" autocomplete="new-password">
             </div>
             <div class="auth-field">
               <label>Phone Number</label>
@@ -397,14 +397,6 @@
       typeof window.TekagonAPI.signupWithEmail === 'function' &&
       typeof window.TekagonAPI.signinWithEmail === 'function';
 
-    const shouldTryBackendAuth = (code) => [
-      'auth/user-not-found',
-      'auth/invalid-credential',
-      'auth/operation-not-allowed',
-      'auth/configuration-not-found',
-      'auth/internal-error'
-    ].includes(code);
-
     // ── Sign In ──
     document.getElementById('btn-signin').addEventListener('click', async () => {
       const email = document.getElementById('si-email').value.trim();
@@ -413,19 +405,20 @@
       setLoading('btn-signin', true);
       clearAuthMessages();
       try {
-        const cred = await auth.signInWithEmailAndPassword(email, password);
-        // onAuthStateChanged handles the rest
-      } catch (err) {
-        if (canUseBackendEmailAuth() && shouldTryBackendAuth(err.code)) {
+        if (canUseBackendEmailAuth()) {
           const result = await window.TekagonAPI.signinWithEmail({ email, password });
           if (result.success && result.user) {
             setBackendAuthSession(result.user);
             return;
           }
-          showAuthError(result.error || friendlyError(err.code));
-        } else {
-          showAuthError(friendlyError(err.code));
+          showAuthError(result.error || 'Unable to sign in.');
+          setLoading('btn-signin', false);
+          return;
         }
+        const cred = await auth.signInWithEmailAndPassword(email, password);
+        // onAuthStateChanged handles the rest
+      } catch (err) {
+        showAuthError(friendlyError(err.code));
         setLoading('btn-signin', false);
       }
     });
@@ -441,6 +434,16 @@
       setLoading('btn-signup', true);
       clearAuthMessages();
       try {
+        if (canUseBackendEmailAuth()) {
+          const result = await window.TekagonAPI.signupWithEmail({ name, email, password, phone, company: '' });
+          if (result.success && result.user) {
+            setBackendAuthSession(result.user);
+            return;
+          }
+          showAuthError(result.error || 'Unable to create the account.');
+          setLoading('btn-signup', false);
+          return;
+        }
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         await cred.user.updateProfile({ displayName: name });
         cred.user.sendEmailVerification().catch(() => {});
@@ -458,16 +461,7 @@
         localStorage.setItem('pendingUserPhone', phone || '');
         // onAuthStateChanged handles the signed-in session.
       } catch (err) {
-        if (canUseBackendEmailAuth() && shouldTryBackendAuth(err.code)) {
-          const result = await window.TekagonAPI.signupWithEmail({ name, email, password, phone, company: '' });
-          if (result.success && result.user) {
-            setBackendAuthSession(result.user);
-            return;
-          }
-          showAuthError(result.error || friendlyError(err.code));
-        } else {
-          showAuthError(friendlyError(err.code));
-        }
+        showAuthError(friendlyError(err.code));
         setLoading('btn-signup', false);
       }
     });
@@ -562,6 +556,36 @@
     return map[code] || 'Something went wrong. Please try again.';
   }
 
+  function ensureWelcomeNotification(userId, name) {
+    if (!userId) return;
+    const userKey = `tekagon_notifications_${userId}`;
+    const guestKey = 'tekagon_notifications_guest';
+    try {
+      const userNotifications = JSON.parse(localStorage.getItem(userKey) || '[]');
+      const guestNotifications = JSON.parse(localStorage.getItem(guestKey) || '[]');
+      const merged = [...userNotifications];
+      guestNotifications.forEach(item => {
+        if (!merged.some(existing => existing.id === item.id)) merged.push(item);
+      });
+      if (!merged.some(item => item.id === `welcome_${userId}`)) {
+        merged.unshift({
+          id: `welcome_${userId}`,
+          type: 'welcome',
+          title: `Welcome to Tekagon${name ? `, ${name}` : ''}`,
+          description: 'Your account is ready. Explore services, book a session, create tickets, and chat with our team.',
+          iconUrl: '../Images/Tekagon_Icon.png',
+          targetPage: 'home',
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+      localStorage.setItem(userKey, JSON.stringify(merged.slice(0, 100)));
+      localStorage.removeItem(guestKey);
+    } catch (error) {
+      console.warn('Could not create welcome notification', error);
+    }
+  }
+
   function setBackendAuthSession(user) {
     removeAuthOverlay();
     const name = user.name || (user.email ? user.email.split('@')[0] : 'User');
@@ -572,47 +596,58 @@
     localStorage.setItem('userCompany', user.company || '');
     localStorage.removeItem('pendingUserName');
     localStorage.removeItem('pendingUserPhone');
+    ensureWelcomeNotification(user.userId, name);
+    window.TekagonAPI?.updateUserActivity?.(user.userId);
+    window.dispatchEvent(new CustomEvent('tekagon-auth-ready', { detail: { userId: user.userId } }));
     injectLogoutButton();
 
-    if (typeof window.buildPage === 'function') {
-      window.buildPage(window._currentPage || 'home');
+    const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+    if (typeof window.buildPage === 'function' && (window._currentPage || requestedPage)) {
+      window.buildPage(window._currentPage || requestedPage);
     }
     setTimeout(() => showPolicyConsent(user.userId), 0);
   }
 
   // ── Session handler — runs on every page load ──────────────────────────────
 
-  function onUserSignedIn(firebaseUser) {
+  async function onUserSignedIn(firebaseUser) {
     removeAuthOverlay();
 
     // Build a stable userId from the Firebase UID
-    const userId = 'FB_' + firebaseUser.uid;
+    let userId = 'FB_' + firebaseUser.uid;
     const name    = firebaseUser.displayName ||
                     localStorage.getItem('pendingUserName') || 'User';
     const phone   = localStorage.getItem('pendingUserPhone') || '';
     const email   = firebaseUser.email || '';
 
     // Persist so the rest of the app (which reads localStorage) still works
+    if (window.TekagonAPI) {
+      try {
+        const result = await window.TekagonAPI.registerUser({ userId, name, phone, email, company: '' });
+        if (result?.success && result.user?.userId) userId = result.user.userId;
+      } catch (error) {
+        console.warn('User registration sync failed', error);
+      }
+    }
+
     localStorage.setItem('chatUserId', userId);
     localStorage.setItem('userName',   name);
     localStorage.setItem('userPhone',  phone);
     localStorage.setItem('userEmail',  email);
     localStorage.removeItem('pendingUserName');
     localStorage.removeItem('pendingUserPhone');
-
-    // Register/update in MongoDB (fire-and-forget)
-    if (window.TekagonAPI) {
-      window.TekagonAPI.registerUser({ userId, name, phone, email, company: '' })
-        .catch(() => {});
-    }
+    ensureWelcomeNotification(userId, name);
+    window.TekagonAPI?.updateUserActivity?.(userId);
+    window.dispatchEvent(new CustomEvent('tekagon-auth-ready', { detail: { userId } }));
 
     // Add logout button to the nav
     injectLogoutButton();
 
     // If dashboard.js is loaded and has already built the page, trigger a reload
     // of the chat/dashboard so it picks up the new userId
-    if (typeof window.buildPage === 'function') {
-      window.buildPage(window._currentPage || 'home');
+    const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+    if (typeof window.buildPage === 'function' && (window._currentPage || requestedPage)) {
+      window.buildPage(window._currentPage || requestedPage);
     }
     setTimeout(() => showPolicyConsent(userId), 0);
   }
@@ -622,8 +657,9 @@
     if (existingUserId && existingUserId.startsWith('EMAIL_')) {
       removeAuthOverlay();
       injectLogoutButton();
-      if (typeof window.buildPage === 'function') {
-        window.buildPage(window._currentPage || 'home');
+      const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+      if (typeof window.buildPage === 'function' && (window._currentPage || requestedPage)) {
+        window.buildPage(window._currentPage || requestedPage);
       }
       setTimeout(() => showPolicyConsent(existingUserId), 0);
       return;
@@ -651,7 +687,7 @@
 
     auth.onAuthStateChanged(user => {
       if (user) {
-        onUserSignedIn(user);
+        onUserSignedIn(user).catch(error => console.error('Sign-in initialization failed', error));
       } else {
         onUserSignedOut();
       }

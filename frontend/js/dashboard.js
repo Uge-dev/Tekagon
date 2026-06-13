@@ -1,3 +1,66 @@
+function repairTekagonText(value) {
+  return String(value || '')
+    .replace(/â¢/g, '-')
+    .replace(/â/g, '-')
+    .replace(/â€“/g, '-')
+    .replace(/â/g, '->')
+    .replace(/Ã/g, 'x');
+}
+
+function escapeTekagonMessage(value) {
+  return repairTekagonText(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[character]));
+}
+
+function parseLegacyTicketSummary(content) {
+  const clean = repairTekagonText(content);
+  if (!/^NEW SERVICE REQUEST/i.test(clean)) return null;
+  const getValue = label => clean.match(new RegExp(`^${label}:\\s*(.+)$`, 'im'))?.[1]?.trim() || '';
+  const fields = [];
+  clean.split('\n').forEach(line => {
+    const match = line.trim().match(/^[-*]\s*([^:]+):\s*(.*)$/);
+    if (match) fields.push({ label: match[1].trim(), value: match[2].trim() });
+  });
+  return {
+    ticketId: clean.match(/Ticket #([^\s]+)/i)?.[1] || getValue('Ticket created').replace(/^#/, ''),
+    serviceName: getValue('Service'),
+    customer: getValue('Customer'),
+    submittedAt: getValue('Submitted'),
+    packageName: getValue('Package'),
+    fields
+  };
+}
+
+function formatChatMessageContent(message) {
+  const summary = message?.ticketSummary || message?.metadata?.ticketSummary || parseLegacyTicketSummary(message?.content);
+  if (!summary) return escapeTekagonMessage(message?.content).replace(/\n/g, '<br>');
+  const fields = Array.isArray(summary.fields) ? summary.fields.filter(field => field?.value) : [];
+  return `
+    <article class="ticket-chat-summary">
+      <div class="ticket-chat-summary__header">
+        <span class="ticket-chat-summary__icon"><i class="fas fa-ticket-alt" aria-hidden="true"></i></span>
+        <span><small>Service request</small><strong>${escapeTekagonMessage(summary.serviceName || 'New service request')}</strong></span>
+      </div>
+      <div class="ticket-chat-summary__meta">
+        ${summary.ticketId ? `<div><span>Ticket</span><strong>#${escapeTekagonMessage(summary.ticketId)}</strong></div>` : ''}
+        ${summary.customer ? `<div><span>Customer</span><strong>${escapeTekagonMessage(summary.customer)}</strong></div>` : ''}
+        ${summary.packageName ? `<div><span>Package</span><strong>${escapeTekagonMessage(summary.packageName)}</strong></div>` : ''}
+        ${summary.submittedAt ? `<div><span>Submitted</span><strong>${escapeTekagonMessage(summary.submittedAt)}</strong></div>` : ''}
+      </div>
+      ${fields.length ? `<div class="ticket-chat-summary__details">${fields.map(field => `
+        <div><span>${escapeTekagonMessage(field.label)}</span><strong>${escapeTekagonMessage(Array.isArray(field.value) ? field.value.join(', ') : field.value)}</strong></div>
+      `).join('')}</div>` : ''}
+    </article>
+  `;
+}
+
+window.formatChatMessageContent = formatChatMessageContent;
+
 async function showTicketDetailsModal(ticketId) {
   const currentUserId = localStorage.getItem('chatUserId');
 const tickets = await window.getUserTickets(currentUserId) || {};
@@ -133,7 +196,7 @@ const tickets = await window.getUserTickets(currentUserId) || {};
                         ${new Date(msg.timestamp).toLocaleString()}
                       </span>
                     </div>
-                    <div class="message-content">${escapeHtml(msg.content)}</div>
+                    <div class="message-content">${formatChatMessageContent(msg)}</div>
                   </div>
                 `).join('')}
               </div>
@@ -347,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Only include non-empty fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value && value.toString().trim() !== '') {
-          brief += `• ${key}: ${value}\n`;
+          brief += `- ${key}: ${value}\n`;
         }
       });
 
@@ -707,7 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="message-sender">You</span>
             <span class="message-time">${time}</span>
           </div>
-          <div class="message-content">${escapeHtml(msg.content)}</div>
+          <div class="message-content">${formatChatMessageContent(msg)}</div>
           ${msg.ticketId ? `
             <div class="message-context">
               <i class="fas fa-ticket-alt"></i>
@@ -730,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </span>
           <span class="message-time">${time}</span>
         </div>
-        <div class="message-content">${escapeHtml(msg.content)}</div>
+        <div class="message-content">${formatChatMessageContent(msg)}</div>
         ${msg.ticketId ? `
           <div class="message-context ticket-context">
             <i class="fas fa-ticket-alt"></i>
@@ -1016,6 +1079,20 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       ticketCounter.textContent = '0';
     }
+  }
+
+  window.addEventListener('tekagon-auth-ready', () => {
+    updateDashboardCounters();
+    if (window._currentPage === 'notifications') buildPage('notifications');
+  });
+
+  function startUserActivityHeartbeat() {
+    const heartbeat = () => {
+      const userId = localStorage.getItem('chatUserId');
+      if (userId) window.TekagonAPI?.updateUserActivity?.(userId);
+    };
+    heartbeat();
+    window.setInterval(heartbeat, 60000);
   }
 
   function firstSentence(value) {
@@ -2627,7 +2704,7 @@ async function buildPage(pageKey) {
             <span class="message-sender">You</span>
             <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${escapeHtml(msg.content)}</div>
+        <div class="message-content">${formatChatMessageContent(msg)}</div>
         ${msg.ticketId ? `
             <div class="message-context">
                 <i class="fas fa-ticket-alt"></i>
@@ -2650,7 +2727,7 @@ async function buildPage(pageKey) {
             </span>
             <span class="message-time">${date} ${time}</span>
         </div>
-        <div class="message-content">${escapeHtml(msg.content)}</div>
+        <div class="message-content">${formatChatMessageContent(msg)}</div>
         ${msg.ticketId ? `
             <div class="message-context ticket-context">
                 <i class="fas fa-ticket-alt"></i>
@@ -3082,7 +3159,7 @@ async function buildPage(pageKey) {
                
                 <span class="message-time">${time}</span>
             </div>
-            <div class="message-content">${escapeHtml(msg.content)}</div>
+            <div class="message-content">${formatChatMessageContent(msg)}</div>
             ${msg.ticketId ? `
                 <div class="message-context">
                     <i class="fas fa-ticket-alt"></i>
@@ -3104,7 +3181,7 @@ async function buildPage(pageKey) {
                 </span>
                 <span class="message-time">${time}</span>
             </div>
-            <div class="message-content">${escapeHtml(msg.content)}</div>
+            <div class="message-content">${formatChatMessageContent(msg)}</div>
             ${msg.ticketId ? `
                 <div class="message-context ticket-context">
                     <i class="fas fa-ticket-alt"></i>
@@ -3698,7 +3775,7 @@ async function buildPage(pageKey) {
                       <i class="fas fa-${msg.sender === 'user' ? 'user' : 'headset'}"></i>
                       ${msg.sender === 'user' ? 'You' : 'Support'}
                     </div>
-                    <div class="message-content">${escapeHtml(msg.content)}</div>
+                    <div class="message-content">${formatChatMessageContent(msg)}</div>
                     <div class="message-time">
                       ${new Date(msg.timestamp).toLocaleString()}
                     </div>
@@ -8459,11 +8536,42 @@ async function buildPage(pageKey) {
         timestamp: new Date().toISOString(),
         read: false,
         isTicket: true,
-        ticketId: ticket.id
+        ticketId: ticket.id,
+        messageType: 'ticket-summary',
+        ticketSummary: {
+          ticketId: ticket.id,
+          serviceName,
+          customer: userName,
+          userId,
+          submittedAt: new Date().toLocaleString(),
+          packageName: data.package || '',
+          fields: Object.entries(data)
+            .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+            .map(([key, value]) => ({
+              label: key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^\w/, character => character.toUpperCase()),
+              value
+            }))
+        }
       };
 
       ticketChats[ticket.id].push(ticketMessage);
       localStorage.setItem(TICKET_CHAT_KEY, JSON.stringify(ticketChats));
+
+      if (window.TekagonAPI?.sendMessage) {
+        const summaryResult = await window.TekagonAPI.sendMessage({
+          id: ticketMessage.id,
+          clientId: ticketMessage.id,
+          sender: 'system',
+          content: brief,
+          userId,
+          ticketId: ticket.id,
+          messageType: 'ticket-summary',
+          metadata: { ticketSummary: ticketMessage.ticketSummary }
+        });
+        if (!summaryResult?.success) {
+          console.warn('Ticket summary was saved locally but could not be synced to MongoDB');
+        }
+      }
 
       console.log(`✅ Created SEPARATE ticket chat for ${ticket.id}`);
 
@@ -9205,6 +9313,7 @@ async function buildPage(pageKey) {
     initFromHash();
     updateDashboardCounters();
     startDashboardMessageNotifications();
+    startUserActivityHeartbeat();
   });
 
   // Make functions globally accessible
