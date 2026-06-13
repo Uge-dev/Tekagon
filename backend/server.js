@@ -46,6 +46,91 @@ const CONTACT_SENDER_NAME = process.env.CONTACT_SENDER_NAME || 'Tekagon Website'
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
+const DEMAND_SERVICES = [
+  {
+    id: 'brand',
+    name: 'Brand Identity & Strategy',
+    aliases: ['brand', 'branding', 'identity', 'logo', 'strategy']
+  },
+  {
+    id: 'product-design',
+    name: 'UI/UX & Product Design',
+    aliases: ['ui/ux', 'ui ux', 'ux', 'product design', 'interface design']
+  },
+  {
+    id: 'frontend',
+    name: 'Frontend Web Development',
+    aliases: ['frontend', 'front-end', 'website development', 'web development', 'website']
+  },
+  {
+    id: 'backend',
+    name: 'Backend & Systems Engineering',
+    aliases: ['backend', 'back-end', 'systems engineering', 'api development', 'system integration']
+  },
+  {
+    id: 'mobile',
+    name: 'Mobile Application Development',
+    aliases: ['mobile', 'mobile app', 'application development', 'app development', 'android', 'ios']
+  },
+  {
+    id: 'marketing',
+    name: 'Digital Marketing & Growth',
+    aliases: ['digital marketing', 'marketing', 'growth', 'seo', 'social media']
+  },
+  {
+    id: 'devops',
+    name: 'DevOps & Cloud Infrastructure',
+    aliases: ['devops', 'cloud', 'infrastructure', 'hosting', 'deployment']
+  },
+  {
+    id: 'consulting',
+    name: 'Technical Consulting & Technical Writing',
+    aliases: ['consulting', 'technical writing', 'documentation', 'technical consulting', 'writing']
+  },
+  {
+    id: 'automation',
+    name: 'AI & Business Automation',
+    aliases: ['ai', 'automation', 'artificial intelligence', 'machine learning']
+  },
+  {
+    id: 'commerce',
+    name: 'E-commerce & Digital Platforms',
+    aliases: ['e-commerce', 'ecommerce', 'commerce', 'digital platform', 'marketplace']
+  },
+  {
+    id: 'quality',
+    name: 'Cybersecurity, QA & Optimization',
+    aliases: ['cybersecurity', 'security', 'qa', 'testing', 'optimization', 'performance']
+  }
+];
+
+function ticketSearchText(ticket) {
+  const formData = ticket.formData && typeof ticket.formData === 'object' ? ticket.formData : {};
+  return [
+    ticket.serviceName,
+    formData.service,
+    formData.websiteType,
+    formData.primaryGoal,
+    formData.requiredFeatures,
+    formData.industry
+  ].flat().filter(Boolean).join(' ').toLowerCase();
+}
+
+function demandCategoryFor(ticket) {
+  const searchable = ticketSearchText(ticket);
+  let bestMatch = null;
+  let bestLength = 0;
+  DEMAND_SERVICES.forEach(service => {
+    service.aliases.forEach(alias => {
+      if (searchable.includes(alias) && alias.length > bestLength) {
+        bestMatch = service.id;
+        bestLength = alias.length;
+      }
+    });
+  });
+  return bestMatch;
+}
+
 function getEmailName(email) {
   return (email || '').split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'User';
 }
@@ -706,6 +791,73 @@ app.get('/api/tickets/all', async (req, res) => {
   try {
     const tickets = await Ticket.find().sort({ createdAt: -1 });
     res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/market-demand', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const now = new Date();
+    const currentYear = now.getUTCFullYear();
+    const yearStart = new Date(Date.UTC(currentYear, 0, 1));
+    const currentWindowStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const previousWindowStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const tickets = await Ticket.find({
+      createdAt: { $gte: yearStart },
+      status: { $ne: 'cancelled' }
+    }, {
+      serviceName: 1,
+      formData: 1,
+      createdAt: 1
+    }).lean();
+
+    const metrics = Object.fromEntries(DEMAND_SERVICES.map(service => [service.id, {
+      ...service,
+      yearRequests: 0,
+      currentRequests: 0,
+      previousRequests: 0,
+      weightedDemand: 0
+    }]));
+
+    tickets.forEach(ticket => {
+      const categoryId = demandCategoryFor(ticket);
+      if (!categoryId) return;
+      const metric = metrics[categoryId];
+      const createdAt = new Date(ticket.createdAt);
+      const ageDays = Math.max(0, (now - createdAt) / (24 * 60 * 60 * 1000));
+      metric.yearRequests++;
+      metric.weightedDemand += Math.exp(-ageDays / 45);
+      if (createdAt >= currentWindowStart) metric.currentRequests++;
+      else if (createdAt >= previousWindowStart) metric.previousRequests++;
+    });
+
+    const highestDemand = Math.max(1, ...Object.values(metrics).map(metric => metric.weightedDemand));
+    const services = DEMAND_SERVICES.map(service => {
+      const metric = metrics[service.id];
+      const growth = metric.previousRequests > 0
+        ? Math.round(((metric.currentRequests - metric.previousRequests) / metric.previousRequests) * 100)
+        : metric.currentRequests > 0 ? 100 : 0;
+      return {
+        id: service.id,
+        name: service.name,
+        score: Math.round((metric.weightedDemand / highestDemand) * 100),
+        growth,
+        requests: metric.yearRequests,
+        recentRequests: metric.currentRequests,
+        year: currentYear
+      };
+    });
+
+    res.json({
+      success: true,
+      source: 'Tekagon service-request activity',
+      methodology: 'Demand index uses confirmed service tickets, weighted toward the most recent 45 days.',
+      updatedAt: now.toISOString(),
+      chart: services.slice(0, 8),
+      services
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

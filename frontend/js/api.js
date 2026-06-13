@@ -263,6 +263,15 @@ async function getAllTickets() {
   }
 }
 
+async function getMarketDemand() {
+  try {
+    const res = await fetch(`${API_URL}/api/market-demand`, { cache: 'no-store' });
+    return await res.json();
+  } catch (err) {
+    return { success: false, chart: [], services: [] };
+  }
+}
+
 async function updateTicketStatus(ticketId, status) {
   try {
     const res = await fetch(`${API_URL}/api/tickets/${ticketId}/status`, {
@@ -455,6 +464,7 @@ window.TekagonAPI = {
   createTicket,
   getUserTickets,
   getAllTickets,
+  getMarketDemand,
   updateTicketStatus,
   updateAdminTicketNotes,
   sendMessage,

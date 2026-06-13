@@ -1886,6 +1886,10 @@ Designed and developed a full-stack quiz website for church examinations and com
   // --- Build page grid / profile
 async function buildPage(pageKey) {
 
+    if (pageKey !== 'home') {
+      clearInterval(window.__tekagonDemandRefresh);
+      window.__tekagonDemandRefresh = null;
+    }
     const data = pageData[pageKey];
     pageEl.innerHTML = '';
     currentPage = pageKey;
@@ -5080,19 +5084,19 @@ async function buildPage(pageKey) {
     <h2>Our Values</h2>
   </div>
   <div class="values-grid">
-    <div class="values-card chart-card">
-      <h3>Tech Services Growth (historical)</h3>
-      <canvas id="growthChartBar"></canvas>
-    </div>
-    <div class="values-card data-card">
-      <h3>Tekagon Growth Metrics</h3>
-      <table class="metrics-table">
-        <thead>
-          <tr><th>Service</th><th>Value</th><th>Year</th></tr>
-        </thead>
-        <tbody id="metricsBody"></tbody>
-      </table>
-    </div>
+	    <div class="values-card chart-card">
+	      <h3 title="Calculated from current Tekagon service-request activity">Live Service Demand</h3>
+	      <canvas id="growthChartBar"></canvas>
+	    </div>
+	    <div class="values-card data-card">
+	      <h3>2026 Demand Metrics</h3>
+	      <table class="metrics-table">
+	        <thead>
+	          <tr><th>Service</th><th>Value</th><th>Year</th></tr>
+	        </thead>
+	        <tbody id="metricsBody"><tr><td colspan="3">Loading live demand data...</td></tr></tbody>
+	      </table>
+	    </div>
   </div>
 `;
       pageEl.appendChild(ourValuesSection);
@@ -5100,147 +5104,88 @@ async function buildPage(pageKey) {
 
 
 
-      // load Chart.js dynamically if not present
-      if (!window.Chart) {
-        const s = document.createElement('script');
-        s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
-        s.onload = initGrowthBar;
-        document.body.appendChild(s);
-      } else {
-        initGrowthBar();
-      }
+	      initGrowthBar();
 
-      function initGrowthBar() {
-        // ensure canvas exists (we just appended it)
-        const canvas = document.getElementById('growthChartBar');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+	      function initGrowthBar() {
+	        const canvas = document.getElementById('growthChartBar');
+	        if (!canvas || canvas.dataset.demandInitialized) return;
+	        canvas.dataset.demandInitialized = 'true';
+	        const shortLabels = ['Brand', 'UI/UX', 'Frontend', 'Backend', 'Mobile', 'Marketing', 'DevOps', 'Consulting'];
+	        const defaultServices = [
+	          'Brand Identity & Strategy',
+	          'UI/UX & Product Design',
+	          'Frontend Web Development',
+	          'Backend & Systems Engineering',
+	          'Mobile Application Development',
+	          'Digital Marketing & Growth',
+	          'DevOps & Cloud Infrastructure',
+	          'Technical Consulting & Technical Writing',
+	          'AI & Business Automation',
+	          'E-commerce & Digital Platforms',
+	          'Cybersecurity, QA & Optimization'
+	        ].map((name, index) => ({
+	          id: `service-${index}`,
+	          name,
+	          score: 0,
+	          growth: 0,
+	          requests: 0,
+	          recentRequests: 0,
+	          year: 2026
+	        }));
 
-        // create vertical gradient for bars (light-blue -> purple)
-        // Create horizontal gradient (white → light-blue → purple)
-        // Create a vertical gradient for each bar (white → #93fff6 → #6f65ff)
-        function createBarGradient(ctx) {
-          const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-          gradient.addColorStop(0.8, 'rgba(161, 154, 255, 1)');  // purple bottom
-          gradient.addColorStop(0.5, 'rgba(255, 255, 255, 1)');  // white top
-          gradient.addColorStop(0.6, 'rgba(181, 255, 249, 1)'); // light blue mid
+	        canvas.style.display = 'none';
+	        const fallbackChart = document.createElement('div');
+	        fallbackChart.className = 'native-demand-chart';
+	        canvas.insertAdjacentElement('afterend', fallbackChart);
 
-          return gradient;
-        }
+	        const renderNativeBars = services => {
+	          fallbackChart.innerHTML = services.slice(0, 8).map((service, index) => {
+	            const direction = service.growth > 0 ? '+' : '';
+	            const height = service.score > 0 ? Math.max(service.score, 5) : 2;
+	            return `
+	              <div class="native-demand-column" tabindex="0">
+	                <div class="native-demand-tooltip">
+	                  <strong>${escapeHtml(service.name)}</strong>
+	                  <span>Demand index: ${escapeHtml(String(service.score))}/100</span>
+	                  <span>30-day growth: ${direction}${escapeHtml(String(service.growth))}%</span>
+	                  <span>2026 requests: ${escapeHtml(String(service.requests))}</span>
+	                </div>
+	                <div class="native-demand-track">
+	                  <span class="native-demand-fill" style="height:${height}%"></span>
+	                </div>
+	                <small>${escapeHtml(shortLabels[index])}</small>
+	              </div>
+	            `;
+	          }).join('');
+	        };
 
-        const barGradient = createBarGradient(ctx);
+	        async function refreshDemandData() {
+	          if (!document.getElementById('growthChartBar')) return;
+	          const result = await window.TekagonAPI?.getMarketDemand?.();
+	          const chartServices = result?.success && Array.isArray(result.chart) ? result.chart : defaultServices.slice(0, 8);
+	          const tableServices = result?.success && Array.isArray(result.services) ? result.services : defaultServices;
+	          window.__tekagonDemandData = { chart: chartServices, services: tableServices };
+	          renderNativeBars(chartServices);
 
+	          const metricsBody = document.getElementById('metricsBody');
+	          if (!metricsBody) return;
+	          metricsBody.innerHTML = tableServices.slice(0, 11).map(service => {
+	            const direction = service.growth > 0 ? '+' : '';
+	            const demandValue = service.requests
+	              ? `${service.score}/100 (${direction}${service.growth}%)`
+	              : 'No requests yet';
+	            return `<tr title="${escapeHtml(`${service.recentRequests} requests in the last 30 days`)}">
+	              <td>${escapeHtml(service.name)}</td>
+	              <td>${escapeHtml(demandValue)}</td>
+	              <td>${escapeHtml(String(service.year || 2026))}</td>
+	            </tr>`;
+	          }).join('');
+	        }
 
-        // base dataset (8 points)
-        let barYears = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
-        let barValues = [30, 45, 60, 75, 90, 120, 160, 210];
-
-        // Chart config (bar)
-        const config = {
-          type: 'bar',
-          data: {
-            labels: barYears.slice(),
-            datasets: [{
-              label: 'Services growth',
-              data: barValues.slice(),
-              backgroundColor: barGradient,
-              borderRadius: 8,
-              barThickness: 'flex',
-              maxBarThickness: 40,
-              datasets: [{
-                label: 'Services Growth',
-                data: barValues.slice(),
-                backgroundColor: barGradient,
-                borderRadius: 8,
-                barThickness: 'flex',
-                maxBarThickness: 40
-              }]
-
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 600 },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: 'rgba(18,18,24,0.95)',
-                titleColor: '#fff',
-                bodyColor: '#ddd',
-                borderColor: 'rgba(255,255,255,0.04)',
-                borderWidth: 1,
-                shadowOffsetX: 0,
-                shadowOffsetY: 0,
-                shadowBlur: 1,
-                shadowColor: 'rgba(0, 255, 255, 1)',
-
-              }
-            },
-            scales: {
-              x: {
-                ticks: { color: '#cfcfe6' },
-                grid: { display: false }
-              },
-              y: {
-                beginAtZero: true,
-                ticks: { color: '#cfcfe6' },
-                grid: { color: 'rgba(255,255,255,0.04)' }
-              }
-            }
-          }
-        };
-
-        // create chart instance (set canvas height so gradient works)
-        canvas.style.height = '320px';
-        const growthChartBar = new Chart(ctx, config);
-
-        // sliding-forward simulation (every 2s push new value)
-        const slideInterval = 2000;
-        setInterval(() => {
-          const nextYear = (barYears[barYears.length - 1] || new Date().getFullYear()) + 1;
-          // generate next value with gentle upward trend + randomness
-          const last = barValues[barValues.length - 1] || 100;
-          const delta = Math.round(Math.random() * 30 - 5); // -5 .. +25
-          const nextVal = Math.max(5, last + delta);
-
-          barYears.push(nextYear);
-          barValues.push(nextVal);
-
-          // keep window length = 8
-          if (barYears.length > 8) {
-            barYears.shift();
-            barValues.shift();
-          }
-
-          // update chart data & re-render
-          growthChartBar.data.labels = barYears.slice();
-          growthChartBar.data.datasets[0].data = barValues.slice();
-          growthChartBar.data.datasets[0].backgroundColor = createBarGradient(ctx);
-          growthChartBar.update();
-        }, slideInterval);
-
-        // populate metrics table
-        const metrics = [
-          { service: 'Cloud Integration', value: '+85%', year: 2024 },
-          { service: 'Product Design', value: '+73%', year: 2024 },
-          { service: 'AI Systems', value: '+92%', year: 2025 },
-          { service: 'Customer Experience', value: '+67%', year: 2025 },
-          { service: 'Product Design', value: '+73%', year: 2024 },
-          { service: 'AI Systems', value: '+92%', year: 2025 },
-          { service: 'Customer Experience', value: '+67%', year: 2025 },
-          { service: 'Product Design', value: '+73%', year: 2024 },
-          { service: 'AI Systems', value: '+92%', year: 2025 },
-          { service: 'Customer Experience', value: '+67%', year: 2025 },
-        ];
-        const metricsBody = document.getElementById('metricsBody');
-        metricsBody.innerHTML = ''; // clear
-        metrics.forEach(m => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${m.service}</td><td>${m.value}</td><td>${m.year}</td>`;
-          metricsBody.appendChild(tr);
-        });
-      }
+	        refreshDemandData();
+	        clearInterval(window.__tekagonDemandRefresh);
+	        window.__tekagonDemandRefresh = setInterval(refreshDemandData, 60000);
+	      }
     }
 
 

@@ -458,6 +458,16 @@ html, body {
     width: 100% !important;
   }
 
+  .native-demand-chart {
+    height: 320px !important;
+    gap: 5px !important;
+    padding-inline: 2px !important;
+  }
+
+  .native-demand-column small {
+    font-size: 0.58rem !important;
+  }
+
   .data-card {
     min-height: auto !important;
     padding: 20px 15px !important;
