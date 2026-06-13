@@ -809,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
     home: {
       title: 'Trending Projects',
       banners: [
-        { title: 'Dune: Part Two', desc: 'Paul Atreides returns, Business visibility can be enhanced by design tool to visualise prospective products of your business', meta: 'View Now', count: '+100 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: 'https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1650&q=80' },
+        { title: 'Tekagon: Launching Soon', desc: 'Unlike standard agencies that separate form from function, Tekagon integrates cutting-edge full-stack development with professional UI/UX and brand strategy under one roof', meta: 'View Now', count: '+1000 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: 'https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1650&q=80' },
         { title: 'Launching Gamer', desc: 'Paul Atreides returns, Business visibility can be enhanced by design tool to visualise prospective products of your business', meta: 'View Now', count: '+105 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/back3.png' },
         { title: 'Nocturne Runner', desc: 'Paul Atreides returns, Business visibility can be enhanced by design tool to visualise prospective products of your business', meta: 'View Now', count: '+110 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/seta.png' }
       ],
