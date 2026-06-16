@@ -116,7 +116,7 @@ a {
 }
 
 .nav {
-  position: fixed;
+  position: fixed !important;
   top: 12px;
   left: 50%;
   z-index: 1000;
@@ -140,7 +140,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.02em;
 }
