@@ -20,6 +20,48 @@ body {
   overflow-x: clip;
 }
 
+.hero .nav {
+  position: fixed !important;
+  top: 12px !important;
+  left: 50% !important;
+  z-index: 10000 !important;
+  transform: translate3d(-50%, 0, 0) !important;
+  will-change: transform;
+}
+
+.hero.scroll-animate,
+.hero.scroll-animate.active,
+.hero.scroll-animate.reverse {
+  opacity: 1 !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.hero .hero-content,
+.hero .planet-wrap,
+.hero .dashboard-preview {
+  opacity: 1;
+}
+
+.hero .hero-content {
+  transform: translateY(0);
+}
+
+.hero .dashboard-preview {
+  transform: translateY(0) scale(1);
+}
+
+.hero .hero-glow,
+.hero .planet-wrap::before,
+.hero .dashboard-preview::before {
+  animation-duration: 12s !important;
+  filter: blur(32px);
+}
+
+.hero .dashboard-preview::before {
+  opacity: 0.42;
+}
+
 .landing-hero {
   --hero-x: 50%;
   --hero-y: 48%;
@@ -387,6 +429,17 @@ body {
     min-height: 0;
     object-fit: contain;
     object-position: top;
+  }
+}
+
+@media (max-width: 910px) {
+  .hero .nav {
+    top: 10px !important;
+  }
+
+  .hero .mobile-menu {
+    position: fixed !important;
+    z-index: 9999 !important;
   }
 }
 

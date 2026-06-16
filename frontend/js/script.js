@@ -3,6 +3,16 @@ const hamburger = document.getElementById('hamburger');
 const navbar = document.getElementById('navbar');
 const header = document.querySelector('header');
 
+function markPageLoaded() {
+  document.body.classList.add('is-loaded');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', markPageLoaded, { once: true });
+} else {
+  markPageLoaded();
+}
+
 if (hamburger && navbar) {
   hamburger.addEventListener('click', function (e) {
     e.preventDefault();
@@ -210,7 +220,7 @@ const animatedElements = new Map();
 function initScrollAnimations() {
   // Select all sections (except banner and header), cards, and major container divs to animate
   const sections = document.querySelectorAll(
-    'section:not(.banner):not(.content):not(header), .card, .carousel-container, .cont-gp, .val-sect, .abt-bg, .ph1, .faq-det, .bg-container, .card-container'
+    'section:not(.banner):not(.content):not(.hero):not(header), .card, .carousel-container, .cont-gp, .val-sect, .abt-bg, .ph1, .faq-det, .bg-container, .card-container'
   );
 
   if (sections.length === 0) return;
