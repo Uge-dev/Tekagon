@@ -22,29 +22,64 @@
 </head>
 
 <body class="contact-page">
-  <header class="main-header">
-  <div class="header-container">
-    <div class="logo">
-      <a href="../index.html"><img src="../Images/TeckIQ white text.png" alt="TeckIQ Logo"></a>
-    </div>
-
-    <nav class="nav-wrapper" id="menu-item" >
-      <div class="nav-links">
-        <a href="#feature">Features</a>
-        <a href="#project">Projects</a>
-        <a href="#FAQ">FAQ</a>
-        <a href="#">Contact Us</a>
-      </div>
-      <a href="./dashboard.html" class="dashboard-btn">View Dashboard</a>
-    </nav>
-
-    <button class="hamburger-toggle" id="mobile-toggle" aria-label="Toggle Navigation">
-      <span class="bar"></span>
-      <span class="bar"></span>
-      <span class="bar"></span>
-    </button>
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <img class="preloader-logo" src="/Images/Tekagon-logo.png" alt="">
   </div>
-</header>
+
+
+ <main class="hero-shell">
+    <section class="hero" aria-label="AI sales automation hero section">
+      <div class="grid-noise"></div>
+      <div class="hero-glow"></div>
+      <div class="planet-wrap" aria-hidden="true">
+        <div class="planet"></div>
+      </div>
+
+      <header class="nav">
+        <a href="#" class="brand" aria-label="Vetra home">
+          <span class="brand-mark">
+            <img style="height: 18px;" src="/Images/Asset 2.png" alt="">
+          </span>
+          <span>Tekagon</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="#feature">Features</a>
+          <a href="#project">Project</a>
+          <a href="#FAQ">FAQ</a>
+          <a href="./pages/contact.html">Contact Use</a>
+        </nav>
+
+        <a href="./pages/Dasnboard.html" class="nav-cta">Login</a>
+
+        <button class="menu-button" type="button" aria-label="Open menu" aria-controls="mobileMenu" aria-expanded="false">
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+
+      <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+        <a href="../index.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7v7H4V5Zm9 0h7v7h-7V5ZM4 14h7v5H4v-5Zm9 0h7v5h-7v-5Z"/></svg>
+          Features
+        </a>
+        <a href="../index.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-1 7h7l-8 13 1-8H5l8-12Z"/></svg>
+          Projects
+        </a>
+        <a href="../index.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5V4Zm3 3v2h8V7H8Zm0 5v2h3v-2H8Zm5 0v2h3v-2h-3Zm-5 4v2h3v-2H8Zm5 0v2h3v-2h-3Z"/></svg>
+          FAQ
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H7l-3 3V5Zm3 3v2h10V8H7Zm0 4v2h7v-2H7Z"/></svg>
+          Contact Us
+        </a>
+        <a href="#" class="mobile-login">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h9v16h-9v-2h7V6h-7V4Zm1 4 5 4-5 4v-3H4v-2h7V8Z"/></svg>
+          Login
+        </a>
+      </div>
 
 
 

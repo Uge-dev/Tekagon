@@ -1314,7 +1314,7 @@ body.is-loaded .dashboard-preview::before {
 }
 
 .f-span {
-    background: linear-gradient(to right, white, #ff99ee, #9c8dff, #93d4ff, white);
+    background: linear-gradient(to right, white, #93d4ff,#9c8dff, white);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
