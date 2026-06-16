@@ -84,7 +84,7 @@
       </div>
 
       <header class="nav">
-        <a href="#" class="brand" aria-label="Vetra home">
+        <a href="./index.html" class="brand" aria-label="Tekagon home">
           <span class="brand-mark">
             <img style="height: 22px;" src="/Images/Asset 2.png" alt="">
           </span>
@@ -95,7 +95,7 @@
           <a href="#feature">Features</a>
           <a href="#project">Project</a>
           <a href="#FAQ">FAQ</a>
-          <a href="./pages/contact.html">Contact Use</a>
+          <a href="./pages/contact.html">Contact Us</a>
         </nav>
 
         <a href="./pages/Dasnboard.html" class="nav-cta">Login</a>
@@ -123,7 +123,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H7l-3 3V5Zm3 3v2h10V8H7Zm0 4v2h7v-2H7Z"/></svg>
           Contact Us
         </a>
-        <a href="./pages/dashboard.html" class="mobile-login">
+        <a href="./pages/Dasnboard.html" class="mobile-login">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h9v16h-9v-2h7V6h-7V4Zm1 4 5 4-5 4v-3H4v-2h7V8Z"/></svg>
           Login
         </a>
@@ -141,7 +141,7 @@
         </p>
 
         <div class="hero-actions">
-          <a href="#" class="btn btn-outline">
+          <a href="#project" class="btn btn-outline">
             <span class="play-icon">▶</span>
             Watch Demo
           </a>
@@ -274,7 +274,7 @@
                 <div class="val-card-txt">
                   <h1>Programming & App Development</h1>
                   <p>We build reliable, scalable, and secure software solutions using modern technologies.</p>
-                  <a href="#">Start a Project</a>
+                  <a href="./pages/Dasnboard.html#page=service">Start a Project</a>
                 </div>
               </div>
             </div>
@@ -285,7 +285,7 @@
                 <div class="val-card-txt">
                   <h1>Design & User Experience</h1>
                   <p>We design digital products that are visually compelling, intuitive, and user-focused.</p>
-                  <a href="#">See Portfolio</a>
+                  <a href="#project">See Portfolio</a>
                 </div>
               </div>
             </div>
@@ -298,7 +298,7 @@
                 <h1>Business Optimization & Strategy</h1>
                 <p>We help businesses improve performance by aligning technology with business goals.
                 </p>
-                <a href="#">Request Maintenance</a>
+                <a href="./pages/Dasnboard.html#page=service">Request Maintenance</a>
               </div>
             </div>
 
@@ -308,7 +308,7 @@
                 <h1>DevOps, Maintenance & Support</h1>
                 <p>We ensure your systems remain stable, secure, and scalable after launch.
                 </p>
-                <a href="#">Book Design Services</a>
+                <a href="./pages/Dasnboard.html#page=book">Book Design Services</a>
               </div>
             </div>
           </div>
@@ -327,7 +327,7 @@
             <img class="verified" src="./Images/setb (2)-assets/cd5.png" alt="">
             <h1 class="writing-text">Trusted & Verified</h1>
             <div class="contact">
-              <a href="/pages/Dasnboard.html"><a href="./pages/Dasnboard.html" class="nav-cta">View Dashboard</a></a>
+              <a href="./pages/Dasnboard.html" class="nav-cta">View Dashboard</a>
             </div>
           </div>
         </div>
@@ -432,7 +432,7 @@
               </div>
             </div>
             <div class="ph-btn">
-              <a href="#" onclick="buildPage('service')">Click to hire us and get the best web service</a>
+              <a href="./pages/Dasnboard.html#page=service">Click to hire us and get the best web service</a>
             </div>
           </div>
         </div>
@@ -645,11 +645,11 @@
           <div class="footer-column">
             <h3>Services</h3>
             <ul>
-              <li><a href="#">App & Web developement</a></li>
-              <li><a href="#">Business Development</a></li>
-              <li><a href="#">Branding</a></li>
-              <li><a href="#">Tech Consultation</a></li>
-               <li><a href="#">Platform Maintenance</a></li>
+              <li><a href="./pages/Dasnboard.html#page=service">App & Web developement</a></li>
+              <li><a href="./pages/Dasnboard.html#page=service">Business Development</a></li>
+              <li><a href="./pages/Dasnboard.html#page=service">Branding</a></li>
+              <li><a href="./pages/Dasnboard.html#page=contact">Tech Consultation</a></li>
+               <li><a href="./pages/Dasnboard.html#page=service">Platform Maintenance</a></li>
             </ul>
           </div>
           <div class="footer-column">
@@ -698,20 +698,22 @@
 const toggleBtn = document.getElementById('mobile-toggle');
 const navMenu = document.getElementById('menu-item');
 
-toggleBtn.addEventListener('click', () => {
-  // Toggle the side menu
-  navMenu.classList.toggle('active');
-  // Toggle the hamburger animation
-  toggleBtn.classList.toggle('active');
-});
-
-// Close when clicking a link
-document.querySelectorAll('.nav-links a').forEach(link => {
-  link.addEventListener('click', () => {
-    navMenu.classList.remove('active');
-    toggleBtn.classList.remove('active');
+if (toggleBtn && navMenu) {
+  toggleBtn.addEventListener('click', () => {
+    // Toggle the side menu
+    navMenu.classList.toggle('active');
+    // Toggle the hamburger animation
+    toggleBtn.classList.toggle('active');
   });
-});
+
+  // Close when clicking a link
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      navMenu.classList.remove('active');
+      toggleBtn.classList.remove('active');
+    });
+  });
+}
   </script>
 
  
