@@ -139,9 +139,15 @@ a {
   justify-self: start;
   display: inline-flex;
   align-items: center;
+<<<<<<< HEAD
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 400;
+=======
   gap: 8px;
   font-size: 18px;
   font-weight: 500;
+>>>>>>> 7510636b53f1ea4e46dc5f51254da3134a7be8f7
   letter-spacing: -0.02em;
 }
 
