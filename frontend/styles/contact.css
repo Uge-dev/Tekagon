@@ -1,8 +1,9 @@
  .contact-section {
    background: #0b0c12;
-   padding: 1rem;
+   
    color: #fff;
    padding: 0px 3rem;
+   margin-top: 3rem;
    display: flex;
    flex-direction: column;
    gap: 2rem;
