@@ -1,3 +1,23 @@
+body.contact-page {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #000000 0%, #050713 52%, #000000 100%);
+}
+
+.contact-page .hero-shell,
+.contact-page .hero {
+  min-height: 100vh;
+  overflow: visible;
+  isolation: auto;
+  border-radius: 0 !important;
+  background: linear-gradient(145deg, #000000 0%, #050713 52%, #000000 100%) !important;
+}
+
+.contact-page .grid-noise,
+.contact-page .hero-glow,
+.contact-page .planet-wrap {
+  display: none !important;
+}
+
  .contact-section {
    background: #0b0c12;
    
@@ -23,6 +43,8 @@
  }
 
  .contact-page .contact-section {
+   position: relative;
+   z-index: 2;
    width: calc(100% - 20rem);
    max-width: 1200px;
    margin: 8rem auto 0;

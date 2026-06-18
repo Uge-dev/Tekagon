@@ -27,6 +27,26 @@ body {
   overflow-x: hidden;
 }
 
+.legal-site-page {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #000000 0%, #050713 52%, #000000 100%);
+}
+
+.legal-site-page .hero-shell,
+.legal-site-page .hero {
+  min-height: 100vh;
+  overflow: visible;
+  isolation: auto;
+  border-radius: 0 !important;
+  background: linear-gradient(145deg, #000000 0%, #050713 52%, #000000 100%) !important;
+}
+
+.legal-site-page .grid-noise,
+.legal-site-page .hero-glow,
+.legal-site-page .planet-wrap {
+  display: none !important;
+}
+
 .legal-site-page.is-loaded .preloader {
   opacity: 0;
   visibility: hidden;
