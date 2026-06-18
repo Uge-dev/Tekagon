@@ -16,6 +16,12 @@
 
  }
 
+ .contact-page.is-loaded .preloader {
+   opacity: 0;
+   visibility: hidden;
+   pointer-events: none;
+ }
+
  .contact-page .contact-section {
    width: calc(100% - 20rem);
    max-width: 1200px;

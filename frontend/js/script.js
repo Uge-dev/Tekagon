@@ -47,6 +47,8 @@ window.addEventListener("scroll", function () {
 
 
 // Keep the preloader independent from slow remote fonts, videos, and APIs.
+window.TEKAGON_PRELOADER_MANAGED = true;
+
 function dismissPreloader() {
   const preloader = document.getElementById('preloader');
   if (!preloader || preloader.classList.contains('is-hidden')) return;

@@ -92,6 +92,7 @@ a {
   left: 50%;
   top: clamp(10px, 6vw, 12px);
   z-index: 0;
+  pointer-events: none;
   width: max(1120px, 116vw);
   height: 1200px;
   transform: translateX(-50%);
@@ -119,7 +120,7 @@ a {
   position: fixed !important;
   top: 12px;
   left: 50%;
-  z-index: 1000;
+  z-index: 10000;
   width: min(1120px, calc(100% - 64px));
   height: 72px;
   padding: 0 18px;
@@ -787,7 +788,7 @@ body.is-loaded .dashboard-preview::before {
 
   .mobile-menu {
     position: fixed;
-    z-index: 999;
+    z-index: 9999;
     top: 80px;
     left: 50%;
     width: min(100% - 34px, 760px);

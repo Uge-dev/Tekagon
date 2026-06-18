@@ -1,6 +1,19 @@
+function dismissSharedPreloader() {
+  if (window.TEKAGON_PRELOADER_MANAGED) return;
+
+  const preloader = document.getElementById('preloader');
+  if (!preloader || preloader.classList.contains('is-hidden')) return;
+
+  preloader.classList.add('is-hidden');
+  setTimeout(() => preloader.remove(), 220);
+}
+
 window.addEventListener('load', () => {
   document.body.classList.add('is-loaded');
+  setTimeout(dismissSharedPreloader, 180);
 });
+
+setTimeout(dismissSharedPreloader, 900);
 
 const menuButton = document.querySelector('.menu-button');
 const mobileMenu = document.querySelector('#mobileMenu');

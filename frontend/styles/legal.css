@@ -27,6 +27,12 @@ body {
   overflow-x: hidden;
 }
 
+.legal-site-page.is-loaded .preloader {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .legal-main-header {
   position: fixed;
   top: 0;
@@ -616,10 +622,11 @@ body {
   }
 
   .legal-page {
-    padding-top: calc(var(--legal-header-height) + 18px);
+    padding-top: calc(var(--legal-header-height) + 58px);
   }
 
   .legal-hero {
+    margin-top: 18px;
     padding: 38px 18px;
     border-radius: 24px;
   }
