@@ -10,6 +10,7 @@ const Ticket = require('./models/Ticket');
 const Message = require('./models/Message');
 const SiteContent = require('./models/SiteContent');
 const AdminSettings = require('./models/AdminSettings');
+const AuthCode = require('./models/AuthCode');
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -155,6 +156,59 @@ function verifyPassword(password, user) {
   if (!user?.passwordHash || !user?.passwordSalt) return false;
   const { hash } = hashPassword(password, user.passwordSalt);
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.passwordHash, 'hex'));
+}
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function createNumericCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashAuthCode(email, purpose, code) {
+  return crypto
+    .createHash('sha256')
+    .update(`${normalizeEmail(email)}:${purpose}:${String(code).trim()}`)
+    .digest('hex');
+}
+
+async function sendAuthCodeEmail({ email, name, code, purpose }) {
+  if (!SENDGRID_API_KEY || !SENDER_EMAIL || !email) {
+    return { sent: false, error: 'Email service is not configured' };
+  }
+
+  const isReset = purpose === 'password-reset';
+  const subject = isReset ? 'Reset your Tekagon password' : 'Verify your Tekagon email';
+  const headline = isReset ? 'Password reset code' : 'Email verification code';
+  const intro = isReset
+    ? 'Use this code to reset your Tekagon password.'
+    : 'Use this code to verify your email and finish creating your Tekagon account.';
+
+  try {
+    const [result] = await sgMail.send({
+      to: email,
+      from: SENDER_EMAIL,
+      subject,
+      text: `Hello ${name || 'there'},\n\n${intro}\n\nCode: ${code}\n\nThis code expires in 15 minutes. If you did not request this, you can ignore this email.\n\nTekagon Team`,
+      html: `
+        <div style="font-family:Arial,sans-serif;background:#050713;color:#e2e8f0;padding:28px;">
+          <div style="max-width:520px;margin:auto;background:#111827;border:1px solid rgba(147,255,246,.18);border-radius:16px;padding:28px;">
+            <h2 style="margin:0 0 10px;color:#93fff6;">${headline}</h2>
+            <p style="line-height:1.6;color:#cbd5e1;">Hello ${name || 'there'},</p>
+            <p style="line-height:1.6;color:#cbd5e1;">${intro}</p>
+            <div style="font-size:32px;letter-spacing:8px;font-weight:700;color:#ffffff;background:linear-gradient(135deg,#6f65ff,#163a45);border-radius:12px;padding:18px;text-align:center;margin:24px 0;">${code}</div>
+            <p style="line-height:1.6;color:#94a3b8;">This code expires in 15 minutes. If you did not request this, you can ignore this email.</p>
+            <p style="margin-top:28px;color:#cbd5e1;">Tekagon Team</p>
+          </div>
+        </div>
+      `
+    });
+    return { sent: true, messageId: result?.headers?.['x-message-id'] || null };
+  } catch (error) {
+    console.error('Auth code email failed:', error.message);
+    return { sent: false, error: error.message };
+  }
 }
 
 async function sendWelcomeEmail(user) {
@@ -391,7 +445,7 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const existing = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
     if (existing?.passwordHash) {
       return res.status(409).json({ success: false, error: 'An account with this email already exists' });
@@ -399,17 +453,82 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const { salt, hash } = hashPassword(password);
     const userId = existing?.userId || `EMAIL_${crypto.createHash('sha256').update(normalizedEmail).digest('hex').slice(0, 24)}`;
+    const code = createNumericCode();
+    const emailResult = await sendAuthCodeEmail({ email: normalizedEmail, name, code, purpose: 'signup' });
+    if (!emailResult.sent) {
+      return res.status(503).json({ success: false, error: 'Email verification service is not configured. Please contact support.' });
+    }
+
+    await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'signup' });
+    await AuthCode.create({
+      email: normalizedEmail,
+      purpose: 'signup',
+      codeHash: hashAuthCode(normalizedEmail, 'signup', code),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      payload: {
+        userId,
+        name,
+        phone,
+        company,
+        authProvider: existing?.authProvider || 'email',
+        passwordHash: hash,
+        passwordSalt: salt,
+        existingUserId: existing?.userId || ''
+      }
+    });
+
+    res.json({
+      success: true,
+      requiresVerification: true,
+      email: normalizedEmail,
+      message: 'Verification code sent to your email.'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/signup/verify', async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const code = String(req.body.code || '').trim();
+    if (!normalizedEmail || !code) {
+      return res.status(400).json({ success: false, error: 'Email and verification code are required' });
+    }
+
+    const authCode = await AuthCode.findOne({ email: normalizedEmail, purpose: 'signup' }).sort({ createdAt: -1 });
+    if (!authCode || authCode.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, error: 'Verification code expired. Please request a new code.' });
+    }
+    if (authCode.attempts >= 5) {
+      await AuthCode.deleteOne({ _id: authCode._id });
+      return res.status(429).json({ success: false, error: 'Too many attempts. Please request a new code.' });
+    }
+    if (!safeCompare(authCode.codeHash, hashAuthCode(normalizedEmail, 'signup', code))) {
+      authCode.attempts += 1;
+      await authCode.save();
+      return res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+    const existing = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
+    if (existing?.passwordHash) {
+      await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'signup' });
+      return res.status(409).json({ success: false, error: 'An account with this email already exists' });
+    }
+
+    const payload = authCode.payload || {};
+    const userId = payload.existingUserId || payload.userId || `EMAIL_${crypto.createHash('sha256').update(normalizedEmail).digest('hex').slice(0, 24)}`;
     const user = await User.findOneAndUpdate(
       { userId },
       {
         $set: {
-          name,
-          phone,
+          name: payload.name || getEmailName(normalizedEmail),
+          phone: payload.phone || '',
           email: normalizedEmail,
-          company,
-          authProvider: existing?.authProvider || 'email',
-          passwordHash: hash,
-          passwordSalt: salt,
+          company: payload.company || '',
+          authProvider: payload.authProvider || 'email',
+          passwordHash: payload.passwordHash,
+          passwordSalt: payload.passwordSalt,
           lastActive: new Date()
         },
         $setOnInsert: { registeredAt: new Date() }
@@ -417,14 +536,92 @@ app.post('/api/auth/signup', async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    const created = !existing;
-    const welcomeEmail = created ? await sendWelcomeEmail(user) : { sent: false };
+    await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'signup' });
+    const welcomeEmail = await sendWelcomeEmail(user);
     res.json({
       success: true,
-      created,
+      created: true,
       welcomeEmailSent: welcomeEmail.sent,
       user: { userId: user.userId, name: user.name, phone: user.phone, email: user.email, company: user.company }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/password/forgot', async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    if (!normalizedEmail) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
+    if (!user?.passwordHash) {
+      return res.json({ success: true, message: 'If this email exists, a reset code has been sent.' });
+    }
+
+    const code = createNumericCode();
+    const emailResult = await sendAuthCodeEmail({ email: normalizedEmail, name: user.name, code, purpose: 'password-reset' });
+    if (!emailResult.sent) {
+      return res.status(503).json({ success: false, error: 'Password reset email service is not configured. Please contact support.' });
+    }
+
+    await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'password-reset' });
+    await AuthCode.create({
+      email: normalizedEmail,
+      purpose: 'password-reset',
+      codeHash: hashAuthCode(normalizedEmail, 'password-reset', code),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      payload: { userId: user.userId }
+    });
+
+    res.json({ success: true, message: 'If this email exists, a reset code has been sent.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/password/reset', async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const code = String(req.body.code || '').trim();
+    const password = String(req.body.password || '');
+    if (!normalizedEmail || !code || !password) {
+      return res.status(400).json({ success: false, error: 'Email, reset code, and new password are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    const authCode = await AuthCode.findOne({ email: normalizedEmail, purpose: 'password-reset' }).sort({ createdAt: -1 });
+    if (!authCode || authCode.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, error: 'Reset code expired. Please request a new code.' });
+    }
+    if (authCode.attempts >= 5) {
+      await AuthCode.deleteOne({ _id: authCode._id });
+      return res.status(429).json({ success: false, error: 'Too many attempts. Please request a new code.' });
+    }
+    if (!safeCompare(authCode.codeHash, hashAuthCode(normalizedEmail, 'password-reset', code))) {
+      authCode.attempts += 1;
+      await authCode.save();
+      return res.status(400).json({ success: false, error: 'Invalid reset code' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
+    if (!user?.passwordHash) {
+      return res.status(404).json({ success: false, error: 'User not found. Please create an account first.' });
+    }
+
+    const { salt, hash } = hashPassword(password);
+    user.passwordSalt = salt;
+    user.passwordHash = hash;
+    user.authProvider = user.authProvider || 'email';
+    user.lastActive = new Date();
+    await user.save();
+    await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'password-reset' });
+
+    res.json({ success: true, message: 'Password reset successfully. You can now sign in.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

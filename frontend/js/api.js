@@ -55,6 +55,48 @@ async function signinWithEmail(credentials) {
   }
 }
 
+async function verifySignupCode(data) {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/signup/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('verifySignupCode error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function requestPasswordReset(email) {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/password/forgot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('requestPasswordReset error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+async function resetPasswordWithCode(data) {
+  try {
+    const res = await fetch(`${API_URL}/api/auth/password/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('resetPasswordWithCode error:', err);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 async function adminLogin(credentials) {
   try {
     const res = await fetch(`${API_URL}/api/admin/login`, {
@@ -447,6 +489,9 @@ window.TekagonAPI = {
   updateUserActivity,
   signupWithEmail,
   signinWithEmail,
+  verifySignupCode,
+  requestPasswordReset,
+  resetPasswordWithCode,
   adminLogin,
   getDashboardContent,
   updateSocialCard,

@@ -22,6 +22,13 @@
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  function hasFirebaseAuth() {
+    return typeof firebase !== 'undefined' &&
+      Array.isArray(firebase.apps) &&
+      firebase.apps.length > 0 &&
+      typeof firebase.auth === 'function';
+  }
+
   function injectStyles() {
     if (document.getElementById('tekagon-auth-styles')) return;
     const style = document.createElement('style');
@@ -86,7 +93,8 @@
       }
 
       .auth-form { display: flex; flex-direction: column; gap: 16px; }
-      .auth-form.hidden { display: none; }
+      .auth-form.hidden,
+      .hidden { display: none !important; }
 
       .auth-field label {
         display: block; margin-bottom: 7px; font-size: .9rem;
@@ -104,6 +112,41 @@
         outline: none; border-color: #6f65ff;
         background: rgba(255,255,255,.06);
       }
+      .password-shell {
+        position: relative;
+      }
+      .password-shell input {
+        padding-right: 44px;
+      }
+      .password-toggle {
+        position: absolute; right: 10px; top: 50%;
+        transform: translateY(-50%);
+        width: 32px; height: 32px; border: 0; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,.04); color: #94a3b8;
+        cursor: pointer; transition: all .2s;
+      }
+      .password-toggle:hover {
+        color: #93fff6; background: rgba(147,255,246,.08);
+      }
+      .auth-code-note {
+        margin: -2px 0 2px; color: #94a3b8; font-size: .88rem; line-height: 1.55;
+      }
+      .auth-code-note strong { color: #e2e8f0; }
+      .auth-code-input {
+        text-align: center; letter-spacing: 8px; font-size: 1.2rem !important;
+        font-weight: 700;
+      }
+      .auth-inline-actions {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 12px; margin-top: -4px;
+      }
+      .auth-link {
+        border: 0; background: transparent; color: #93fff6;
+        font-size: .88rem; font-weight: 600; cursor: pointer;
+        padding: 0; text-align: left;
+      }
+      .auth-link:hover { color: #ffffff; text-decoration: underline; }
 
       .auth-error {
         background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3);
@@ -272,7 +315,16 @@
             </div>
             <div class="auth-field">
               <label>Password</label>
-              <input type="password" id="si-password" placeholder="Enter password" autocomplete="current-password">
+              <div class="password-shell">
+                <input type="password" id="si-password" placeholder="Enter password" autocomplete="current-password">
+                <button type="button" class="password-toggle" data-target="si-password" aria-label="Show password">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="auth-inline-actions">
+              <span></span>
+              <button type="button" class="auth-link" id="btn-forgot-password">Forgot password?</button>
             </div>
             <button class="btn-auth-submit" id="btn-signin">Sign In</button>
             <div class="auth-divider">or</div>
@@ -294,7 +346,12 @@
             </div>
             <div class="auth-field">
               <label>Password (min 6 characters)</label>
-              <input type="password" id="su-password" placeholder="Create password" autocomplete="new-password">
+              <div class="password-shell">
+                <input type="password" id="su-password" placeholder="Create password" autocomplete="new-password">
+                <button type="button" class="password-toggle" data-target="su-password" aria-label="Show password">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
             </div>
             <div class="auth-field">
               <label>Phone Number</label>
@@ -306,6 +363,48 @@
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
               Continue with Google
             </button>
+          </div>
+
+          <!-- Email verification form -->
+          <div class="auth-form hidden" id="form-verify">
+            <p class="auth-code-note">We sent a 6-digit verification code to <strong id="verify-email-label"></strong>. Enter it below to activate your account.</p>
+            <div class="auth-field">
+              <label>Verification Code</label>
+              <input class="auth-code-input" type="text" id="verify-code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+            </div>
+            <button class="btn-auth-submit" id="btn-verify-signup">Verify Email</button>
+            <div class="auth-inline-actions">
+              <button type="button" class="auth-link" id="btn-resend-signup-code">Resend code</button>
+              <button type="button" class="auth-link" id="btn-back-to-signup">Edit details</button>
+            </div>
+          </div>
+
+          <!-- Forgot password form -->
+          <div class="auth-form hidden" id="form-reset">
+            <p class="auth-code-note" id="reset-copy">Enter your account email and we will send a password reset code.</p>
+            <div class="auth-field">
+              <label>Email</label>
+              <input type="email" id="reset-email" placeholder="you@example.com" autocomplete="email">
+            </div>
+            <div class="auth-field reset-code-field hidden">
+              <label>Reset Code</label>
+              <input class="auth-code-input" type="text" id="reset-code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+            </div>
+            <div class="auth-field reset-code-field hidden">
+              <label>New Password</label>
+              <div class="password-shell">
+                <input type="password" id="reset-password" placeholder="Create new password" autocomplete="new-password">
+                <button type="button" class="password-toggle" data-target="reset-password" aria-label="Show password">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <button class="btn-auth-submit" id="btn-request-reset">Send Reset Code</button>
+            <button class="btn-auth-submit hidden" id="btn-reset-password">Reset Password</button>
+            <div class="auth-inline-actions">
+              <button type="button" class="auth-link hidden" id="btn-resend-reset-code">Resend code</button>
+              <button type="button" class="auth-link" id="btn-back-to-signin">Back to sign in</button>
+            </div>
           </div>
         </div>
       </div>
@@ -374,28 +473,101 @@
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
     btn.disabled = loading;
-    btn.textContent = loading ? 'Please wait…' : btn.dataset.label || btn.textContent;
+    btn.textContent = loading ? 'Please wait…' : btn.dataset.label;
+  }
+
+  function setAuthView(view) {
+    const views = ['signin', 'signup', 'verify', 'reset'];
+    views.forEach(name => {
+      const form = document.getElementById(`form-${name}`);
+      if (form) form.classList.toggle('hidden', name !== view);
+    });
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === view);
+    });
+    clearAuthMessages();
+  }
+
+  function setResetCodeMode(enabled) {
+    document.querySelectorAll('.reset-code-field').forEach(el => el.classList.toggle('hidden', !enabled));
+    const resend = document.getElementById('btn-resend-reset-code');
+    const request = document.getElementById('btn-request-reset');
+    const reset = document.getElementById('btn-reset-password');
+    if (resend) resend.classList.toggle('hidden', !enabled);
+    if (request) request.classList.toggle('hidden', enabled);
+    if (reset) reset.classList.toggle('hidden', !enabled);
+    const copy = document.getElementById('reset-copy');
+    if (copy) {
+      copy.textContent = enabled
+        ? 'Enter the 6-digit code sent to your email, then choose a new password.'
+        : 'Enter your account email and we will send a password reset code.';
+    }
+  }
+
+  function setupPasswordToggles(overlay) {
+    overlay.querySelectorAll('.password-toggle').forEach(button => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.target);
+        if (!input) return;
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        button.innerHTML = `<i class="fas ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+      });
+    });
   }
 
   function wireAuthOverlay(overlay) {
+    let pendingSignup = null;
+
+    setupPasswordToggles(overlay);
+
     // Tab switching
     overlay.querySelectorAll('.auth-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        overlay.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
         const which = tab.dataset.tab;
-        document.getElementById('form-signin').classList.toggle('hidden', which !== 'signin');
-        document.getElementById('form-signup').classList.toggle('hidden', which !== 'signup');
-        clearAuthMessages();
+        setAuthView(which);
       });
     });
 
-    const auth = firebase.auth();
+    const auth = hasFirebaseAuth() ? firebase.auth() : null;
     const canUseBackendEmailAuth = () =>
       window.TekagonAPI &&
       typeof window.TekagonAPI.signupWithEmail === 'function' &&
-      typeof window.TekagonAPI.signinWithEmail === 'function';
+      typeof window.TekagonAPI.signinWithEmail === 'function' &&
+      typeof window.TekagonAPI.verifySignupCode === 'function' &&
+      typeof window.TekagonAPI.requestPasswordReset === 'function' &&
+      typeof window.TekagonAPI.resetPasswordWithCode === 'function';
+
+    async function requestSignupCode() {
+      const name = document.getElementById('su-name').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const password = document.getElementById('su-password').value;
+      const phone = document.getElementById('su-phone').value.trim();
+      if (!name || !email || !password) {
+        showAuthError('Name, email, and password are required.');
+        return false;
+      }
+      if (password.length < 6) {
+        showAuthError('Password must be at least 6 characters.');
+        return false;
+      }
+      const result = await window.TekagonAPI.signupWithEmail({ name, email, password, phone, company: '' });
+      if (result.success && result.requiresVerification) {
+        pendingSignup = { name, email, password, phone };
+        const emailLabel = document.getElementById('verify-email-label');
+        if (emailLabel) emailLabel.textContent = result.email || email;
+        const codeInput = document.getElementById('verify-code');
+        if (codeInput) codeInput.value = '';
+        setAuthView('verify');
+        showAuthInfo(result.message || 'Verification code sent to your email.');
+        return true;
+      }
+      showAuthError(result.error || 'Unable to send verification code.');
+      return false;
+    }
 
     // ── Sign In ──
     document.getElementById('btn-signin').addEventListener('click', async () => {
@@ -412,6 +584,11 @@
             return;
           }
           showAuthError(result.error || 'Unable to sign in.');
+          setLoading('btn-signin', false);
+          return;
+        }
+        if (!auth) {
+          showAuthError('Authentication service is not ready. Please try again in a moment.');
           setLoading('btn-signin', false);
           return;
         }
@@ -435,12 +612,12 @@
       clearAuthMessages();
       try {
         if (canUseBackendEmailAuth()) {
-          const result = await window.TekagonAPI.signupWithEmail({ name, email, password, phone, company: '' });
-          if (result.success && result.user) {
-            setBackendAuthSession(result.user);
-            return;
-          }
-          showAuthError(result.error || 'Unable to create the account.');
+          await requestSignupCode();
+          setLoading('btn-signup', false);
+          return;
+        }
+        if (!auth) {
+          showAuthError('Authentication service is not ready. Please try again in a moment.');
           setLoading('btn-signup', false);
           return;
         }
@@ -466,11 +643,120 @@
       }
     });
 
+    document.getElementById('btn-verify-signup').addEventListener('click', async () => {
+      const code = document.getElementById('verify-code').value.trim();
+      const email = pendingSignup?.email || document.getElementById('su-email').value.trim();
+      if (!email || !code) return showAuthError('Please enter the verification code from your email.');
+      setLoading('btn-verify-signup', true);
+      clearAuthMessages();
+      try {
+        const result = await window.TekagonAPI.verifySignupCode({ email, code });
+        if (result.success && result.user) {
+          setBackendAuthSession(result.user);
+          return;
+        }
+        showAuthError(result.error || 'Unable to verify this code.');
+      } catch (error) {
+        showAuthError('Network error. Please try again.');
+      } finally {
+        setLoading('btn-verify-signup', false);
+      }
+    });
+
+    document.getElementById('btn-resend-signup-code').addEventListener('click', async () => {
+      if (!pendingSignup) return setAuthView('signup');
+      setLoading('btn-resend-signup-code', true);
+      clearAuthMessages();
+      try {
+        await requestSignupCode();
+      } finally {
+        setLoading('btn-resend-signup-code', false);
+      }
+    });
+
+    document.getElementById('btn-back-to-signup').addEventListener('click', () => {
+      setAuthView('signup');
+    });
+
+    document.getElementById('btn-forgot-password').addEventListener('click', () => {
+      const email = document.getElementById('si-email').value.trim();
+      const resetEmail = document.getElementById('reset-email');
+      if (resetEmail && email) resetEmail.value = email;
+      setResetCodeMode(false);
+      setAuthView('reset');
+    });
+
+    document.getElementById('btn-back-to-signin').addEventListener('click', () => {
+      setAuthView('signin');
+    });
+
+    document.getElementById('btn-request-reset').addEventListener('click', async () => {
+      const email = document.getElementById('reset-email').value.trim();
+      if (!email) return showAuthError('Please enter your email address.');
+      setLoading('btn-request-reset', true);
+      clearAuthMessages();
+      try {
+        if (canUseBackendEmailAuth()) {
+          const result = await window.TekagonAPI.requestPasswordReset(email);
+          if (result.success) {
+            setResetCodeMode(true);
+            showAuthInfo(result.message || 'Reset code sent. Check your email.');
+          } else {
+            showAuthError(result.error || 'Unable to send reset code.');
+          }
+          return;
+        }
+        if (!auth) {
+          showAuthError('Authentication service is not ready. Please try again in a moment.');
+          return;
+        }
+        await auth.sendPasswordResetEmail(email);
+        showAuthInfo('Password reset email sent. Check your inbox.');
+      } catch (err) {
+        showAuthError(friendlyError(err.code));
+      } finally {
+        setLoading('btn-request-reset', false);
+      }
+    });
+
+    document.getElementById('btn-resend-reset-code').addEventListener('click', () => {
+      document.getElementById('btn-request-reset').click();
+    });
+
+    document.getElementById('btn-reset-password').addEventListener('click', async () => {
+      const email = document.getElementById('reset-email').value.trim();
+      const code = document.getElementById('reset-code').value.trim();
+      const password = document.getElementById('reset-password').value;
+      if (!email || !code || !password) return showAuthError('Email, reset code, and new password are required.');
+      if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
+      setLoading('btn-reset-password', true);
+      clearAuthMessages();
+      try {
+        const result = await window.TekagonAPI.resetPasswordWithCode({ email, code, password });
+        if (result.success) {
+          document.getElementById('si-email').value = email;
+          document.getElementById('si-password').value = '';
+          setAuthView('signin');
+          showAuthInfo(result.message || 'Password reset successfully. You can now sign in.');
+        } else {
+          showAuthError(result.error || 'Unable to reset password.');
+        }
+      } catch (error) {
+        showAuthError('Network error. Please try again.');
+      } finally {
+        setLoading('btn-reset-password', false);
+      }
+    });
+
     // ── Google (both forms) ──
     ['btn-google-signin', 'btn-google-signup'].forEach(id => {
       document.getElementById(id).addEventListener('click', async () => {
         clearAuthMessages();
         try {
+          if (!auth) {
+            showAuthError('Google sign-in is not ready. Please use email sign-in or try again later.');
+            return;
+          }
           const provider = new firebase.auth.GoogleAuthProvider();
           provider.setCustomParameters({ prompt: 'select_account' });
           await auth.signInWithPopup(provider);
@@ -531,7 +817,7 @@
        'current_ticket_id', 'pendingUserName', 'pendingUserPhone'].forEach(k =>
         localStorage.removeItem(k)
       );
-      await firebase.auth().signOut();
+      if (hasFirebaseAuth()) await firebase.auth().signOut();
       const btn = document.getElementById('tekagon-logout-btn');
       if (btn) btn.remove();
       showAuthOverlay();
@@ -678,8 +964,9 @@
     injectStyles();
 
     // Wait for Firebase to be ready
-    if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
-      console.error('auth.js: Firebase Auth SDK not loaded. Check your script tags.');
+    if (!hasFirebaseAuth()) {
+      console.warn('auth.js: Firebase Auth SDK not ready. Falling back to Tekagon backend auth.');
+      showAuthOverlay();
       return;
     }
 
@@ -700,5 +987,12 @@
   } else {
     init();
   }
+
+  setTimeout(() => {
+    if (!hasFirebaseAuth() && !document.getElementById('tekagon-auth-overlay')) {
+      injectStyles();
+      showAuthOverlay();
+    }
+  }, 700);
 
 })();
