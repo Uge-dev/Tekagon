@@ -9,7 +9,8 @@ const SHELL_ASSETS = [
   '/js/api.js',
   '/js/auth.js',
   '/js/dashboard.js',
-  '/Images/Tekagon_Icon.png',
+  '/Images/Asset 1.png',
+  '/Images/Asset 2.png',
   '/Images/pwa-icons/icon-192.png',
   '/Images/pwa-icons/icon-512.png',
   '/Images/Tekagon-logo.png'

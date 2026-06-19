@@ -11,7 +11,6 @@ const Message = require('./models/Message');
 const SiteContent = require('./models/SiteContent');
 const AdminSettings = require('./models/AdminSettings');
 const AuthCode = require('./models/AuthCode');
-const DeletedAccount = require('./models/DeletedAccount');
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -169,15 +168,6 @@ function normalizeUsername(name) {
 
 function escapeRegExp(value) {
   return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-async function isDeletedAccount({ userId = '', email = '' } = {}) {
-  const filters = [];
-  if (userId) filters.push({ userId });
-  const normalizedEmail = normalizeEmail(email);
-  if (normalizedEmail) filters.push({ email: normalizedEmail });
-  if (!filters.length) return false;
-  return Boolean(await DeletedAccount.exists({ $or: filters }));
 }
 
 async function findUserBySessionIdentity(userId, email = '') {
@@ -436,10 +426,6 @@ app.post('/api/users/register', async (req, res) => {
     }
 
     const normalizedEmail = normalizeEmail(email);
-    if (await isDeletedAccount({ userId, email: normalizedEmail })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin. Please contact support.' });
-    }
-
     const existing = normalizedEmail
       ? await User.findOne({ $or: [{ userId }, { email: normalizedEmail }] }).sort({ lastActive: -1 })
       : await User.findOne({ userId });
@@ -478,10 +464,6 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const normalizedEmail = normalizeEmail(email);
     const normalizedName = normalizeUsername(name);
-    if (await isDeletedAccount({ email: normalizedEmail })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin. Please contact support.' });
-    }
-
     const existing = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
     if (existing) {
       return res.status(409).json({ success: false, error: 'An account with this email already exists' });
@@ -553,10 +535,6 @@ app.post('/api/auth/signup/verify', async (req, res) => {
     }
 
     const existing = await User.findOne({ email: normalizedEmail }).sort({ lastActive: -1 }).select('+passwordHash +passwordSalt');
-    if (await isDeletedAccount({ email: normalizedEmail })) {
-      await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'signup' });
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin. Please contact support.' });
-    }
     if (existing) {
       await AuthCode.deleteMany({ email: normalizedEmail, purpose: 'signup' });
       return res.status(409).json({ success: false, error: 'An account with this email already exists' });
@@ -690,10 +668,6 @@ app.post('/api/auth/signin', async (req, res) => {
     }
 
     const normalizedEmail = normalizeEmail(email);
-    if (await isDeletedAccount({ email: normalizedEmail })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin. Please contact support.' });
-    }
-
     const matchingUsers = await User.find({ email: normalizedEmail })
       .sort({ lastActive: -1 })
       .select('+passwordHash +passwordSalt');
@@ -750,9 +724,6 @@ app.post('/api/admin/login', async (req, res) => {
 
 app.patch('/api/users/:userId/activity', async (req, res) => {
   try {
-    if (await isDeletedAccount({ userId: req.params.userId })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin' });
-    }
     const user = await User.findOneAndUpdate(
       { userId: req.params.userId },
       { lastActive: new Date() },
@@ -767,9 +738,6 @@ app.patch('/api/users/:userId/activity', async (req, res) => {
 app.get('/api/users/:userId/session', async (req, res) => {
   try {
     const email = normalizeEmail(req.query.email || '');
-    if (await isDeletedAccount({ userId: req.params.userId, email })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin' });
-    }
     const user = await findUserBySessionIdentity(req.params.userId, email);
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found. Please create an account first.' });
@@ -980,24 +948,6 @@ app.delete('/api/admin/users/:userId', requireAdmin, async (req, res) => {
       : await User.find({ userId }, { userId: 1, email: 1, name: 1 }).lean();
     const relatedUserIds = [...new Set(relatedUsers.map(item => item.userId).filter(Boolean))];
     const deletedMarkers = relatedUsers.length ? relatedUsers : [{ userId, email: user?.email || '', name: user?.name || '' }];
-    await Promise.all(deletedMarkers.map(item => DeletedAccount.findOneAndUpdate(
-      {
-        $or: [
-          ...(item.userId ? [{ userId: item.userId }] : []),
-          ...(item.email ? [{ email: normalizeEmail(item.email) }] : [])
-        ]
-      },
-      {
-        $set: {
-          userId: item.userId || userId,
-          email: normalizeEmail(item.email || user?.email || ''),
-          name: item.name || user?.name || '',
-          deletedAt: new Date(),
-          reason: 'admin-delete'
-        }
-      },
-      { upsert: true, new: true }
-    )));
 
     const [userResult, messageResult, ticketResult, authCodeResult] = await Promise.all([
       User.deleteMany({ userId: { $in: relatedUserIds } }),
@@ -1089,9 +1039,6 @@ app.post('/api/admin/email', requireAdmin, async (req, res) => {
 // ── TICKET ROUTES ─────────────────────────────────────────────────────────────
 app.post('/api/tickets/create', async (req, res) => {
   try {
-    if (await isDeletedAccount({ userId: req.body.userId })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin' });
-    }
     const ticket = await Ticket.create(req.body);
     res.json({ success: true, ticket });
   } catch (err) {
@@ -1101,9 +1048,6 @@ app.post('/api/tickets/create', async (req, res) => {
 
 app.get('/api/tickets/user/:userId', async (req, res) => {
   try {
-    if (await isDeletedAccount({ userId: req.params.userId })) {
-      return res.status(403).json({ success: false, deleted: true, tickets: [], error: 'This account has been deleted by admin' });
-    }
     const tickets = await Ticket.find({ userId: req.params.userId }).sort({ createdAt: -1 });
     res.json({ success: true, tickets });
   } catch (err) {
@@ -1236,9 +1180,6 @@ app.post('/api/messages', async (req, res) => {
     if (!sender || !content || !userId) {
       return res.status(400).json({ success: false, error: 'sender, content, and userId are required' });
     }
-    if (await isDeletedAccount({ userId })) {
-      return res.status(403).json({ success: false, deleted: true, error: 'This account has been deleted by admin' });
-    }
     const message = await Message.create({
       clientId: clientId || id || undefined,
       sender,
@@ -1299,9 +1240,6 @@ app.post('/api/messages', async (req, res) => {
 // to ticket threads are visible to the user's polling.
 app.get('/api/messages/user/:userId', async (req, res) => {
   try {
-    if (await isDeletedAccount({ userId: req.params.userId })) {
-      return res.status(403).json({ success: false, deleted: true, messages: [], error: 'This account has been deleted by admin' });
-    }
     const messages = await Message.find({ userId: req.params.userId }).sort({ timestamp: 1 });
     res.json({ success: true, messages });
   } catch (err) {
@@ -1312,9 +1250,6 @@ app.get('/api/messages/user/:userId', async (req, res) => {
 // General chat only (ticketId = null) — used when admin wants general thread
 app.get('/api/messages/user/:userId/general', async (req, res) => {
   try {
-    if (await isDeletedAccount({ userId: req.params.userId })) {
-      return res.status(403).json({ success: false, deleted: true, messages: [], error: 'This account has been deleted by admin' });
-    }
     const messages = await Message.find({
       userId: req.params.userId,
       ticketId: null
