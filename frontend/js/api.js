@@ -27,6 +27,16 @@ async function updateUserActivity(userId) {
   }
 }
 
+async function validateUserSession(userId, email = '') {
+  try {
+    const query = email ? `?email=${encodeURIComponent(email)}` : '';
+    const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}/session${query}`);
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 async function signupWithEmail(userData) {
   try {
     const res = await fetch(`${API_URL}/api/auth/signup`, {
@@ -487,6 +497,7 @@ function stopPolling() {
 window.TekagonAPI = {
   registerUser,
   updateUserActivity,
+  validateUserSession,
   signupWithEmail,
   signinWithEmail,
   verifySignupCode,

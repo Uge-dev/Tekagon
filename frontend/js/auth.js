@@ -519,6 +519,13 @@
     });
   }
 
+  function clearStoredUserSession() {
+    ['chatUserId', 'userName', 'userPhone', 'userEmail', 'userCompany',
+     'current_ticket_id', 'pendingUserName', 'pendingUserPhone'].forEach(k =>
+      localStorage.removeItem(k)
+    );
+  }
+
   function wireAuthOverlay(overlay) {
     let pendingSignup = null;
 
@@ -812,11 +819,7 @@
     document.getElementById('logout-no').addEventListener('click', () => popup.remove());
     document.getElementById('logout-yes').addEventListener('click', async () => {
       popup.remove();
-      // Clear session data
-      ['chatUserId', 'userName', 'userPhone', 'userEmail', 'userCompany',
-       'current_ticket_id', 'pendingUserName', 'pendingUserPhone'].forEach(k =>
-        localStorage.removeItem(k)
-      );
+      clearStoredUserSession();
       if (hasFirebaseAuth()) await firebase.auth().signOut();
       const btn = document.getElementById('tekagon-logout-btn');
       if (btn) btn.remove();
@@ -867,13 +870,13 @@
       }
       localStorage.setItem(userKey, JSON.stringify(merged.slice(0, 100)));
       localStorage.removeItem(guestKey);
+      window.dispatchEvent(new CustomEvent('tekagon-notifications-updated', { detail: { userId } }));
     } catch (error) {
       console.warn('Could not create welcome notification', error);
     }
   }
 
-  function setBackendAuthSession(user) {
-    removeAuthOverlay();
+  function syncStoredSession(user) {
     const name = user.name || (user.email ? user.email.split('@')[0] : 'User');
     localStorage.setItem('chatUserId', user.userId);
     localStorage.setItem('userName', name);
@@ -882,6 +885,12 @@
     localStorage.setItem('userCompany', user.company || '');
     localStorage.removeItem('pendingUserName');
     localStorage.removeItem('pendingUserPhone');
+    return name;
+  }
+
+  function setBackendAuthSession(user) {
+    removeAuthOverlay();
+    const name = syncStoredSession(user);
     ensureWelcomeNotification(user.userId, name);
     window.TekagonAPI?.updateUserActivity?.(user.userId);
     window.dispatchEvent(new CustomEvent('tekagon-auth-ready', { detail: { userId: user.userId } }));
@@ -910,6 +919,17 @@
     if (window.TekagonAPI) {
       try {
         const result = await window.TekagonAPI.registerUser({ userId, name, phone, email, company: '' });
+        if (result?.deleted) {
+          clearStoredUserSession();
+          if (hasFirebaseAuth()) await firebase.auth().signOut();
+          showAuthOverlay();
+          const errorBox = document.getElementById('auth-error');
+          if (errorBox) {
+            errorBox.textContent = result.error || 'This account has been deleted by admin. Please contact support.';
+            errorBox.classList.add('show');
+          }
+          return;
+        }
         if (result?.success && result.user?.userId) userId = result.user.userId;
       } catch (error) {
         console.warn('User registration sync failed', error);
@@ -938,24 +958,64 @@
     setTimeout(() => showPolicyConsent(userId), 0);
   }
 
-  function onUserSignedOut() {
+  async function validateStoredBackendSession(existingUserId) {
+    if (!existingUserId || !window.TekagonAPI?.validateUserSession) return false;
+    const email = localStorage.getItem('userEmail') || '';
+    const result = await window.TekagonAPI.validateUserSession(existingUserId, email);
+    if (result?.success && result.user) {
+      const name = syncStoredSession(result.user);
+      ensureWelcomeNotification(result.user.userId, name);
+      return result.user;
+    }
+    if (result?.deleted || /user not found/i.test(result?.error || '')) {
+      clearStoredUserSession();
+      return false;
+    }
+    if (/network error/i.test(result?.error || '')) {
+      return {
+        userId: existingUserId,
+        name: localStorage.getItem('userName') || 'User',
+        phone: localStorage.getItem('userPhone') || '',
+        email: localStorage.getItem('userEmail') || '',
+        company: localStorage.getItem('userCompany') || ''
+      };
+    }
+    return false;
+  }
+
+  function showSignedOutOverlay(message) {
+    const btn = document.getElementById('tekagon-logout-btn');
+    if (btn) btn.remove();
+    showAuthOverlay();
+    if (message) {
+      const errorBox = document.getElementById('auth-error');
+      if (errorBox) {
+        errorBox.textContent = message;
+        errorBox.classList.add('show');
+      }
+    }
+  }
+
+  async function onUserSignedOut() {
     const existingUserId = localStorage.getItem('chatUserId');
     if (existingUserId && existingUserId.startsWith('EMAIL_')) {
-      removeAuthOverlay();
-      injectLogoutButton();
-      const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
-      if (typeof window.buildPage === 'function' && (window._currentPage || requestedPage)) {
-        window.buildPage(window._currentPage || requestedPage);
+      const validUser = await validateStoredBackendSession(existingUserId);
+      if (validUser) {
+        removeAuthOverlay();
+        injectLogoutButton();
+        window.dispatchEvent(new CustomEvent('tekagon-auth-ready', { detail: { userId: validUser.userId } }));
+        const requestedPage = new URLSearchParams(location.hash.replace(/^#/, '')).get('page');
+        if (typeof window.buildPage === 'function' && (window._currentPage || requestedPage)) {
+          window.buildPage(window._currentPage || requestedPage);
+        }
+        setTimeout(() => showPolicyConsent(validUser.userId), 0);
+        return;
       }
-      setTimeout(() => showPolicyConsent(existingUserId), 0);
+      showSignedOutOverlay('This session is no longer available. Please sign in again.');
       return;
     }
 
-    // Remove logout button
-    const btn = document.getElementById('tekagon-logout-btn');
-    if (btn) btn.remove();
-    // Show auth screen
-    showAuthOverlay();
+    showSignedOutOverlay();
   }
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
@@ -966,7 +1026,10 @@
     // Wait for Firebase to be ready
     if (!hasFirebaseAuth()) {
       console.warn('auth.js: Firebase Auth SDK not ready. Falling back to Tekagon backend auth.');
-      showAuthOverlay();
+      onUserSignedOut().catch(error => {
+        console.error('Backend session initialization failed', error);
+        showSignedOutOverlay();
+      });
       return;
     }
 
@@ -976,7 +1039,7 @@
       if (user) {
         onUserSignedIn(user).catch(error => console.error('Sign-in initialization failed', error));
       } else {
-        onUserSignedOut();
+        onUserSignedOut().catch(error => console.error('Sign-out initialization failed', error));
       }
     });
   }
@@ -988,10 +1051,14 @@
     init();
   }
 
+  window.addEventListener('tekagon-auth-required', () => {
+    if (!localStorage.getItem('chatUserId')) showSignedOutOverlay();
+  });
+
   setTimeout(() => {
     if (!hasFirebaseAuth() && !document.getElementById('tekagon-auth-overlay')) {
       injectStyles();
-      showAuthOverlay();
+      onUserSignedOut().catch(() => showSignedOutOverlay());
     }
   }, 700);
 

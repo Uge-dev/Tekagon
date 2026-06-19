@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Tekagon - Innovative, Build, Design.</title>
+  <meta name="theme-color" content="#050713">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/styles/style.css">
   <link rel="stylesheet" href="/styles/resp.css">
   <link rel="stylesheet" href="/styles/landing-hero.css">
@@ -24,6 +26,7 @@
 
 <!-- Add at the end of <body> or in <head> -->
   <script src="/js/runtime-config.js"></script>
+  <script src="/js/pwa.js" defer></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, getDocs, where, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";

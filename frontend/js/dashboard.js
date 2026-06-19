@@ -1003,6 +1003,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveNotifications(notifications) {
     localStorage.setItem(notificationStorageKey(), JSON.stringify(notifications.slice(0, 100)));
     updateDashboardCounters();
+    window.dispatchEvent(new CustomEvent('tekagon-notifications-updated', {
+      detail: { userId: localStorage.getItem('chatUserId') || 'guest' }
+    }));
   }
 
   window.addTekagonNotification = function (notification) {
@@ -1047,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
       const ticketUnread = Object.values(ticketChats).some(messages =>
         Array.isArray(messages) && messages.some(message =>
-          message.sender === 'admin' && message.read === false
+          message.userId === userId && message.sender === 'admin' && message.read === false
         )
       );
       return generalUnread || ticketUnread;
@@ -1082,11 +1085,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('tekagon-auth-ready', () => {
+    startDashboardMessageNotifications();
+    updateDashboardCounters();
+    if (window._currentPage === 'notifications') buildPage('notifications');
+  });
+
+  window.addEventListener('tekagon-notifications-updated', () => {
     updateDashboardCounters();
     if (window._currentPage === 'notifications') buildPage('notifications');
   });
 
   function startUserActivityHeartbeat() {
+    if (window.__tekagonActivityHeartbeatStarted) return;
+    window.__tekagonActivityHeartbeatStarted = true;
     const heartbeat = () => {
       const userId = localStorage.getItem('chatUserId');
       if (userId) window.TekagonAPI?.updateUserActivity?.(userId);
@@ -1104,6 +1115,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function startDashboardMessageNotifications() {
     const userId = localStorage.getItem('chatUserId');
     if (!userId || !window.TekagonAPI?.getUserMessages) return;
+    if (window.__tekagonMessageNotificationsStarted === userId) return;
+    window.__tekagonMessageNotificationsStarted = userId;
     const seenKey = `tekagon_seen_admin_messages_${userId}`;
     let seen = new Set(JSON.parse(localStorage.getItem(seenKey) || '[]'));
     let initialized = seen.size > 0;
@@ -2110,8 +2123,13 @@ async function buildPage(pageKey) {
   currentChatUser = localStorage.getItem('chatUserId');
 
   if (!currentChatUser) {
-    showUserRegistration();
+    window.dispatchEvent(new CustomEvent('tekagon-auth-required'));
     return;
+  }
+
+  const existingRegistrationModal = document.getElementById('userRegModal');
+  if (existingRegistrationModal) {
+    existingRegistrationModal.remove();
   }
 
   await loadUserMessages();
@@ -3218,7 +3236,6 @@ async function buildPage(pageKey) {
       // Check general messages
       const conversations = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
       const userMessages = conversations[currentChatUser] || [];
-      2
       hasUnread = userMessages.some(msg =>
         msg.sender !== 'user' && !msg.read
       );
@@ -3227,7 +3244,7 @@ async function buildPage(pageKey) {
       if (!hasUnread) {
         const ticketChats = JSON.parse(localStorage.getItem(TICKET_CHAT_KEY) || '{}');
         Object.values(ticketChats).forEach(messages => {
-          if (messages.some(msg => msg.sender !== 'user' && !msg.read)) {
+          if (messages.some(msg => msg.userId === currentChatUser && msg.sender !== 'user' && !msg.read)) {
             hasUnread = true;
           }
         });

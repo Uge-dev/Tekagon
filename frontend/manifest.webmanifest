@@ -1,0 +1,25 @@
+{
+  "name": "Tekagon",
+  "short_name": "Tekagon",
+  "description": "Tekagon digital services dashboard, bookings, tickets, and live support.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050713",
+  "theme_color": "#050713",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/Images/pwa-icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Images/pwa-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
