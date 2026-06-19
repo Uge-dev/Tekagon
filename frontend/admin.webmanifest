@@ -1,0 +1,26 @@
+{
+  "id": "/pages/admin.html",
+  "name": "Tekagon Admin",
+  "short_name": "Tekagon Admin",
+  "description": "Tekagon admin dashboard for users, tickets, chat, content, and settings.",
+  "start_url": "/pages/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111722",
+  "theme_color": "#111722",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/Images/pwa-icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Images/pwa-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

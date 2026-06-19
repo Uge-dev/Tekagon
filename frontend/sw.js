@@ -1,8 +1,11 @@
-const CACHE_NAME = 'tekagon-shell-v2';
+const CACHE_NAME = 'tekagon-shell-v3';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/pages/dashboard.html',
+  '/pages/admin.html',
+  '/admin.webmanifest',
+  '/manifest.webmanifest',
   '/styles/style.css',
   '/styles/dashboard.css',
   '/js/runtime-config.js',
