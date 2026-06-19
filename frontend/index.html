@@ -8,6 +8,7 @@
   <title>Tekagon - Innovative, Build, Design.</title>
   <meta name="theme-color" content="#050713">
   <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/Images/Asset 1.png" as="image" fetchpriority="high">
   <link rel="stylesheet" href="/styles/style.css">
   <link rel="stylesheet" href="/styles/resp.css">
   <link rel="stylesheet" href="/styles/landing-hero.css">
@@ -76,7 +77,7 @@
   <div class="preloader" id="preloader" aria-hidden="true">
     <div class="preloader-splash" role="presentation">
       <span class="preloader-icon-tile">
-        <img class="preloader-logo" src="/Images/Asset 1.png" alt="">
+        <img class="preloader-logo" src="/Images/Asset 1.png" alt="" loading="eager" decoding="sync" fetchpriority="high">
       </span>
       <span class="preloader-wordmark">Tekagon</span>
     </div>

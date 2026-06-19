@@ -1419,6 +1419,7 @@ body.is-loaded .dashboard-preview::before {
     opacity: 1;
     visibility: visible;
     transition: opacity 180ms ease, visibility 180ms ease;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .preloader.is-hidden {
@@ -1428,10 +1429,11 @@ body.is-loaded .dashboard-preview::before {
 }
 
 .preloader-splash {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
+    position: relative;
+    width: min(100%, 420px);
+    min-height: min(100vh, 720px);
+    display: grid;
+    place-items: center;
     animation: preloaderLogo 820ms cubic-bezier(.2, .8, .2, 1) infinite alternate;
 }
 
@@ -1440,12 +1442,12 @@ body.is-loaded .dashboard-preview::before {
     aspect-ratio: 1;
     display: grid;
     place-items: center;
-    border-radius: 22px;
+    border-radius: 20px;
     background:
-        radial-gradient(circle at 35% 24%, rgba(147, 255, 246, 0.18), transparent 34%),
-        linear-gradient(145deg, #071022 0%, #06182f 52%, #02040a 100%);
-    border: 1px solid rgba(147, 255, 246, 0.12);
-    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.48), 0 0 32px rgba(49, 102, 214, 0.24);
+        radial-gradient(circle at 34% 22%, rgba(180, 188, 205, 0.2), transparent 34%),
+        linear-gradient(145deg, #262b34 0%, #111722 48%, #02040a 100%);
+    border: 1px solid rgba(226, 232, 240, 0.1);
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.52), 0 0 34px rgba(49, 102, 214, 0.16);
 }
 
 .preloader-logo {
@@ -1456,11 +1458,17 @@ body.is-loaded .dashboard-preview::before {
 }
 
 .preloader-wordmark {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: max(34px, env(safe-area-inset-bottom));
+    text-align: center;
     color: #f8fbff;
     font-size: clamp(1.05rem, 2.6vw, 1.35rem);
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0;
-    text-shadow: 0 0 20px rgba(147, 255, 246, 0.2);
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    text-shadow: 0 0 20px rgba(147, 255, 246, 0.16);
 }
 
 @keyframes preloaderLogo {
@@ -1472,12 +1480,6 @@ body.is-loaded .dashboard-preview::before {
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
-    }
-}
-
-@media (display-mode: standalone) {
-    .preloader {
-        display: none !important;
     }
 }
 
