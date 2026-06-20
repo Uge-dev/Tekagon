@@ -358,6 +358,12 @@ class TekagonScheduler {
 
             console.log("💾 Creating booking:", booking);
 
+            const backendResult = await window.TekagonAPI?.createBooking?.(booking);
+            if (!backendResult?.success) {
+                throw new Error(backendResult?.error || 'Booking could not be saved to the server');
+            }
+            console.log("✅ Booking saved to MongoDB:", backendResult.booking?.id || booking.id);
+
             // Save to Firebase
             if (window.db && typeof window.db.collection === 'function') {
                 try {

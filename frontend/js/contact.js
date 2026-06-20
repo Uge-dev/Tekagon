@@ -6,7 +6,7 @@ function initializeContactForm() {
     setTimeout(() => {
         const contactForm = document.getElementById('contactForm');
         if (!contactForm) {
-            console.error('Contact form not found!');
+            console.info('Contact form not present on this page.');
             return;
         }
         if (contactForm.dataset.contactInitialized === 'true') return;

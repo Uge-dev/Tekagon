@@ -7,6 +7,7 @@ const path = require('path');
 const connectDB = require('./db');
 const User = require('./models/User');
 const Ticket = require('./models/Ticket');
+const Booking = require('./models/Booking');
 const Message = require('./models/Message');
 const SiteContent = require('./models/SiteContent');
 const AdminSettings = require('./models/AdminSettings');
@@ -1059,6 +1060,57 @@ app.get('/api/tickets/all', async (req, res) => {
   try {
     const tickets = await Ticket.find().sort({ createdAt: -1 });
     res.json({ success: true, tickets });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── BOOKING ROUTES ───────────────────────────────────────────────────────────
+app.post('/api/bookings', async (req, res) => {
+  try {
+    const clean = value => String(value || '').trim();
+    const payload = {
+      id: clean(req.body.id) || `TEK-${Date.now()}`,
+      name: clean(req.body.name),
+      email: clean(req.body.email).toLowerCase(),
+      phone: clean(req.body.phone),
+      company: clean(req.body.company),
+      businessType: clean(req.body.businessType),
+      notes: clean(req.body.notes),
+      platform: clean(req.body.platform) || 'google-meet',
+      date: clean(req.body.date),
+      time: clean(req.body.time),
+      timezone: clean(req.body.timezone) || 'Africa/Lagos',
+      guests: Array.isArray(req.body.guests)
+        ? req.body.guests.map(guest => clean(guest).toLowerCase()).filter(Boolean)
+        : [],
+      status: clean(req.body.status) || 'confirmed',
+      source: clean(req.body.source) || 'web_scheduler',
+      updatedAt: new Date()
+    };
+
+    const required = ['name', 'email', 'phone', 'company', 'businessType', 'date', 'time'];
+    const missing = required.filter(field => !payload[field]);
+    if (missing.length) {
+      return res.status(400).json({ success: false, error: `Missing booking fields: ${missing.join(', ')}` });
+    }
+
+    const booking = await Booking.findOneAndUpdate(
+      { id: payload.id },
+      { $set: payload, $setOnInsert: { createdAt: new Date() } },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    res.json({ success: true, booking });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/admin/bookings', requireAdmin, async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 }).limit(200);
+    res.json({ success: true, bookings });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

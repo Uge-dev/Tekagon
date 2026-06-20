@@ -315,6 +315,20 @@ async function getAllTickets() {
   }
 }
 
+// ── BOOKINGS ─────────────────────────────────────────────────────────────────
+async function createBooking(bookingData) {
+  try {
+    const res = await fetch(`${API_URL}/api/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingData)
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 async function getMarketDemand() {
   try {
     const res = await fetch(`${API_URL}/api/market-demand`, { cache: 'no-store' });
@@ -520,6 +534,7 @@ window.TekagonAPI = {
   createTicket,
   getUserTickets,
   getAllTickets,
+  createBooking,
   getMarketDemand,
   updateTicketStatus,
   updateAdminTicketNotes,

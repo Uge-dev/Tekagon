@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tekagon-shell-v3';
+const CACHE_NAME = 'tekagon-shell-v5';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -11,6 +11,11 @@ const SHELL_ASSETS = [
   '/js/runtime-config.js',
   '/js/api.js',
   '/js/auth.js',
+  '/js/calendar.js',
+  '/js/sendgrid-client.js',
+  '/js/scheduler.js',
+  '/js/contact.js',
+  '/js/admin-dashboard.js',
   '/js/dashboard.js',
   '/Images/Asset 1.png',
   '/Images/Asset 2.png',
