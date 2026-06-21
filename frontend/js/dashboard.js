@@ -809,9 +809,9 @@ document.addEventListener('DOMContentLoaded', () => {
     home: {
       title: 'Trending Projects',
       banners: [
-        { title: 'Tekagon: Launching Soon', desc: 'Unlike standard agencies that separate form from function, Tekagon integrates cutting-edge full-stack development with professional UI/UX and brand strategy under one roof', meta: 'View Now', count: '+1000 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: 'https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1650&q=80' },
-        { title: 'Launching Gamer', desc: 'Paul Atreides returns, Business visibility can be enhanced by design tool to visualise prospective products of your business', meta: 'View Now', count: '+105 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/back3.png' },
-        { title: 'Nocturne Runner', desc: 'Paul Atreides returns, Business visibility can be enhanced by design tool to visualise prospective products of your business', meta: 'View Now', count: '+110 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/seta.png' }
+        { title: 'Tekagon Digital Growth Suite', desc: 'Plan, design, build, and scale your brand with one team covering strategy, UI/UX, web systems, mobile products, cloud infrastructure, and secure delivery.', meta: 'View Now', count: '+1000 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: 'https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1650&q=80' },
+        { title: 'Launch-Ready Web Platforms', desc: 'From company websites to dashboards and portals, Tekagon builds fast, responsive platforms that help customers trust, understand, and buy from your business.', meta: 'View Now', count: '+105 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/back3.png' },
+        { title: 'Brand Systems That Convert', desc: 'We turn ideas into memorable visual identities, product interfaces, and marketing assets that make your business easier to recognize and easier to choose.', meta: 'View Now', count: '+110 Views', inlineIconText: '4.7', inlineImage: '../Images/people.png', inlineIcon: '../Images/Polygon.png', image: '../Images/seta.png' }
       ],
       items: [
         { title: 'Social Betting Platform', prf: 'Luelink', prfTxt: 'Social betting', inlineImage: '../Images/thumb_1.png', btn: 'View Now', meta: 'Atreides returns, Business visibility can be enhanced by design ', img: '../Images/trending (2).jpeg' },
@@ -5430,9 +5430,9 @@ async function buildPage(pageKey) {
       pageEl.innerHTML = `
     <section class="service-hero">
       <div class="service-hero-content">
-        <div class="hero-tag"> <span class="hero-txt">What's new?</span> <span>Instantly Order for A Service →</span></div>
-        <h1>The Evolution of <br><span>Digital Services.</span></h1>
-        <p>Bringing trust, speed, and security to crypto.</p>
+        <div class="hero-tag"> <span class="hero-txt">Tekagon Services</span> <span>Order a digital solution built around your business →</span></div>
+        <h1>Build, launch, and scale <br><span>with Tekagon.</span></h1>
+        <p>Choose expert branding, product design, software development, cybersecurity, and growth services delivered for modern African and global businesses.</p>
         <div class="hero-buttons">
          
           <button class="btn-hero" onclick="buildPage('contact')">Contact Us</button>
@@ -5469,19 +5469,19 @@ async function buildPage(pageKey) {
             <div class="card-icon">
              <img src="../Images/servcard-turk.png" alt="">
             </div>
-            <h3>Turquoise Trek</h3>
-            <p>Seamless Web to Integration, Decentralized applications</p>
+            <h3>Brand Starter</h3>
+            <p>Clean identity foundations for a new or refreshed business.</p>
           </div>
           <div class="card-price">
-            <h2>$4,200<span class="price-duration">/month</span></h2>
+            <h2>₦250k - ₦600k<span class="price-duration"> starting from</span></h2>
           </div>
           <button class="btn-outline">Choose this plan</button>
           <ul class="card-features">
-            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Unlimited seats available</span> </li>
-            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text"> 1TB+ of cloud storage</span></li>
-            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Own your data</span> </li>
-            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Censorship-resistant</span> </li>
-            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Decentralized social media</span> </li>
+            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Brand discovery session</span> </li>
+            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text">Logo direction and usage guide</span></li>
+            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Color and typography system</span> </li>
+            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Social profile starter kit</span> </li>
+            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Editable source files</span> </li>
           </ul>
           
         </div>
@@ -5493,19 +5493,19 @@ async function buildPage(pageKey) {
             <div class="card-icon">
               <img src="../Images/servcard-pup.png" alt="">
             </div>
-            <h3>Purple Lift</h3>
-            <p>Supercharged crypto tools, Personalized guidance, Market insights</p>
+            <h3>Brand Growth System</h3>
+            <p>Expanded identity assets for brands ready to look consistent everywhere.</p>
           </div>
           <div class="card-price">
-            <h2>$10,500<span class="price-duration">/month</span></h2>
+            <h2>₦650k - ₦1.5m<span class="price-duration"> starting from</span></h2>
           </div>
           <button class="btn-solid">Choose this plan</button>
           <ul class="card-features">
-            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Unlimited seats available</span> </li>
-            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text"> 1TB+ of cloud storage</span></li>
-            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Own your data</span> </li>
-            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Censorship-resistant</span> </li>
-            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Decentralized social media</span> </li>
+            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Logo suite and brand rules</span> </li>
+            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text">Pitch and business templates</span></li>
+            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Social media launch pack</span> </li>
+            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Brand messaging framework</span> </li>
+            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Priority creative review</span> </li>
           </ul>
           
         </div>
@@ -5516,19 +5516,19 @@ async function buildPage(pageKey) {
             <div class="card-icon">
            <img src="../Images/servcard-brown.png" alt="">
             </div>
-            <h3>Off-white</h3>
-            <p>Own your data, Censorship-resistant, Decentralized social media</p>
+            <h3>Visual Refresh</h3>
+            <p>Targeted improvements for an existing brand that needs cleaner assets.</p>
           </div>
           <div class="card-price">
-            <h2>$300<span class="price-duration">/month</span></h2>
+            <h2>₦120k - ₦350k<span class="price-duration"> starting from</span></h2>
           </div>
                     <button class="btn-outline">Contact us</button>
           <ul class="card-features">
-            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Unlimited seats available</span> </li>
-            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text"> 1TB+ of cloud storage</span></li>
-            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Own your data</span> </li>
-            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Censorship-resistant</span> </li>
-            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Decentralized social media</span> </li>
+            <li><i class="feat-icon" data-feather="users"></i> <span class="feat-text">Existing asset audit</span> </li>
+            <li><i class="feat-icon" data-feather="hard-drive"></i> <span class="feat-text">Logo cleanup or adaptation</span></li>
+            <li><i class="feat-icon" data-feather="database"></i> <span class="feat-text">Color and layout refinements</span> </li>
+            <li><i class="feat-icon" data-feather="shield"></i> <span class="feat-text">Social template polish</span> </li>
+            <li><i class="feat-icon" data-feather="share-2"></i> <span class="feat-text">Export-ready deliverables</span> </li>
           </ul>
 
         </div>
@@ -5544,6 +5544,7 @@ async function buildPage(pageKey) {
   <button class="gr-btn" data-key="Digital Foundation">Digital Foundation</button>
   <button class="gr-btn" data-key="System Connection">System Connection</button>
   <button class="gr-btn" data-key="Management Services">Management Services</button>
+  <button class="gr-btn" data-key="Cybersecurity">Cybersecurity</button>
     
   </div>
     <div class="pricing-section">
@@ -5560,7 +5561,7 @@ async function buildPage(pageKey) {
       <div class="serviceContactContent">
         <div class="ft-tag"> <span>Instantly Order for A Service →</span></div>
         <h1>Contact US For Specified Services</span></h1>
-        <p>can't find the services you are looking for?, contact us for with detailed specification</p>
+        <p>Can't find the service you are looking for? Contact us with your exact business requirement.</p>
         <div class="service-buttons">
          
           <button class="btn-service" onclick="buildPage('chat')">Tekagon Admin</button>
@@ -5635,37 +5636,37 @@ async function buildPage(pageKey) {
         /* Graphic Design buttons */
         'Brand Identity': [
           {
-            title: 'Full Branding',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'Brand Starter',
+            desc: 'Identity foundations for startups, SMEs, and teams preparing to launch professionally.',
+            price: '₦250k - ₦600k',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Brand discovery session', 'Logo direction and usage guide', 'Color and typography system', 'Social profile starter kit']
           },
           {
-            title: 'Purple Lift',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'Brand Growth System',
+            desc: 'A stronger visual identity system for businesses that need consistency across every channel.',
+            price: '₦650k - ₦1.5m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Logo suite and brand rules', 'Business and pitch templates', 'Social media launch pack', 'Messaging framework']
           },
           {
-            title: 'E-marketing design',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Visual Refresh',
+            desc: 'Focused improvements for existing brands that need cleaner, sharper, modern assets.',
+            price: '₦120k - ₦350k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Existing asset audit', 'Logo cleanup or adaptation', 'Template polish', 'Export-ready deliverables']
           }
         ],
 
@@ -5674,36 +5675,36 @@ async function buildPage(pageKey) {
         'UI/UX': [
           {
             title: 'Mobile App UI',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            desc: 'User-friendly mobile app screens built for clear flows, conversion, and developer handoff.',
+            price: '₦400k - ₦1.2m',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['User flow mapping', 'Wireframes and UI screens', 'Clickable prototype', 'Developer handoff files']
           },
           {
-            title: 'Web UI',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'Web Product UI',
+            desc: 'Responsive website, dashboard, and web app interfaces designed for serious business use.',
+            price: '₦450k - ₦1.6m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['UX structure and sitemap', 'Responsive UI design', 'Design system components', 'Prototype review session']
           },
           {
-            title: 'Off-white',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Dashboard UX Audit',
+            desc: 'Improve confusing screens, weak conversion points, and interface friction in an existing product.',
+            price: '₦180k - ₦500k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['UX review report', 'Priority issue list', 'Improved screen samples', 'Implementation guidance']
           }
         ],
 
@@ -5711,72 +5712,72 @@ async function buildPage(pageKey) {
         // fallback to 'Brand Identity' if null
         'Motion Graphics': [
           {
-            title: 'E-market Ads',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'Animated Ads',
+            desc: 'Short motion creatives for product launches, paid ads, and social media campaigns.',
+            price: '₦150k - ₦450k',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Campaign concept', 'Motion storyboard', 'Animated ad export', 'Platform-ready sizes']
           },
           {
-            title: 'Prototype product',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'Product Explainer',
+            desc: 'Motion-led videos that explain your product, service, or process clearly and quickly.',
+            price: '₦350k - ₦950k',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Script direction', 'Storyboard scenes', 'Motion graphics production', 'Final video exports']
           },
           {
-            title: 'Off-white',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Logo Animation',
+            desc: 'Clean animated logo reveals for brand intros, reels, presentations, and video content.',
+            price: '₦80k - ₦250k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Animation direction', 'Sound-ready export', 'Transparent version', 'Social media formats']
           }
         ],
         'Product Design': [
           {
-            title: 'Product Protype',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'Product Prototype',
+            desc: 'Validate your idea with clear product flows, interface concepts, and interactive prototypes.',
+            price: '₦500k - ₦1.5m',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Product discovery', 'Core user journeys', 'Clickable prototype', 'Launch-readiness notes']
           },
           {
-            title: 'Purple Lift',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'MVP Design System',
+            desc: 'Design the full experience and reusable UI system your development team can build from.',
+            price: '₦900k - ₦2.5m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Feature planning', 'Reusable UI components', 'Responsive screen set', 'Developer documentation']
           },
           {
-            title: 'Off-white',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Product UX Review',
+            desc: 'Find and fix usability gaps before users abandon your app, website, or digital product.',
+            price: '₦200k - ₦600k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Heuristic review', 'Conversion issue list', 'Improved flow suggestions', 'Priority roadmap']
           }
         ],
 
@@ -5784,146 +5785,180 @@ async function buildPage(pageKey) {
         'Web/App': [
           {
             title: 'Web Application Development',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            desc: 'Custom websites, portals, and business dashboards built for speed, usability, and scale.',
+            price: '₦700k - ₦3.5m',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Responsive frontend', 'Backend/API integration', 'Admin features', 'Deployment support']
           },
           {
             title: 'Mobile App Development',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            desc: 'Cross-platform mobile apps with clean UX, secure backend connections, and launch support.',
+            price: '₦1.8m - ₦7m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['iOS and Android build', 'Authentication and APIs', 'App analytics', 'Store submission guidance']
           },
           {
             title: 'Desktop Application',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            desc: 'Operational desktop tools for internal workflows, reporting, and business automation.',
+            price: '₦900k - ₦4m',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Workflow mapping', 'Desktop UI build', 'Local/cloud data sync', 'Installer packaging']
           }
         ],
-
 
         'Digital Foundation': [
           {
-            title: 'Mobile UI',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'Business Website',
+            desc: 'A polished website foundation that explains your offer and helps customers take action.',
+            price: '₦450k - ₦1.5m',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Responsive pages', 'Contact and lead forms', 'Basic SEO setup', 'Analytics connection']
           },
           {
-            title: 'Purple',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'E-commerce Platform',
+            desc: 'Online stores with product structure, checkout planning, and conversion-focused design.',
+            price: '₦900k - ₦3.8m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Product catalog setup', 'Payment workflow planning', 'Order management basics', 'Mobile-friendly checkout']
           },
           {
-            title: 'white',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Landing Page',
+            desc: 'Fast campaign pages for launches, ads, events, and waitlists.',
+            price: '₦180k - ₦650k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Conversion copy structure', 'Responsive page build', 'Lead capture form', 'Performance optimization']
           }
         ],
 
-
         'System Connection': [
           {
-            title: ' Integration',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'API Integration',
+            desc: 'Connect third-party tools, payment systems, CRMs, and business apps into one workflow.',
+            price: '₦350k - ₦1.8m',
+            duration: ' starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Integration planning', 'Secure API connection', 'Webhook handling', 'Testing and documentation']
           },
           {
-            title: ' Native Development',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            title: 'Backend Systems',
+            desc: 'Reliable server-side logic, databases, dashboards, and admin workflows for your platform.',
+            price: '₦800k - ₦4.5m',
+            duration: ' starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Database design', 'Authentication flows', 'Admin APIs', 'Monitoring-ready deployment']
           },
           {
-            title: ' Development & Integration',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Automation Setup',
+            desc: 'Reduce repetitive work by connecting forms, emails, dashboards, and internal workflows.',
+            price: '₦250k - ₦1.2m',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Workflow audit', 'Automation logic', 'Email/tool integrations', 'Handoff documentation']
           }
         ],
 
         'Management Services': [
           {
-            title: 'Code Base Banagement',
-            desc: 'Seamless Web to Integration, Decentralized applications',
-            price: '$4,200',
-            duration: '/month',
+            title: 'Codebase Management',
+            desc: 'Keep your application stable with structured maintenance, updates, and version control care.',
+            price: '₦250k - ₦900k',
+            duration: ' monthly',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Bug triage', 'Dependency updates', 'Repository hygiene', 'Release support']
           },
           {
             title: 'SEO Optimization',
-            desc: 'Supercharged crypto tools, Personalized guidance, Market insights',
-            price: '$10,500',
-            duration: '/month',
+            desc: 'Improve technical SEO, content structure, and discoverability for better organic growth.',
+            price: '₦180k - ₦700k',
+            duration: ' monthly',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
             btnType: 'solid',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Censorship-resistant']
+            features: ['Technical SEO audit', 'Keyword page mapping', 'Metadata improvements', 'Performance recommendations']
           },
           {
-            title: 'Debugging and Code Refubbsihing',
-            desc: 'Own your data, Censorship-resistant, Decentralized social media',
-            price: '$300',
-            duration: '/month',
+            title: 'Debugging & Refactoring',
+            desc: 'Fix broken flows, clean unstable code, and improve the reliability of existing systems.',
+            price: '₦150k - ₦800k',
+            duration: ' starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
             btnType: 'outline',
-            features: ['Unlimited seats available', '1TB+ of cloud storage', 'Own your data']
+            features: ['Issue diagnosis', 'Targeted code fixes', 'Regression checks', 'Clear repair notes']
+          }
+        ],
+
+        'Cybersecurity': [
+          {
+            title: 'Security Audit',
+            desc: 'Review your website, app, or backend for common vulnerabilities and risky configurations.',
+            price: '₦300k - ₦1.2m',
+            duration: ' starting from',
+            theme: 'turquoise',
+            img: '../Images/servcard-turk.png',
+            btnText: 'Choose this plan',
+            btnType: 'outline',
+            features: ['Vulnerability review', 'Auth and access checks', 'Risk report', 'Fix recommendations']
+          },
+          {
+            title: 'Application Hardening',
+            desc: 'Strengthen forms, APIs, admin panels, data handling, and deployment settings before launch.',
+            price: '₦600k - ₦2.5m',
+            duration: ' starting from',
+            theme: 'purple',
+            img: '../Images/servcard-pup.png',
+            btnText: 'Choose this plan',
+            btnType: 'solid',
+            features: ['Secure headers', 'Input validation review', 'API protection', 'Deployment hardening']
+          },
+          {
+            title: 'Security Monitoring Setup',
+            desc: 'Set up alerts, logs, and operational checks so your team can respond faster to threats.',
+            price: '₦250k - ₦950k',
+            duration: ' starting from',
+            theme: 'offwhite',
+            img: '../Images/servcard-brown.png',
+            btnText: 'Contact us',
+            btnType: 'outline',
+            features: ['Logging setup', 'Alert channels', 'Incident checklist', 'Admin handoff']
           }
         ]
 
@@ -5943,12 +5978,12 @@ async function buildPage(pageKey) {
         // Graphic Design Plans
         'brand-identity-full': {
           id: 'brand-identity-full',
-          title: 'Full Branding',
+          title: 'Brand Starter',
           category: 'Graphic Design',
           subcategory: 'Brand Identity',
-          price: 4200,
-          currency: '$',
-          period: 'month',
+          price: 250000,
+          currency: '₦',
+          period: 'starting from',
           features: [
             'Logo design & variations',
             'Brand style guide',
@@ -5958,7 +5993,7 @@ async function buildPage(pageKey) {
             'Source files delivery'
           ],
           popular: false,
-          description: 'Complete brand identity package including all essential assets',
+          description: 'Brand identity foundation including the core assets needed to launch professionally',
           deliveryTime: '14-21 days'
         },
 
@@ -5967,9 +6002,9 @@ async function buildPage(pageKey) {
           title: 'Mobile App UI',
           category: 'Graphic Design',
           subcategory: 'UI/UX',
-          price: 4200,
-          currency: '$',
-          period: 'month',
+          price: 400000,
+          currency: '₦',
+          period: 'starting from',
           features: [
             'UI/UX design for mobile app',
             'Wireframing & prototyping',
@@ -5985,12 +6020,12 @@ async function buildPage(pageKey) {
 
         'purple-lift-popular': {
           id: 'purple-lift-popular',
-          title: 'Purple Lift',
+          title: 'Brand Growth System',
           category: 'Graphic Design',
           subcategory: 'Brand Identity',
-          price: 10500,
-          currency: '$',
-          period: 'month',
+          price: 650000,
+          currency: '₦',
+          period: 'starting from',
           features: [
             'Everything in Full Branding',
             'Animated logo variations',
@@ -6010,9 +6045,9 @@ async function buildPage(pageKey) {
           title: 'Web Application Development',
           category: 'Coding Services',
           subcategory: 'Web/App',
-          price: 4200,
-          currency: '$',
-          period: 'month',
+          price: 700000,
+          currency: '₦',
+          period: 'starting from',
           features: [
             'Custom web application',
             'Responsive design',
@@ -6031,9 +6066,9 @@ async function buildPage(pageKey) {
           title: 'Mobile App Development',
           category: 'Coding Services',
           subcategory: 'Web/App',
-          price: 10500,
-          currency: '$',
-          period: 'month',
+          price: 1800000,
+          currency: '₦',
+          period: 'starting from',
           features: [
             'iOS & Android app',
             'Cross-platform (React Native)',
@@ -6199,7 +6234,7 @@ async function buildPage(pageKey) {
             <div class="price-display">
               <span class="currency">${plan.currency}</span>
               <span class="amount">${plan.price.toLocaleString()}</span>
-              <span class="period">/${plan.period}</span>
+              <span class="period">${plan.period ? ` ${plan.period}` : ''}</span>
             </div>
             ${plan.popular ? '<span class="popular-badge">Most Popular</span>' : ''}
           </div>
@@ -6243,7 +6278,7 @@ async function buildPage(pageKey) {
             <i class="fas fa-times"></i> Cancel
           </button>
           <button class="btn-primary" onclick="addToCart('${plan.id}')">
-            <i class="fas fa-cart-plus"></i> Add to Cart - ${plan.currency}${plan.price}
+            <i class="fas fa-cart-plus"></i> Add to Cart - ${plan.currency}${plan.price.toLocaleString()}
           </button>
         </div>
       </div>
@@ -6304,7 +6339,7 @@ async function buildPage(pageKey) {
                   <h4>${item.title}</h4>
                   <div class="item-details">
                     <span class="item-category">${item.category} • ${item.subcategory}</span>
-                    <span class="item-price">${item.currency}${item.price}/${item.period}</span>
+                    <span class="item-price">${item.currency}${item.price.toLocaleString()} ${item.period}</span>
                   </div>
                 </div>
                 
@@ -6329,15 +6364,15 @@ async function buildPage(pageKey) {
           <div class="cart-summary">
             <div class="summary-row">
               <span>Subtotal</span>
-              <span>$${shoppingCart.subtotal.toLocaleString()}</span>
+              <span>₦${shoppingCart.subtotal.toLocaleString()}</span>
             </div>
             <div class="summary-row">
               <span>Tax (10%)</span>
-              <span>$${shoppingCart.tax.toLocaleString()}</span>
+              <span>₦${shoppingCart.tax.toLocaleString()}</span>
             </div>
             <div class="summary-row total">
               <span>Total</span>
-              <span>$${shoppingCart.total.toLocaleString()}</span>
+              <span>₦${shoppingCart.total.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -6434,7 +6469,7 @@ async function buildPage(pageKey) {
                   <div class="order-item">
                     <div class="order-item-title">
                       <span>${item.title} × ${item.quantity}</span>
-                      <span>$${(item.price * item.quantity).toLocaleString()}</span>
+                      <span>${item.currency}${(item.price * item.quantity).toLocaleString()}</span>
                     </div>
                     <div class="order-item-category">${item.subcategory}</div>
                   </div>
@@ -6444,15 +6479,15 @@ async function buildPage(pageKey) {
               <div class="order-totals">
                 <div class="total-row">
                   <span>Subtotal</span>
-                  <span>$${shoppingCart.subtotal.toLocaleString()}</span>
+                  <span>₦${shoppingCart.subtotal.toLocaleString()}</span>
                 </div>
                 <div class="total-row">
                   <span>Tax</span>
-                  <span>$${shoppingCart.tax.toLocaleString()}</span>
+                  <span>₦${shoppingCart.tax.toLocaleString()}</span>
                 </div>
                 <div class="total-row grand-total">
                   <span>Total</span>
-                  <span>$${shoppingCart.total.toLocaleString()}</span>
+                  <span>₦${shoppingCart.total.toLocaleString()}</span>
                 </div>
               </div>
               
@@ -6469,7 +6504,7 @@ async function buildPage(pageKey) {
             Cancel
           </button>
           <button class="btn-primary" onclick="processPayment()">
-            <i class="fas fa-credit-card"></i> Pay $${shoppingCart.total.toLocaleString()}
+            <i class="fas fa-credit-card"></i> Pay ₦${shoppingCart.total.toLocaleString()}
           </button>
         </div>
       </div>
@@ -6563,7 +6598,7 @@ async function buildPage(pageKey) {
               Order #: <strong>TEK${Date.now().toString().slice(-8)}</strong>
             </div>
             <div class="confirmation-total">
-              Total Paid: <strong>$${shoppingCart.total.toLocaleString()}</strong>
+              Total Paid: <strong>₦${shoppingCart.total.toLocaleString()}</strong>
             </div>
           </div>
           
@@ -6623,7 +6658,7 @@ async function buildPage(pageKey) {
 
               // Map card title to service name
               let serviceName = '';
-              if (serviceTitle.includes('Branding') || serviceTitle.includes('Full Branding')) {
+              if (serviceTitle.includes('Brand') || serviceTitle.includes('Visual Refresh')) {
                 serviceName = 'Brand Identity';
               } else if (serviceTitle.includes('UI') || serviceTitle.includes('App UI')) {
                 serviceName = 'UI/UX Design';
@@ -6631,6 +6666,8 @@ async function buildPage(pageKey) {
                 serviceName = 'Website Development';
               } else if (serviceTitle.includes('Mobile App')) {
                 serviceName = 'Mobile App Development';
+              } else if (serviceTitle.includes('Security') || serviceTitle.includes('Hardening')) {
+                serviceName = 'Cybersecurity';
               } else if (serviceTitle.includes('E-market')) {
                 serviceName = 'Digital Marketing';
               } else {
@@ -7526,11 +7563,11 @@ async function buildPage(pageKey) {
         label: 'Budget Range *',
         required: true,
         options: [
-          { value: 'under-500', label: 'Under $500' },
-          { value: '500-2000', label: '$500 - $2,000' },
-          { value: '2000-5000', label: '$2,000 - $5,000' },
-          { value: '5000-10000', label: '$5,000 - $10,000' },
-          { value: '10000-plus', label: '$10,000+' }
+          { value: 'under-250k', label: 'Under ₦250,000' },
+          { value: '250k-750k', label: '₦250,000 - ₦750,000' },
+          { value: '750k-2m', label: '₦750,000 - ₦2,000,000' },
+          { value: '2m-5m', label: '₦2,000,000 - ₦5,000,000' },
+          { value: '5m-plus', label: '₦5,000,000+' }
         ]
       },
       {
@@ -7874,11 +7911,11 @@ async function buildPage(pageKey) {
         label: 'Monthly Ad Budget *',
         required: true,
         options: [
-          { value: 'under-500', label: 'Under $500' },
-          { value: '500-1000', label: '$500 - $1,000' },
-          { value: '1000-3000', label: '$1,000 - $3,000' },
-          { value: '3000-5000', label: '$3,000 - $5,000' },
-          { value: '5000-plus', label: '$5,000+' }
+          { value: 'under-250k', label: 'Under ₦250,000' },
+          { value: '250k-750k', label: '₦250,000 - ₦750,000' },
+          { value: '750k-2m', label: '₦750,000 - ₦2,000,000' },
+          { value: '2m-5m', label: '₦2,000,000 - ₦5,000,000' },
+          { value: '5m-plus', label: '₦5,000,000+' }
         ]
       },
       {
@@ -7918,6 +7955,54 @@ async function buildPage(pageKey) {
           { value: 'ongoing', label: 'Ongoing' }
         ]
       }
+    ],
+
+    'cybersecurity': [
+      {
+        id: 'assetType',
+        type: 'checkbox',
+        label: 'What should we secure? *',
+        required: true,
+        options: [
+          { value: 'website', label: 'Website' },
+          { value: 'web-app', label: 'Web Application' },
+          { value: 'mobile-app', label: 'Mobile App' },
+          { value: 'api', label: 'Backend / API' },
+          { value: 'cloud', label: 'Cloud Infrastructure' }
+        ]
+      },
+      {
+        id: 'securityGoal',
+        type: 'textarea',
+        label: 'Security Goal *',
+        required: true,
+        placeholder: 'Tell us what you want reviewed, hardened, monitored, or protected.'
+      },
+      {
+        id: 'currentRisks',
+        type: 'textarea',
+        label: 'Known Issues or Concerns',
+        required: false,
+        placeholder: 'Suspicious activity, login issues, exposed admin areas, payment concerns, etc.'
+      },
+      {
+        id: 'accessLevel',
+        type: 'radio',
+        label: 'Can you provide technical access for review? *',
+        required: true,
+        options: [
+          { value: 'yes', label: 'Yes, technical access can be provided securely' },
+          { value: 'limited', label: 'Limited access only' },
+          { value: 'no', label: 'No, external review only' }
+        ]
+      },
+      {
+        id: 'complianceNeeds',
+        type: 'textarea',
+        label: 'Compliance or Data Requirements',
+        required: false,
+        placeholder: 'Customer data, payments, healthcare, finance, internal admin tools, etc.'
+      }
     ]
   };
 
@@ -7940,6 +8025,7 @@ async function buildPage(pageKey) {
     'DevOps': 'devops',
     'Website Maintenance': 'website-maintenance',
     'Cloud Services': 'cloud-services',
+    'Cybersecurity': 'cybersecurity',
     'Payment Integration': 'payment-integration',
     'Tech Consultation': 'tech-consultation',
     'Video Editing': 'video-editing',
