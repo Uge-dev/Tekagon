@@ -5474,7 +5474,7 @@ async function buildPage(pageKey) {
           </div>
           <div class="card-price">
             <div class="price-badge">
-        🔥     Starting From
+             🔥     Starting From
             </div>
             <h2 class="price">₦250,000</h2>
           </div>
@@ -5500,7 +5500,10 @@ async function buildPage(pageKey) {
             <p>Expanded identity assets for brands ready to look consistent everywhere.</p>
           </div>
           <div class="card-price">
-            <h2>₦650k - ₦1.5m<span class="price-duration"> starting from</span></h2>
+             <div class="price-badge">
+             🔥     Starting From
+            </div>
+            <h2 class="price">₦650,000</h2>
           </div>
           <button class="btn-solid">Choose this plan</button>
           <ul class="card-features">
