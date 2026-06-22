@@ -5503,7 +5503,7 @@ async function buildPage(pageKey) {
              <div class="price-badge">
              🔥     Starting From
             </div>
-            <h2 class="price">₦650,000</h2>
+            <h2 class="price">₦650,000.00</h2>
           </div>
           <button class="btn-solid">Choose this plan</button>
           <ul class="card-features">
