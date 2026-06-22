@@ -2262,3 +2262,22 @@ a[href^="mailto:"]:hover {
   color: #10b981;
   transform: scale(1.1);
 }
+
+.price-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  border-radius:999px;
+  background:rgba(255,120,0,.15);
+  color:#ff9b3d;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.price{
+  font-size:42px;
+  font-weight:700;
+}

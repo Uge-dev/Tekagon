@@ -5473,7 +5473,10 @@ async function buildPage(pageKey) {
             <p>Clean identity foundations for a new or refreshed business.</p>
           </div>
           <div class="card-price">
-            <h2>₦250k - ₦600k<span class="price-duration"> starting from</span></h2>
+            <div class="price-badge">
+        🔥     Starting From
+            </div>
+            <h2 class="price">₦250,000</h2>
           </div>
           <button class="btn-outline">Choose this plan</button>
           <ul class="card-features">
