@@ -5526,7 +5526,7 @@ async function buildPage(pageKey) {
             <p>Targeted improvements for an existing brand that needs cleaner assets.</p>
           </div>
           <div class="card-price">
-            <h2>₦120k - ₦350k<span class="price-duration"> starting from</span></h2>
+            <h2>₦120,000<span class="price-duration"> starting from</span></h2>
           </div>
                     <button class="btn-outline">Contact us</button>
           <ul class="card-features">
