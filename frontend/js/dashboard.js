@@ -5473,10 +5473,8 @@ async function buildPage(pageKey) {
             <p>Clean identity foundations for a new or refreshed business.</p>
           </div>
           <div class="card-price">
-            <div class="price-badge">
-             🔥     Starting From
-            </div>
-            <h2 class="price">₦250,000</h2>
+            <span class="starting-price-label"><i class="fas fa-fire" aria-hidden="true"></i> Starting from</span>
+            <h2>₦250k</h2>
           </div>
           <button class="btn-outline">Choose this plan</button>
           <ul class="card-features">
@@ -5500,10 +5498,8 @@ async function buildPage(pageKey) {
             <p>Expanded identity assets for brands ready to look consistent everywhere.</p>
           </div>
           <div class="card-price">
-             <div class="price-badge">
-             🔥     Starting From
-            </div>
-            <h2 class="price">₦650,000.00</h2>
+            <span class="starting-price-label"><i class="fas fa-fire" aria-hidden="true"></i> Starting from</span>
+            <h2>₦650k</h2>
           </div>
           <button class="btn-solid">Choose this plan</button>
           <ul class="card-features">
@@ -5526,7 +5522,8 @@ async function buildPage(pageKey) {
             <p>Targeted improvements for an existing brand that needs cleaner assets.</p>
           </div>
           <div class="card-price">
-            <h2>₦120,000<span class="price-duration"> starting from</span></h2>
+            <span class="starting-price-label"><i class="fas fa-fire" aria-hidden="true"></i> Starting from</span>
+            <h2>₦120k</h2>
           </div>
                     <button class="btn-outline">Contact us</button>
           <ul class="card-features">
@@ -5644,8 +5641,8 @@ async function buildPage(pageKey) {
           {
             title: 'Brand Starter',
             desc: 'Identity foundations for startups, SMEs, and teams preparing to launch professionally.',
-            price: '₦250k - ₦600k',
-            duration: ' starting from',
+            price: '₦250k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5655,8 +5652,8 @@ async function buildPage(pageKey) {
           {
             title: 'Brand Growth System',
             desc: 'A stronger visual identity system for businesses that need consistency across every channel.',
-            price: '₦650k - ₦1.5m',
-            duration: ' starting from',
+            price: '₦650k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5666,8 +5663,8 @@ async function buildPage(pageKey) {
           {
             title: 'Visual Refresh',
             desc: 'Focused improvements for existing brands that need cleaner, sharper, modern assets.',
-            price: '₦120k - ₦350k',
-            duration: ' starting from',
+            price: '₦120k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5682,8 +5679,8 @@ async function buildPage(pageKey) {
           {
             title: 'Mobile App UI',
             desc: 'User-friendly mobile app screens built for clear flows, conversion, and developer handoff.',
-            price: '₦400k - ₦1.2m',
-            duration: ' starting from',
+            price: '₦400k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5693,8 +5690,8 @@ async function buildPage(pageKey) {
           {
             title: 'Web Product UI',
             desc: 'Responsive website, dashboard, and web app interfaces designed for serious business use.',
-            price: '₦450k - ₦1.6m',
-            duration: ' starting from',
+            price: '₦450k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5704,8 +5701,8 @@ async function buildPage(pageKey) {
           {
             title: 'Dashboard UX Audit',
             desc: 'Improve confusing screens, weak conversion points, and interface friction in an existing product.',
-            price: '₦180k - ₦500k',
-            duration: ' starting from',
+            price: '₦180k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5720,8 +5717,8 @@ async function buildPage(pageKey) {
           {
             title: 'Animated Ads',
             desc: 'Short motion creatives for product launches, paid ads, and social media campaigns.',
-            price: '₦150k - ₦450k',
-            duration: ' starting from',
+            price: '₦150k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5731,8 +5728,8 @@ async function buildPage(pageKey) {
           {
             title: 'Product Explainer',
             desc: 'Motion-led videos that explain your product, service, or process clearly and quickly.',
-            price: '₦350k - ₦950k',
-            duration: ' starting from',
+            price: '₦350k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5742,8 +5739,8 @@ async function buildPage(pageKey) {
           {
             title: 'Logo Animation',
             desc: 'Clean animated logo reveals for brand intros, reels, presentations, and video content.',
-            price: '₦80k - ₦250k',
-            duration: ' starting from',
+            price: '₦80k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5755,8 +5752,8 @@ async function buildPage(pageKey) {
           {
             title: 'Product Prototype',
             desc: 'Validate your idea with clear product flows, interface concepts, and interactive prototypes.',
-            price: '₦500k - ₦1.5m',
-            duration: ' starting from',
+            price: '₦500k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5766,8 +5763,8 @@ async function buildPage(pageKey) {
           {
             title: 'MVP Design System',
             desc: 'Design the full experience and reusable UI system your development team can build from.',
-            price: '₦900k - ₦2.5m',
-            duration: ' starting from',
+            price: '₦900k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5777,8 +5774,8 @@ async function buildPage(pageKey) {
           {
             title: 'Product UX Review',
             desc: 'Find and fix usability gaps before users abandon your app, website, or digital product.',
-            price: '₦200k - ₦600k',
-            duration: ' starting from',
+            price: '₦200k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5792,8 +5789,8 @@ async function buildPage(pageKey) {
           {
             title: 'Web Application Development',
             desc: 'Custom websites, portals, and business dashboards built for speed, usability, and scale.',
-            price: '₦700k - ₦3.5m',
-            duration: ' starting from',
+            price: '₦700k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5803,8 +5800,8 @@ async function buildPage(pageKey) {
           {
             title: 'Mobile App Development',
             desc: 'Cross-platform mobile apps with clean UX, secure backend connections, and launch support.',
-            price: '₦1.8m - ₦7m',
-            duration: ' starting from',
+            price: '₦1.8m',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5814,8 +5811,8 @@ async function buildPage(pageKey) {
           {
             title: 'Desktop Application',
             desc: 'Operational desktop tools for internal workflows, reporting, and business automation.',
-            price: '₦900k - ₦4m',
-            duration: ' starting from',
+            price: '₦900k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5828,8 +5825,8 @@ async function buildPage(pageKey) {
           {
             title: 'Business Website',
             desc: 'A polished website foundation that explains your offer and helps customers take action.',
-            price: '₦450k - ₦1.5m',
-            duration: ' starting from',
+            price: '₦450k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5839,8 +5836,8 @@ async function buildPage(pageKey) {
           {
             title: 'E-commerce Platform',
             desc: 'Online stores with product structure, checkout planning, and conversion-focused design.',
-            price: '₦900k - ₦3.8m',
-            duration: ' starting from',
+            price: '₦900k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5850,8 +5847,8 @@ async function buildPage(pageKey) {
           {
             title: 'Landing Page',
             desc: 'Fast campaign pages for launches, ads, events, and waitlists.',
-            price: '₦180k - ₦650k',
-            duration: ' starting from',
+            price: '₦180k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5864,8 +5861,8 @@ async function buildPage(pageKey) {
           {
             title: 'API Integration',
             desc: 'Connect third-party tools, payment systems, CRMs, and business apps into one workflow.',
-            price: '₦350k - ₦1.8m',
-            duration: ' starting from',
+            price: '₦350k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5875,8 +5872,8 @@ async function buildPage(pageKey) {
           {
             title: 'Backend Systems',
             desc: 'Reliable server-side logic, databases, dashboards, and admin workflows for your platform.',
-            price: '₦800k - ₦4.5m',
-            duration: ' starting from',
+            price: '₦800k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5886,8 +5883,8 @@ async function buildPage(pageKey) {
           {
             title: 'Automation Setup',
             desc: 'Reduce repetitive work by connecting forms, emails, dashboards, and internal workflows.',
-            price: '₦250k - ₦1.2m',
-            duration: ' starting from',
+            price: '₦250k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5900,8 +5897,8 @@ async function buildPage(pageKey) {
           {
             title: 'Codebase Management',
             desc: 'Keep your application stable with structured maintenance, updates, and version control care.',
-            price: '₦250k - ₦900k',
-            duration: ' monthly',
+            price: '₦250k',
+            duration: 'Starting from / month',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5911,8 +5908,8 @@ async function buildPage(pageKey) {
           {
             title: 'SEO Optimization',
             desc: 'Improve technical SEO, content structure, and discoverability for better organic growth.',
-            price: '₦180k - ₦700k',
-            duration: ' monthly',
+            price: '₦180k',
+            duration: 'Starting from / month',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5922,8 +5919,8 @@ async function buildPage(pageKey) {
           {
             title: 'Debugging & Refactoring',
             desc: 'Fix broken flows, clean unstable code, and improve the reliability of existing systems.',
-            price: '₦150k - ₦800k',
-            duration: ' starting from',
+            price: '₦150k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -5936,8 +5933,8 @@ async function buildPage(pageKey) {
           {
             title: 'Security Audit',
             desc: 'Review your website, app, or backend for common vulnerabilities and risky configurations.',
-            price: '₦300k - ₦1.2m',
-            duration: ' starting from',
+            price: '₦300k',
+            duration: 'Starting from',
             theme: 'turquoise',
             img: '../Images/servcard-turk.png',
             btnText: 'Choose this plan',
@@ -5947,8 +5944,8 @@ async function buildPage(pageKey) {
           {
             title: 'Application Hardening',
             desc: 'Strengthen forms, APIs, admin panels, data handling, and deployment settings before launch.',
-            price: '₦600k - ₦2.5m',
-            duration: ' starting from',
+            price: '₦600k',
+            duration: 'Starting from',
             theme: 'purple',
             img: '../Images/servcard-pup.png',
             btnText: 'Choose this plan',
@@ -5958,8 +5955,8 @@ async function buildPage(pageKey) {
           {
             title: 'Security Monitoring Setup',
             desc: 'Set up alerts, logs, and operational checks so your team can respond faster to threats.',
-            price: '₦250k - ₦950k',
-            duration: ' starting from',
+            price: '₦250k',
+            duration: 'Starting from',
             theme: 'offwhite',
             img: '../Images/servcard-brown.png',
             btnText: 'Contact us',
@@ -6731,7 +6728,10 @@ async function buildPage(pageKey) {
         <h3>${escapeHtml(data.title || '')}</h3>
         <p>${escapeHtml(data.desc || '')}</p>
       </div>
-      <div class="card-price"><h2>${escapeHtml(data.price || '')}<span class="price-duration">${escapeHtml(data.duration || '')}</span></h2></div>
+      <div class="card-price">
+        <span class="starting-price-label"><i class="fas fa-fire" aria-hidden="true"></i> ${escapeHtml(data.duration || 'Starting from')}</span>
+        <h2>${escapeHtml(data.price || '')}</h2>
+      </div>
       <button class="${data.btnType === 'solid' ? 'btn-solid' : 'btn-outline'}">${escapeHtml(data.btnText || 'Choose')}</button>
       <ul class="card-features">
         ${(data.features || []).map(f => `<li><i class="feat-icon" data-feather="check"></i> <span class="feat-text">${escapeHtml(f)}</span></li>`).join('')}
@@ -6794,7 +6794,7 @@ async function buildPage(pageKey) {
               const desc = c.querySelector('.card-header p') ? c.querySelector('.card-header p').textContent.trim() : '';
               const img = c.querySelector('.card-icon img') ? c.querySelector('.card-icon img').getAttribute('src') : '';
               const price = c.querySelector('.card-price h2') ? c.querySelector('.card-price h2').childNodes[0].textContent.trim() : '';
-              const durationEl = c.querySelector('.price-duration');
+              const durationEl = c.querySelector('.starting-price-label');
               const duration = durationEl ? durationEl.textContent.trim() : '';
               const theme = Array.from(c.classList).find(cl => cl === 'turquoise' || cl === 'purple' || cl === 'offwhite') || '';
               const btn = c.querySelector('button') ? c.querySelector('button').textContent.trim() : '';
